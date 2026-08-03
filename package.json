@@ -1,0 +1,15 @@
+{
+  "name": "calude-webbuilder",
+  "version": "1.0.0",
+  "description": "Build professional landing pages with Claude Code. Clone, run claude, answer questions, get a deployed website.",
+  "author": "SkormJF",
+  "license": "UNLICENSED",
+  "private": true,
+  "keywords": [
+    "claude-code",
+    "web-builder",
+    "landing-page",
+    "nextjs",
+    "ai-assisted"
+  ]
+}
