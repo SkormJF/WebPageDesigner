@@ -123,7 +123,19 @@ Todo lo visual vive en esta ronda, de lo rapido a lo profundo: primero preferenc
 
 **La conversacion de aprobacion** -- despues de las preguntas rapidas y los assets, **PAUSA con una conversacion visual real, no una aprobacion de un solo tiro** — es el mismo espiritu que la Ronda 3, aplicado a lo visual en vez de a lo funcional: se itera de verdad hasta que todo quede resuelto, no se lee una lista y se espera un "ok".
 
-1. Invoca el skill `imagegen-frontend-web` para generar 1-2 imagenes de referencia (el hero, y una seccion con componentes visibles como botones/cards) — no las 6-8 completas todavia, esas se generan mas adelante con las secciones ya definidas. Si hay logo, incorporalo en la referencia. Si el proyecto es Full-Stack Extension (confirmado en la Ronda 1), suma ademas una referencia de la pantalla de login o del shell del panel/dashboard.
+1. **Publica un Artifact con la direccion visual propuesta** (carga antes el skill `artifact-design`). No es una imagen: es una pagina HTML real que el usuario abre en claude.ai, desde la compu o el celular. Debe contener:
+   - La paleta en bloques grandes, con sus hex a la vista
+   - Un titular en la fuente de titulos y un parrafo en la de cuerpo, **cargadas de verdad** desde Google Fonts
+   - Los botones (primario, secundario, ghost) **funcionando**: el hover, el focus con teclado y el estado disabled se ven porque son CSS real
+   - Una card del tipo que va a repetirse en la pagina
+   - El ritmo de secciones (alternado, centrado, lo que se proponga)
+   - Si el proyecto es Full-Stack Extension: ademas un bloque del login o del shell del panel
+   - Si hay logo, incorporalo
+
+   **Por que un Artifact y no una imagen generada:** una imagen estatica no puede mostrar un hover, un focus ni un disabled — y esos son justo los estados que despues se pierden si nadie los decidio. Ademas la tipografia se ve real, no interpretada.
+
+   **Y esto es lo importante:** el Artifact esta hecho de los valores reales. Cuando el usuario aprueba el boton, quedan aprobados su hex, su border-radius, su altura, su padding y su color de hover — ya escritos. La Fase 2 no "deriva" el spec despues: lo copia de aqui.
+
 2. Presenta la aprobacion **por elemento**, no como un "te late?" generico -- cubriendo todo el sistema visual, no solo el color:
    - Paleta / color
    - Tipografia
@@ -134,7 +146,9 @@ Todo lo visual vive en esta ronda, de lo rapido a lo profundo: primero preferenc
    - Si aplica (Full-Stack Extension): layout del login/panel
 
    Cada uno con su propio si/cambio -- no avances al siguiente hasta resolver el actual.
-3. Itera elemento por elemento, regenerando la referencia visual si hace falta, hasta que todo quede aprobado.
+3. Itera elemento por elemento. Cuando pidan un cambio, ajustalo y **republica el Artifact en la misma URL** — el usuario refresca y ve la version nueva, sin links sueltos acumulandose. Sigue hasta que los siete puntos queden aprobados.
+
+4. **Anota los valores aprobados tal cual quedaron en el Artifact.** Son los que la Fase 2 escribe en el `PROJECT-BRIEF.md` y la Fase 4 pone en los componentes. Si el hex del hover se decidio aqui, no se vuelve a inventar despues.
 
 **Espera la aprobacion del usuario antes de terminar el cuestionario.** Si el usuario quiere cambios, ajusta y vuelve a presentar hasta que apruebe. Esto asegura que casi no queden cambios de gusto/visual pendientes para despues de construir.
 

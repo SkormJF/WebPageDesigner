@@ -58,12 +58,24 @@ This builder always talks to the user in Spanish — `docs/questionnaire.md` and
 | `emil-design-eng` | UI polish & animation craft — Emil Kowalski's philosophy on micro-interactions and invisible details |
 | `design-taste-frontend` | Anti-LLM-bias rules for React/Next.js — metric-based typography, spacing, and component architecture |
 | `full-output-enforcement` | Prevents truncated code output — enforces complete file generation, bans placeholder patterns |
-| `imagegen-frontend-web` | Generates design reference images for Round 4's visual approval conversation in Phase 1 — 1-2 to start (hero + one section with visible components), more later once sections are defined |
+| `imagegen-frontend-web` | **Optional, and unusable in this environment** — it describes art direction for generated images, but no image-generation tool exists here. Round 4's visual approval uses a published **Artifact** instead (see `docs/questionnaire.md`), which shows real components with working hover/focus states rather than a picture of them. Keep this skill only as art-direction reference if an image tool ever appears. |
 | `redesign-existing-projects` | Structured audit + targeted upgrade workflow for Phase 5 iteration and polish |
 | `staged-app-builder` | Plans a large Full-Stack Extension backend as dependency-ordered phases tracked in `PROJECT-BRIEF.md`, with a per-phase verification bar. See Phase 3.5. |
 | `navigation-shell` | Headers, sticky/scroll behavior, mobile menus, and dashboard sidebars — the WCAG criteria they fail by default, the CSS traps that silently break `position: sticky`, and the gaps shadcn's `sidebar` leaves for you. Use in Phase 4. |
 
 See `docs/skill-reference.md` for full invocation examples and all `--domain` values.
+
+## Verification — check results, never declarations
+
+Every bug this workflow has shipped shared one shape: a step reported success while its actual effect never happened. A build passed with the page in the wrong font. Two scaffold commands returned exit code 0 and produced no components. A checklist item asked whether fonts were *configured* — which was true — while the page rendered in Times New Roman. None of it is visible by reading; all of it is obvious the moment you look at the result.
+
+Three rules, and they apply to every phase:
+
+**1. Close each phase with a check that can fail.** Not "did you set up the font?" but "does the font render?" Not "did the scaffold run?" but "does `site/src/components/ui/` contain files?" A checklist item that cannot come back false is decoration, not verification. If you cannot state what a failing result would look like, the check is not a check.
+
+**2. Exit code 0 is not proof in this stack.** `shadcn init` returns success when its registry is unreachable and it installed nothing. Piping to `| tail` or `| head` replaces the command's status with the pipe's, so a failed build reads as success. When the exit code is what you are relying on, redirect to a file and read the status separately (`cmd > /tmp/out.log 2>&1; echo $?`) — and where an artifact should exist, test for the artifact instead.
+
+**3. "Configured" and "working" are different claims.** Only the second one matters, and only the second one is worth reporting to the user. Say a font is applied when you have seen it applied; say a route works when a request returned 200. If you have only verified the setup, say that — it is a weaker statement, and pretending otherwise is how a broken build reaches someone who trusted the report.
 
 ## MCP Availability
 
@@ -124,6 +136,8 @@ If the user's answers describe needs beyond marketing content — user accounts,
 
 **Important:** Round 4 ends with an iterative visual approval — palette, typography, buttons, layout, backgrounds, tone, and assets, each resolved one at a time before moving to the next (see `docs/questionnaire.md` for the exact technique). Don't consider Phase 1 done until every element is approved — this is what lets the brief lock in a fully resolved design direction instead of a rough one.
 
+That approval runs on a **published Artifact**, not a generated image: a real HTML page the user opens on claude.ai from any device. Static images can't show hover, keyboard focus, or disabled states, which are exactly the decisions that otherwise go unmade until a component is already written. And because the Artifact is built from real values, approving it approves the spec — Phase 2 copies those hex codes, radii and heights rather than re-deriving them.
+
 **Persist as you go — start `PROJECT-BRIEF.md` during this phase, not after it.** As soon as Round 1 gives you the business name, create the file **at the repo root** (the template lives in Phase 3 Step 1) with what's known so far, leaving later sections as `[pendiente]`. Then update it at the end of **every** round, and whenever the user makes a decision worth logging.
 
 **Root, not `site/`, and this matters.** `site/` doesn't exist yet at this point, and it must stay empty until Phase 3 scaffolds into it: `create-next-app` refuses to run in a directory containing files it doesn't recognise, and `PROJECT-BRIEF.md` is not on its allowlist. Writing the brief into `site/` early would make Phase 3 either fail outright or delete the brief while "cleaning" the directory — destroying the entire discovery it exists to protect. Phase 3 moves it into `site/` once the scaffold is in place.
@@ -134,6 +148,8 @@ This exists because Phase 1 is the longest conversational stretch in the whole f
 
 ### Phase 2: Design System
 **Note:** The design direction was already presented and approved during Round 4's approval conversation in Phase 1. Phase 2 refines that into a complete design system.
+
+**Start from the approved Artifact, not from scratch.** Round 4's approval ran on a real HTML page, so the values the user said yes to already exist as CSS: the hex codes, the border radii, the control heights, the hover and focus colours. Read them off it. Re-deriving a palette here that differs from what they approved is how a project ends up with an agreed direction and a built page that don't match.
 
 Use `ui-ux-pro-max` to generate specific recommendations. If it fails, fall back to `docs/design-guide.md` — pick colors from the industry palette table, fonts from the vibe pairing table, and tell the user what you chose and why.
 

@@ -25,7 +25,7 @@ Skills are markdown files that Claude Code reads automatically. This project bun
 | `emil-design-eng` | `.claude/skills/emil-design-eng/` | UI polish & animation craft — Emil Kowalski's philosophy on micro-interactions and invisible details. |
 | `design-taste-frontend` | `.claude/skills/design-taste-frontend/` | Anti-LLM-bias rules for React/Next.js — metric-based typography, spacing, and component architecture. |
 | `full-output-enforcement` | `.claude/skills/full-output-enforcement/` | Prevents truncated code output — enforces complete file generation, bans placeholder patterns. |
-| `imagegen-frontend-web` | `.claude/skills/imagegen-frontend-web/` | Generates design reference images for Round 4's visual approval conversation in Phase 1 — 1-2 to start (hero + one section with visible components), more later once sections are defined. |
+| `imagegen-frontend-web` | `.claude/skills/imagegen-frontend-web/` | **Optional, unusable here** — no image-generation tool exists in this environment. Round 4 uses a published Artifact instead. |
 | `redesign-existing-projects` | `.claude/skills/redesign-existing-projects/` | Structured audit + targeted upgrade workflow for Phase 5 iteration and polish. |
 | `performance-audit` | `.claude/skills/performance-audit/` | Systematic, grep-verified performance audit — duplicate auth checks, un-optimized bundle imports, dead dependencies, sequential queries. Runs automatically in Phase 5, after build. |
 | `pre-deploy-verification` | `.claude/skills/pre-deploy-verification/` | Mandatory pass before a real production deploy: E2E with disposable accounts through the real UI, security review with an explicit verdict (Full-Stack only), subdomain availability check before naming, and real-HTTP verification after deploy. See Phase 6. |
@@ -57,7 +57,7 @@ The script:
 
 **Always run `npm run build` first** to catch errors before deploying.
 
-If the Vercel CLI is installed and authenticated, you can also use: `cd site && npx vercel --yes`
+If the Vercel CLI is installed and authenticated, you can also use: `npx vercel --cwd site --yes` — always with `--cwd site`, or it deploys the builder repo instead of the site.
 
 ### building-components (bundled)
 Automatically loaded. Provides guidance when building UI components during Phase 4:
@@ -179,11 +179,12 @@ Loads automatically during Phase 4 (Build) to prevent truncated files.
 - If a file is too large for one response, uses the `[PAUSED — X of Y complete]` protocol to continue cleanly instead of silently cutting code
 - Enforces complete, unabridged file generation every time
 
-### imagegen-frontend-web (bundled)
-Use during Phase 2 (Design System) when the user wants generated reference images instead of only text direction.
-- Produces one design-reference image per page section (hero, features, testimonials, etc.)
-- Applies anti-AI-slop composition rules and a combinatorial variation engine so sections don't look repetitive
-- Useful before Phase 4 to align on visual direction with actual imagery, not just descriptions
+### imagegen-frontend-web (bundled, but not usable here)
+**There is no image-generation tool in this environment**, so this skill cannot run as written. Round 4's visual approval uses a published **Artifact** instead — see `docs/questionnaire.md`.
+
+The Artifact is the better instrument anyway, not just the available one: it renders real components, so hover, keyboard focus and disabled states are visible (a static image cannot show any of them), the fonts load for real rather than being approximated, and the values the user approves are already written as CSS for Phase 2 to copy.
+
+Keep this skill only as art-direction reference — its composition and variation rules are sound — in case an image tool ever becomes available.
 
 ### redesign-existing-projects (bundled)
 Use during Phase 5 (Preview & QA) when the user wants to upgrade an existing site instead of building from scratch.
