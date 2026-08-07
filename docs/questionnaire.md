@@ -15,6 +15,28 @@ Cuatro rondas, cada una con un tema claro: quien sos (1) -> que dice la pagina (
    - Si la respuesta es ambigua o el usuario no esta seguro, seguir con ejemplos concretos: "algo como necesitar que la gente inicie sesion, o que cada quien vea su propia informacion?"
    - Si apunta a funcionalidad real, aplicar la confirmacion explicita de `CLAUDE.md` (Full-Stack Extension → Detection) aqui mismo, antes de seguir con la Ronda 1.
 
+   **1b. Y la segunda mitad de esta pregunta, que casi nadie hace: «que parte de esto va a cambiar, cada cuanto, y quien lo va a cambiar?»**
+
+   Preguntala siempre, con esas palabras o parecidas. Es tan determinante para la arquitectura como la de las cuentas de usuario, y se pasa por alto porque el usuario no sabe que hay que decidirlo — hasta que lo descubre solo, como el dueno de una heladeria que pregunto "y los sabores de la semana quien los cambia? porque si le tengo que escribir a un programador cada semana, no lo voy a hacer".
+
+   Todo lo que este builder produce va **escrito directamente en el codigo**. Para lo que no cambia — a que se dedica, la direccion, el telefono — es perfecto: rapido, gratis de hospedar, nada que se rompa. Para lo que cambia solo, es una pagina que caduca. Una lista de sabores que rota cada semana esta desactualizada a los siete dias, y desactualizada es peor que no tenerla: la gente llega al local pidiendo algo que ya no hay.
+
+   **Como leer la respuesta:**
+
+   | Lo que cambia | Cada cuanto | Que hacer |
+   |---|---|---|
+   | Nada, o casi nada | Un par de veces al ano | Estatico. Los cambios los haces tu cuando avisen. |
+   | Una lista corta (sabores, menu del dia, horarios de temporada) | Semanal o mensual | **Decidirlo con el usuario ahora**, ver abajo. |
+   | Catalogo, stock, agenda, precios variables | Constante | Necesita backend de verdad — Full-Stack Extension. |
+
+   **Cuando cae en la fila del medio** — que es lo mas frecuente y lo que peor se resuelve — pon las opciones sobre la mesa antes de construir, no despues:
+   - **Que lo edite un archivo del proyecto** (ej. un `.json` con los sabores). Gratis, pero requiere que alguien toque el repo: sirve si hay una persona con algo de sonoltura tecnica, no si nadie la hay.
+   - **Un CMS liviano** con panel propio. Cuesta poco o nada y lo edita cualquiera desde el celular.
+   - **Full-Stack Extension** con Supabase, si ademas hay otras razones para tener backend.
+   - **No ponerlo en la pagina.** Es una respuesta legitima y a veces la mejor: si ya lo publican a diario en Instagram, la pagina puede enlazar ahi en vez de duplicar un dato que va a envejecer mal.
+
+   **Registra la decision en el `Decisions Log`**, y si el usuario dice que no lo va a mantener — creele. Es la informacion mas util que te va a dar en toda la conversacion.
+
 2. **Como se llama tu negocio o proyecto?**
    - Obligatorio. Sin default.
    - **Mucha gente no tiene nombre comercial, y esta bien.** Un profesional por cuenta propia — profesora de piano, fisioterapeuta, abogado, disenadora — trabaja con su propio nombre y no quiere una marca. Si la pregunta le hace dudar o improvisar uno en el momento, reformulala: "no hace falta que sea un nombre de empresa, con tu nombre basta — como te conoce la gente?" y usa eso. Empujar a alguien a inventarse una marca produce un nombre que ni el usa.
@@ -45,6 +67,7 @@ Despues de la Ronda 1, resume: "Perfecto — [negocio] ayuda a [audiencia] con [
    - Default: Generar de la descripcion del negocio + normas de la industria.
 
 8. **Quieres un formulario de contacto en la pagina?**
+   - **Si responde "no se, hace falta?", la respuesta suele ser no.** Un formulario solo sirve si el dueno va a leer lo que llega, y quien ya atiende todo por Instagram o por telefono no va a revisar una bandeja mas. Preguntale por donde le escribe la gente hoy y pon eso: un enlace directo a WhatsApp, el telefono en grande, el perfil de Instagram. Un formulario que nadie mira es peor que no tenerlo, porque el visitante cree que dejo un mensaje.
    - Si quiere: Que campos? (Nombre, email, mensaje es lo estandar. Telefono? Empresa?)
    - Opciones:
      - **Simple (default):** Un enlace "mailto:" con estilo de seccion de contacto — no necesita backend.

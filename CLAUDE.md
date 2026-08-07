@@ -87,6 +87,8 @@ By default this builder produces static/marketing landing pages only — no back
 
 **Detection:** During Phase 1 Discovery, if the user describes login/signup, per-user data, admin approval flows, a database schema, or business logic beyond content — stop and confirm explicitly: "This sounds like it needs a real backend (auth, database), not just a marketing page. Want me to extend this build to include that, using Supabase?" Never assume. Log the decision in `PROJECT-BRIEF.md`'s Decisions Log.
 
+**The more common trigger isn't accounts — it's "I need to change this myself."** Everything this builder produces is written into the code, so any content the owner expects to edit regularly (a weekly menu, rotating stock, a schedule, seasonal prices) has no home in a static build. That question is asked in Round 1 (see `docs/questionnaire.md`, question 1b) and it decides architecture as much as auth does: a shop that rotates half its product list every week either gets a way to edit it or gets a page that is wrong within days — and a wrong page is worse than no page, because people act on it. Answer it before Phase 2, not after the site is built.
+
 **Backend provider:** Supabase (Postgres + Auth) is the only supported backend. Access it via the Supabase MCP — see MCP Availability above; don't substitute direct credentials as a workaround if it isn't connected. Store real values only in `site/.env.local` (same secrets policy as Phase 4's Contact Forms section — never commit them, never write the actual value into `PROJECT-BRIEF.md`). Before deploying, the same variables must also be added to the Vercel project's environment settings — `site/.env.local` alone does not reach production.
 
 **Additional discovery:** once the extension is confirmed (Round 1 of `docs/questionnaire.md`), run **Round 3 (Flujo Funcional)** from that same file — an open, narrated walkthrough of the whole functional flow, not a fixed checklist read verbatim. It needs to surface: core entities/tables and how they relate, roles (who sees/does what), states a record moves through (e.g., pending → approved → suspended), calculated/derived values that must stay correct when a related record changes, and — critically — what should NOT be able to happen, not just what's allowed. See `docs/questionnaire.md` for the exact technique.
@@ -228,6 +230,12 @@ The file MUST include:
 - **Logo:** [file path in `site/public/`, or "text-only logo using [font]"] — from Q16
 - **Images provided:** [paths in `site/public/images/`, or "none — using geometric patterns/gradients"] — from Q17
 - **Favicon:** [path, or "generated in `site/src/app/icon.tsx` from brand colors"] — from Q18
+
+## Content Maintenance
+- **What changes:** [e.g. "6 de 12 sabores rotan cada semana" / "nada, salvo horarios de temporada"] — from Q1b
+- **How often:** [semanal / mensual / un par de veces al año / nunca]
+- **Who updates it, and how:** [e.g. "Nico edita `src/data/sabores.json`" / "CMS con panel" / "no se pone en la página, se enlaza al Instagram" / "solo yo, cuando avisen"]
+- **If nobody will maintain it:** say so here. It is the single most useful thing to know before choosing an architecture, and it is normal — plenty of owners genuinely won't, and the design should account for that rather than pretend otherwise.
 
 ## Contact & Links
 - **Contact method:** [mailto / Formspree ID / phone]
@@ -427,6 +435,8 @@ Use the archetype from `docs/landing-page-patterns.md` that best fits the user's
 - **Features section:** From Q7 (3-4 key things to highlight).
 - **Testimonials:** From Q10 (user-provided or placeholder).
 - **Contact section:** From Q8 (mailto, Formspree, or phone).
+- **Multiple locations:** when the business has more than one, each gets its **own** address, hours and map link — never one shared block with a footnote. Different branches usually keep different hours, and that difference is precisely what people come to the page to check. Build it as a repeated molecule, one per location.
+- **Embedding a social feed** (an Instagram wall, a reviews widget): the user often asks for this because it solves their real problem — the feed is already where they post what changes. Tell them the trade-off in plain words before adding it: third-party embeds are heavy, they track visitors, they break when the platform changes its API, and they can't be styled to match the site. A linked profile with a couple of hand-picked images usually serves the visitor better and costs nothing. If they still want the embed, load it below the fold and never let it carry information the page needs to work.
 - **Social links in footer:** From Q11. **`lucide-react` ships no brand icons** — `Instagram`, `Facebook`, `Twitter`, `Github`, `Linkedin` and `Youtube` were all removed and none of them exist. Importing one is a hard build failure (`Export Instagram doesn't exist in target module`), and since most clients answer Q11 with at least one network, this breaks the build on a typical project. Use an inline `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>` with the brand's path for each network, sized with the same `size-4`/`size-5` classes as the Lucide icons around it so they stay optically consistent.
 - **Meta title:** Business name + tagline. Meta description from Q3.
 - **Page language:** From Q5. All content, labels, meta tags, and placeholders in that language.
