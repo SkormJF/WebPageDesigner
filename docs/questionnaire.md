@@ -95,7 +95,7 @@ Todo lo visual vive en esta ronda, de lo rapido a lo profundo: primero preferenc
     - Default: Saltar, elegir basado en la industria.
 
 13. **Tienes preferencia de colores, o quieres que yo elija basado en tu industria?**
-    - Default: Usa `ui-ux-pro-max`. Corre: `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<industria>" --domain color`
+    - Default: Usa `ui-ux-pro-max`. Corre: `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<industria>" --domain color` — en Windows suele ser `python`, no `python3`; si devuelve vacio o error, prueba con el otro nombre antes de asumir que no hay resultados.
     - Si falla la busqueda: Elige basado en las normas de la industria en `docs/design-guide.md`.
 
 14. **Tema claro u oscuro?**

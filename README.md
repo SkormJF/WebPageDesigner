@@ -155,7 +155,7 @@ This project comes with **22 professional skills pre-installed** in `.claude/ski
 | `playwright-cli` | Browser automation so Claude can screenshot and check the design |
 | `chrome-bridge-automation` | Fallback browser — connects to your Chrome to check the design visually |
 | `seo-audit` | SEO analysis for meta tags, headings, and search visibility |
-| `ui-ux-pro-max` | Design intelligence database — 161 color palettes, 57 font pairings, 50+ styles |
+| `ui-ux-pro-max` | Design intelligence database — 161 color palettes, 73 font pairings, 50+ styles |
 | `web-reader` | Analyzes reference websites the user likes |
 | `deep-research` | Systematic web research for better industry-specific copy |
 | `emil-design-eng` | Animation & micro-interaction polish — Emil Kowalski's craft philosophy |

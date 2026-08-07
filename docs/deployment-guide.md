@@ -7,7 +7,7 @@ The project includes a **bundled deploy script** that deploys to Vercel's sandbo
 ### How to Deploy
 ```bash
 # First, make sure the build works
-cd site && npm run build
+npm --prefix site run build
 
 # Then deploy using the bundled script
 bash .claude/skills/vercel-deploy/scripts/deploy.sh site
@@ -41,20 +41,22 @@ If the user already has the Vercel CLI installed and authenticated:
 
 ### Quick Deploy
 ```bash
-cd site && npx vercel --yes
+npx vercel --cwd site --yes
 ```
+
+> **Always point Vercel at `site` explicitly.** Every command in this project runs from the repo root, and a `vercel` invocation without `--cwd site` deploys **the builder repo itself** — `CLAUDE.md`, `docs/`, `.claude/skills/` — instead of the site. The deploy succeeds, so nothing warns you; you just get the wrong thing published.
 
 ### First-Time Setup
 If the user hasn't logged in before:
 1. Run `npx vercel login`
 2. A browser window opens for authentication
 3. Log in with GitHub, GitLab, Bitbucket, or email
-4. Once authenticated, re-run `npx vercel --yes`
+4. Once authenticated, re-run `npx vercel --cwd site --yes`
 
 ### Production Deploy
 For a production deployment (custom domain support):
 ```bash
-npx vercel --prod --yes
+npx vercel --cwd site --prod --yes
 ```
 
 ---

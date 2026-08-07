@@ -1,7 +1,7 @@
 # Skill Reference
 
 ## How Skills Work
-Skills are markdown files that Claude Code reads automatically. This project bundles **18 skills** in `.claude/skills/` — they all load automatically when Claude opens the project.
+Skills are markdown files that Claude Code reads automatically. This project bundles **22 skills** in `.claude/skills/` — they all load automatically when Claude opens the project.
 
 ---
 
@@ -19,7 +19,7 @@ Skills are markdown files that Claude Code reads automatically. This project bun
 | `playwright-cli` | `.claude/skills/playwright-cli/` | Browser automation for screenshots and visual QA. Includes 7 reference docs. |
 | `chrome-bridge-automation` | `.claude/skills/chrome-bridge-automation/` | Fallback visual QA — connects to user's Chrome via Midscene extension. Vision-driven screenshots. |
 | `seo-audit` | `.claude/skills/seo-audit/` | Technical SEO analysis, meta tags, heading structure. |
-| `ui-ux-pro-max` | `.claude/skills/ui-ux-pro-max/` | Design intelligence database — 161 color palettes, 57 font pairings, 50+ styles. Python CLI for search. |
+| `ui-ux-pro-max` | `.claude/skills/ui-ux-pro-max/` | Design intelligence database — 161 color palettes, 73 font pairings, 50+ styles. Python CLI for search. |
 | `web-reader` | `.claude/skills/web-reader/` | Analyze a reference URL the user provides — palette, typography, layout, component patterns — via `WebFetch` plus a `playwright-cli` screenshot. |
 | `deep-research` | `.claude/skills/deep-research/` | Systematic web research for industry-specific copy and content. |
 | `emil-design-eng` | `.claude/skills/emil-design-eng/` | UI polish & animation craft — Emil Kowalski's philosophy on micro-interactions and invisible details. |
@@ -30,7 +30,6 @@ Skills are markdown files that Claude Code reads automatically. This project bun
 | `performance-audit` | `.claude/skills/performance-audit/` | Systematic, grep-verified performance audit — duplicate auth checks, un-optimized bundle imports, dead dependencies, sequential queries. Runs automatically in Phase 5, after build. |
 | `pre-deploy-verification` | `.claude/skills/pre-deploy-verification/` | Mandatory pass before a real production deploy: E2E with disposable accounts through the real UI, security review with an explicit verdict (Full-Stack only), subdomain availability check before naming, and real-HTTP verification after deploy. See Phase 6. |
 | `staged-app-builder` | `.claude/skills/staged-app-builder/` | Plans a large Full-Stack Extension backend (3+ related entities, cross-entity logic, or a detailed spec) as dependency-ordered phases tracked in `PROJECT-BRIEF.md`, with a per-phase verification bar and this stack's known gotchas. See Phase 3.5. |
-
 | `navigation-shell` | `.claude/skills/navigation-shell/` | Headers, sticky/scroll behavior, mobile menus, dashboard sidebars, and the app shell. Covers WCAG 2.2 SC 2.4.11 / 2.5.7 / 1.4.13, the `position: sticky` failure modes, and the three gaps shadcn's `sidebar` leaves unfilled. |
 
 All 22 skills are bundled — no installation needed.

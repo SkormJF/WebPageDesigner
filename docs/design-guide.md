@@ -27,7 +27,7 @@ Inter, Roboto, Arial, Open Sans, Helvetica, system-ui defaults. These are the AI
 | Modern / Clean | Space Grotesk, Outfit, Plus Jakarta Sans | DM Sans, Manrope, Nunito Sans |
 | Bold / Impactful | Syne, Clash Display (variable), Unbounded | Work Sans, Karla, Rubik |
 | Playful / Warm | Fredoka, Baloo 2, Comfortaa | Quicksand, Poppins, Nunito |
-| Professional | Instrument Serif, Literata, Fraunces | Inter (only as body with a distinctive headline), Atkinson Hyperlegible |
+| Professional | Instrument Serif, Literata, Fraunces | Atkinson Hyperlegible, Source Sans 3, IBM Plex Sans |
 | Edgy / Experimental | Space Mono, JetBrains Mono, Major Mono Display | IBM Plex Sans, Geist Sans |
 
 ### Font Loading Pattern

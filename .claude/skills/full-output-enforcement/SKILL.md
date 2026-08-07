@@ -15,6 +15,8 @@ The following patterns are hard failures. Never produce them:
 
 **In code blocks:** `// ...`, `// rest of code`, `// implement here`, `// TODO`, `/* ... */`, `// similar to above`, `// continue pattern`, `// add more as needed`, bare `...` standing in for omitted code
 
+> **The ban is on placeholders that stand in for code you didn't write.** A note marking working code as pending a decision only the *user* can make is a different thing and is allowed — `CLAUDE.md` Phase 4 prescribes exactly one (`// TODO: Replace with Formspree`, above a functioning `mailto:` link, when the user hasn't set up Formspree yet). The test: delete the comment. If working code remains, it was a note. If a hole remains, it was a placeholder — and that is what this skill forbids.
+
 **In prose:** "Let me know if you want me to continue", "I can provide more details if needed", "for brevity", "the rest follows the same pattern", "similarly for the remaining", "and so on" (when replacing actual content), "I'll leave that as an exercise"
 
 **Structural shortcuts:** Outputting a skeleton when the request was for a full implementation. Showing the first and last section while skipping the middle. Replacing repeated logic with one example and a description. Describing what code should do instead of writing it.

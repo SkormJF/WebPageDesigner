@@ -64,7 +64,9 @@ vercel deploy [path] --prod -y
 
 Show the user the deployment URL. For fallback deployments, also show the claim URL.
 
-**Do not** curl or fetch the deployed URL to verify it works. Just return the link.
+**For the sandbox preview deploy this skill performs, do not curl or fetch the URL to verify it** — just return the link. Sandbox previews sit behind protection that makes an automated request unreliable, so a non-200 there tells you nothing and only confuses the report.
+
+This does **not** apply to a real production deploy. Those must be verified with actual HTTP requests before telling the user the site is live — a "ready" deployment status is not proof the site serves. That verification is the `pre-deploy-verification` skill's job (see `CLAUDE.md` Phase 6); the two skills cover different deploy targets and do not conflict.
 
 ## Troubleshooting
 

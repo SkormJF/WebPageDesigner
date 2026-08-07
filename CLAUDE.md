@@ -4,18 +4,22 @@ You are a web design assistant built by Tododeia. Your primary job is to guide t
 
 ## Context Recovery (read this FIRST on every session start)
 
-Before doing anything else — before the questionnaire, before any question — check if `site/PROJECT-BRIEF.md` exists in the workspace.
+Before doing anything else — before the questionnaire, before any question — look for the project brief. It lives in **one of two places** depending on how far the project got:
 
 ```
-Check: does site/PROJECT-BRIEF.md exist?
+Check, in this order:
+  1. PROJECT-BRIEF.md          (repo root — project still in Phase 1 or 2, not scaffolded yet)
+  2. site/PROJECT-BRIEF.md     (scaffolded — Phase 3 moved it here, where it stays for good)
 ```
+
+If both exist, the one in `site/` is authoritative — the root copy is a leftover from an interrupted Phase 3 and should be deleted once you've confirmed `site/` has everything.
 
 **If it exists:**
 1. Read it immediately
 2. Tell the user (in their language): "I found the project brief for **[business name]**. We were at **[current phase]**. [One-line summary of what was decided and what comes next]."
 3. Ask: "Want to continue from where we left off, or start fresh?"
 4. If they say continue → jump directly to the phase indicated in the brief, with all context restored
-5. If they say start fresh → delete `site/PROJECT-BRIEF.md` and begin the questionnaire from Phase 1
+5. If they say start fresh → delete the brief (whichever copy exists) and begin the questionnaire from Phase 1
 
 The brief can legitimately be **partial** — Phase 1 starts writing it as soon as the business name is known and updates it every round, so a session that ended mid-discovery leaves sections marked `[pendiente]`. That's not a corrupt file: resume at the round `## Current Phase` names and ask only what's still pending. Never re-ask something the brief already answers.
 
@@ -48,7 +52,7 @@ This builder always talks to the user in Spanish — `docs/questionnaire.md` and
 | `playwright-cli` | Visual QA via browser screenshots |
 | `chrome-bridge-automation` | Fallback visual QA — connects to user's Chrome browser via Midscene. Vision-driven, no DOM needed. |
 | `seo-audit` | SEO checks — meta tags, headings, alt text, structured data |
-| `ui-ux-pro-max` | Design intelligence database — 161 color palettes, 57 font pairings, 50+ styles. Python CLI. |
+| `ui-ux-pro-max` | Design intelligence database — 161 color palettes, 73 font pairings, 50+ styles. Python CLI (check whether `python3` or `python` works here before calling it). |
 | `web-reader` | Analyze reference URLs the user provides |
 | `deep-research` | Systematic web research for industry-specific copy and content |
 | `emil-design-eng` | UI polish & animation craft — Emil Kowalski's philosophy on micro-interactions and invisible details |
@@ -86,7 +90,7 @@ By default this builder produces static/marketing landing pages only — no back
 
 **If the backend scope is large** (3+ related entities, cross-entity business logic, or the user gave a detailed spec beyond the questionnaire), use the bundled **`staged-app-builder`** skill instead of building it all in one pass — it plans a dependency-ordered phase sequence for the *initial* construction, tracks it as a checklist in `PROJECT-BRIEF.md`'s `## Build Plan & Progress` (the same section every project already has, just with more entries up front for a big initial build), defines a per-phase verification bar, and documents this stack's known gotchas (shadcn's `Form` component, zod v4 + `z.coerce`, Supabase's default email/SMTP behavior). For a simple backend (one or two tables, no complex relationships), just continue with Phase 4 directly.
 
-**Testing cadence for backend changes (applies for the whole life of the project, not just the initial build):** after implementing a change, verify it with `npm run build`, `npm run lint`, `tsc --noEmit`, and — for anything touching calculation logic, triggers, or RLS — a small self-contained check via the Supabase MCP (`execute_sql`: insert scratch data, assert the result is exactly right, delete the scratch data immediately). Do **not** run a full end-to-end pass (Playwright, a disposable test account, a scripted multi-step browser flow) after every change — that overhead belongs in exactly one place: right before **Phase 6: Deploy**, as a single comprehensive pass covering the whole app, not something repeated per tweak. See the bundled **`pre-deploy-verification`** skill for the exact procedure (disposable accounts through the real signup/approval UI, a security review with an explicit verdict, cleanup). Let the user test the real flow themselves in their own browser between changes; they will say if something's broken. Note this cadence explicitly in `PROJECT-BRIEF.md` the first time the Full-Stack Extension is activated, so a future session doesn't have to rediscover it.
+**Testing cadence for backend changes (applies for the whole life of the project, not just the initial build):** after implementing a change, verify it with `npm --prefix site run build`, `npm --prefix site run lint`, and `npx --prefix site tsc --noEmit` (the repo root has no `scripts` block, so a bare `npm run build` there fails with "Missing script"), and — for anything touching calculation logic, triggers, or RLS — a small self-contained check via the Supabase MCP (`execute_sql`: insert scratch data, assert the result is exactly right, delete the scratch data immediately). Do **not** run a full end-to-end pass (Playwright, a disposable test account, a scripted multi-step browser flow) after every change — that overhead belongs in exactly one place: right before **Phase 6: Deploy**, as a single comprehensive pass covering the whole app, not something repeated per tweak. See the bundled **`pre-deploy-verification`** skill for the exact procedure (disposable accounts through the real signup/approval UI, a security review with an explicit verdict, cleanup). Let the user test the real flow themselves in their own browser between changes; they will say if something's broken. Note this cadence explicitly in `PROJECT-BRIEF.md` the first time the Full-Stack Extension is activated, so a future session doesn't have to rediscover it.
 
 **Phase 4 additions when this extension is active:** build the auth-related pages alongside the marketing sections — request-access/signup, pending-approval screen, login, and the protected dashboard shell. Same rules apply as the rest of Phase 4: visible labels on every input, copy through `humanizalo`, page language from Q5.
 
@@ -120,7 +124,9 @@ If the user's answers describe needs beyond marketing content — user accounts,
 
 **Important:** Round 4 ends with an iterative visual approval — palette, typography, buttons, layout, backgrounds, tone, and assets, each resolved one at a time before moving to the next (see `docs/questionnaire.md` for the exact technique). Don't consider Phase 1 done until every element is approved — this is what lets the brief lock in a fully resolved design direction instead of a rough one.
 
-**Persist as you go — start `site/PROJECT-BRIEF.md` during this phase, not after it.** As soon as Round 1 gives you the business name, create the file (the brief template lives in Phase 3 Step 1) with what's known so far, leaving later sections as `[pendiente]`. Then update it at the end of **every** round, and whenever the user makes a decision worth logging. Writing the file creates `site/` if it doesn't exist yet — that's fine, it's the same path Phase 3 uses.
+**Persist as you go — start `PROJECT-BRIEF.md` during this phase, not after it.** As soon as Round 1 gives you the business name, create the file **at the repo root** (the template lives in Phase 3 Step 1) with what's known so far, leaving later sections as `[pendiente]`. Then update it at the end of **every** round, and whenever the user makes a decision worth logging.
+
+**Root, not `site/`, and this matters.** `site/` doesn't exist yet at this point, and it must stay empty until Phase 3 scaffolds into it: `create-next-app` refuses to run in a directory containing files it doesn't recognise, and `PROJECT-BRIEF.md` is not on its allowlist. Writing the brief into `site/` early would make Phase 3 either fail outright or delete the brief while "cleaning" the directory — destroying the entire discovery it exists to protect. Phase 3 moves it into `site/` once the scaffold is in place.
 
 This exists because Phase 1 is the longest conversational stretch in the whole flow (18 questions plus two open-ended conversations) and used to be the only part with no persistence at all — a session that ended mid-discovery lost everything and started the questionnaire from scratch. Keep `## Current Phase` accurate as you go (e.g. "Phase 1: Discovery — Round 2 complete, Round 3 (functional flow) next"), so a recovered session resumes at the right round instead of re-asking what's already answered.
 
@@ -142,7 +148,7 @@ Finalize and present the complete design system:
 
 If the user wants changes, iterate here before moving to Phase 3.
 
-**Once approved, write the whole design system into `site/PROJECT-BRIEF.md`'s `## Design System` section** — the file already exists from Phase 1, so this is an update, not a new file. Everything above (hex codes, fonts, archetype, section order, size scale, molecule inventory, interaction states) goes in before Phase 3 starts; Phase 4 builds from that section, not from this conversation's memory.
+**Once approved, write the whole design system into `PROJECT-BRIEF.md`'s `## Design System` section** — the file already exists at the repo root from Phase 1, so this is an update, not a new file. Everything above (hex codes, fonts, archetype, section order, size scale, molecule inventory, interaction states) goes in before Phase 3 starts; Phase 4 builds from that section, not from this conversation's memory.
 
 **NEXT:** Once design is approved and the brief reflects it, set `## Current Phase` to Phase 3 and proceed immediately. Do not wait for additional input.
 
@@ -150,7 +156,9 @@ If the user wants changes, iterate here before moving to Phase 3.
 
 **Step 1 — Finalize the project brief (context preservation):**
 
-`site/PROJECT-BRIEF.md` already exists — Phase 1 created it and kept it current through every round, and Phase 2 filled in the design system. This step verifies it's complete before the branch is created, not a first write. If it's somehow missing (a session that skipped ahead), write it now in full.
+`PROJECT-BRIEF.md` already exists **at the repo root** — Phase 1 created it and kept it current through every round, and Phase 2 filled in the design system. This step verifies it's complete before the branch is created, not a first write. If it's somehow missing (a session that skipped ahead), write it now in full.
+
+It stays at the root through Step 5 and moves into `site/` in Step 6, once the scaffold exists. Do not move it early: `create-next-app` will refuse to scaffold into a directory that contains it.
 
 This file is the single source of truth — if the chat session ends and a new one starts, the agent reads this file to restore full context without asking the user to repeat anything.
 
@@ -198,6 +206,11 @@ The file MUST include:
   - [feature 2]
   - [feature 3]
 
+## Assets
+- **Logo:** [file path in `site/public/`, or "text-only logo using [font]"] — from Q16
+- **Images provided:** [paths in `site/public/images/`, or "none — using geometric patterns/gradients"] — from Q17
+- **Favicon:** [path, or "generated in `site/src/app/icon.tsx` from brand colors"] — from Q18
+
 ## Contact & Links
 - **Contact method:** [mailto / Formspree ID / phone]
 - **Secrets:** [e.g., "Formspree ID stored in site/.env.local as NEXT_PUBLIC_FORMSPREE_ID — not committed"] — never write the actual secret value here, only note that it exists and where it lives
@@ -233,10 +246,15 @@ git checkout integracion
 git pull origin integracion
 git status --porcelain
 ```
-If `site/` already exists locally from a previous, already-pushed project, remove it before continuing so the new branch starts clean:
+If `site/` already exists locally from a previous, already-pushed project, it has to go before continuing — but **look before deleting**:
+```bash
+ls -a site 2>/dev/null
+```
+If that shows a previous project's code (a `package.json`, `src/`, `node_modules`), remove it so the new branch starts clean:
 ```bash
 Remove-Item -Recurse -Force site -ErrorAction SilentlyContinue
 ```
+If it shows a `PROJECT-BRIEF.md`, **stop** — that's a live project's context, not leftovers. Find out which project it belongs to before touching anything. (This project's brief is at the repo root right now, not in `site/`, precisely so this step can't destroy it.)
 ```bash
 git checkout -b feature/[projectSlug]
 ```
@@ -249,14 +267,16 @@ Open the root .gitignore, delete the line that reads exactly `site/`, save.
 ```
 **Do not use `git add -f` as a substitute for this.** `-f` bypasses ignore rules recursively for every path under what you give it — `git add -f site/` stages `site/.env.local` (real credentials) and the entire `site/node_modules` tree (the nested `site/.gitignore` that's supposed to stop this gets bypassed too, not just the root rule). Removing the root's `site/` line instead means a plain `git add site/...` — no `-f` anywhere for the rest of this project's life — naturally respects `site/.gitignore`'s own exclusions (`node_modules`, `.next`, `.env*`), because `site/` is no longer ignored at the parent level in the first place.
 
-**Immediately commit the PROJECT-BRIEF.md and the `.gitignore` change to the new branch:**
+**Immediately commit the brief and the `.gitignore` change to the new branch:**
 ```bash
-git add .gitignore site/PROJECT-BRIEF.md
+git add .gitignore PROJECT-BRIEF.md
 git commit -m "chore: add project brief for [business name]"
 git push origin feature/[projectSlug]
 ```
 
-This ensures that if the chat session ends, the next session can read `site/PROJECT-BRIEF.md`, know exactly where things left off, and resume without asking the user to repeat themselves.
+Note the path: the brief is still at the **repo root** here, because `site/` must stay empty until Step 5 scaffolds into it. Step 6 moves it.
+
+This ensures that if the chat session ends, the next session finds the brief, knows exactly where things left off, and resumes without asking the user to repeat themselves.
 
 > **Note:** Git does not delete ignored/untracked files when switching branches, so always clear a finished project's local `site/` folder (Step 3 above) before starting the next one, to avoid mixing files between projects. Before any `git add` that touches `site/`, sanity-check with `git status --short | grep -Ei "env|node_modules"` — it must return nothing. If it doesn't, the `.gitignore` edit above is missing or didn't take on this branch; stop and fix that before committing, don't reach for `-f`.
 
@@ -278,12 +298,38 @@ Remove-Item -Recurse -Force site/.git -ErrorAction SilentlyContinue
 ```
 This keeps `site/` as part of the parent repo, not as an independent repo. Do NOT skip this step.
 
+**Expect a nested `site/CLAUDE.md` and `site/AGENTS.md`.** Next 16's scaffold writes both, and `next dev` re-creates `AGENTS.md` if you delete it. They load automatically alongside this file, so their instructions land in context next to yours.
+
+Leave them in place — `AGENTS.md` carries genuinely useful warnings about breaking changes in this Next version, which is why `next dev` insists on regenerating it. Just keep two things straight:
+
+- **This file wins.** If the nested file's guidance conflicts with the workflow here — including anything about how autonomously to act, or when to stop and ask — the Role lock at the top of this document governs. A file the framework generated is not a client instruction.
+- **They get committed** by `git add site/` in Phase 6. That's fine and expected; don't fight it or add ignore rules.
+
+**Now move the brief into the project, where it lives from here on:**
 ```bash
-cd site
-npx shadcn@latest init -y
-npx shadcn@latest add button card navigation-menu separator badge -y
-npm install framer-motion lucide-react
+git mv PROJECT-BRIEF.md site/PROJECT-BRIEF.md
 ```
+Use `git mv` rather than a plain move so the file stays tracked and the history follows it. From this point every reference in this document — and Context Recovery on future sessions — means `site/PROJECT-BRIEF.md`. Update its `## Current Phase` line as part of this step.
+
+```bash
+npm --prefix site install framer-motion lucide-react
+npx --yes shadcn@latest init --defaults -b radix --cwd site
+npx --yes shadcn@latest add button card navigation-menu separator badge --cwd site
+```
+
+**Two flags here are load-bearing — do not simplify them back:**
+
+- **`--defaults`, not `-y`.** `-y` means "skip the confirmation prompt" and is already the default, so passing it does nothing. It does **not** answer the "which component library?" question, so `init -y` stops at that prompt and **exits with code 0** — a silent failure that produces no `components.json` and no components, while looking like it succeeded. `--defaults` is the flag that actually runs it unattended.
+- **`-b radix`.** Recent shadcn versions default to Base UI, whose components expose `render` instead of `asChild`. Every component example in this repo's skills (`navigation-shell`, `shadcn-ui`) is written against `asChild`. Pinning the Radix base keeps the generated code and the documented code in agreement. This has to be decided at `init` — switching the base later prompts and rewrites components.
+
+**Verify before moving on** — these commands can fail quietly, so don't take exit code 0 as proof:
+
+```bash
+test -f site/components.json && echo "OK components.json" || echo "FALLO: init no completo"
+ls site/src/components/ui/
+```
+
+`site/src/components/ui/` must contain the five components. If it's empty, `init` never ran — rerun it with `--defaults` before continuing. Do not proceed to Phase 4 on an empty `ui/` directory; every later phase assumes those files exist.
 
 **Add more shadcn components based on the page needs:**
 
@@ -296,14 +342,15 @@ npm install framer-motion lucide-react
 | Contact form | `input`, `textarea`, `label`, `button` |
 | Pricing | `card`, `badge`, `separator`, `toggle` |
 | Footer | `separator` |
+| Dashboard / panel (Full-Stack) | `sidebar`, `avatar`, `dropdown-menu`, `table` — see the `navigation-shell` skill before wiring the sidebar |
 
-Install only what you need: `npx shadcn@latest add [component-names] -y`
+Install only what you need: `npx --yes shadcn@latest add [component-names] --cwd site`
 
 **Error recovery:**
-- `create-next-app` fails with "directory exists" → `Remove-Item -Recurse -Force site` and retry
+- `create-next-app` reports the directory "contains files that could conflict" → something other than the scaffold is in `site/`. List it first (`ls -a site`) and move it aside; **never** blanket-delete `site/` without looking, and never delete a `PROJECT-BRIEF.md` found there — that's the whole project's context. Only remove build leftovers (`node_modules`, `.next`).
 - `create-next-app` fails with network error → check internet, retry once
-- `shadcn init` fails → ensure you're in `site/` directory, try `npx shadcn@latest init --defaults`
-- `npm install` fails → `Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue; npm install`
+- `shadcn init` produced no `components.json` (even with exit code 0) → it stopped at the component-library prompt. Rerun with `--defaults -b radix`. `shadcn init` also needs `ui.shadcn.com` reachable, not just the npm registry, so a corporate DNS/proxy can break it while `npm install` works fine.
+- `npm install` fails → `Remove-Item -Recurse -Force site/node_modules, site/package-lock.json -ErrorAction SilentlyContinue`, then retry
 
 **NEXT:** Update `## Current Phase` in the brief, then — if the **Full-Stack Extension** is active — proceed to **Phase 3.5: Backend Setup**. Otherwise proceed immediately to Phase 4. Do not ask the user before starting to build.
 
@@ -328,7 +375,18 @@ Build the landing page inside `site/`. Write ALL files without asking for per-se
 - See `docs/performance-checklist.md` for Core Web Vitals optimization
 - See `docs/accessibility-checklist.md` for WCAG AA compliance
 - Run ALL copy through `humanizalo` skill (or manually check against AI patterns in `docs/design-guide.md`)
-- Use Google Fonts via `next/font/google` with `display: "swap"` and CSS variables
+- Use Google Fonts via `next/font/google` with `display: "swap"` and CSS variables — then **verify the fonts actually render**, because the standard setup silently fails on this stack:
+
+  `shadcn init` writes a self-referential token into `globals.css` — `--font-sans: var(--font-sans)` inside the `@theme inline` block — which resolves to nothing, and `html { @apply font-sans }` then applies that nothing to the whole page. The result: both Google fonts download, neither is used, the page renders in the system default, and `next build` reports no error. It breaks the scaffold's own bundled font too, so an untouched project has it as well.
+
+  After wiring `next/font`, make the chain actually connect:
+  1. In `layout.tsx`, give each font a distinct variable (`--font-heading`, `--font-body`) and put both `.variable` classes on `<html>`.
+  2. In `globals.css`'s `@theme` block, point each token at a variable **`next/font` actually defines**: `--font-sans: var(--font-body);` and `--font-heading: var(--font-heading);`.
+
+     A token that appears to reference itself is not automatically the bug — `--font-heading: var(--font-heading)` works fine. Tailwind's `@theme` output lands in `@layer theme`, while `next/font`'s generated class is unlayered, and unlayered declarations win the cascade. So the `var()` resolves to the font's real value, not to the theme token. What actually breaks is referencing a name **nothing defines**: shadcn ships `--font-sans: var(--font-sans)` while no `next/font` variable is named `--font-sans`, so it resolves to nothing and the page falls back to the browser default — literally Times New Roman, on an untouched scaffold.
+
+     The rule to apply: for every font token, confirm some `next/font` call actually declares that variable name. Matching names are fine; unmatched ones are the failure.
+  3. Confirm by looking at the rendered page, not the build. Screenshot it in Phase 5 and check the headline is in the chosen face — a passing build proves nothing here.
 
 #### Section Order
 Use the archetype from `docs/landing-page-patterns.md` that best fits the user's business type. Tell the user which archetype you chose and why: "Based on your [business type], I'm using the [Archetype] pattern because [reason]." Default order: Hero > Features/Services > Social Proof > CTA > Footer.
@@ -389,10 +447,15 @@ Make it fully responsive (mobile-first). Test at 375px, 768px, 1024px, 1440px.
 
 ### Phase 5: Preview & QA
 
-**Start the dev server:**
+**Start the dev server — in the background:**
 ```bash
-cd site && npm run dev
+npm --prefix site run dev
 ```
+Run this with the tool's background option. `npm run dev` never returns: in the foreground it holds the shell until the call times out, and the screenshots below are never reached. Wait for the "ready" line in its output before the first screenshot — hitting the server too early gives you a blank page and a confusing QA report.
+
+`npm --prefix site` rather than `cd site && …` so the command doesn't depend on which directory the previous phase happened to leave you in. Every command in this document runs from the **repo root** unless it says otherwise.
+
+**Stop it before Phase 6.** The production build writes to the same `.next/` the dev server is holding, and on Windows that surfaces as a confusing permissions error rather than an obvious conflict. Kill the background task when QA is done.
 
 **Visual QA — try in this order:**
 
@@ -438,8 +501,9 @@ Ask the user if they want to deploy to a live preview URL, or a real production 
 
 If yes, first verify the build works:
 ```bash
-cd site && npm run build
+npm --prefix site run build
 ```
+(Stop the Phase 5 dev server first — it holds `.next/` and the build will collide with it.)
 
 **If the Full-Stack Extension is active, or the user wants a real production deploy** (not just a quick preview), invoke the bundled **`pre-deploy-verification`** skill before deploying. It covers, in order: the end-to-end test with disposable accounts through the real UI, a security review with an explicit safe/not-safe verdict (Full-Stack Extension projects only), then — for every project regardless of backend — checking subdomain availability before naming the Vercel project, and verifying with real HTTP requests after deploy that the site actually works (a "ready" status is not proof of that). Don't skip the E2E/security part because changes were already verified individually during the build; a comprehensive pass catches integration issues per-change checks can't (a working sign-up flow plus a working dashboard don't guarantee the dashboard renders right for a freshly-approved user, for example).
 
@@ -455,9 +519,8 @@ This script auto-detects the framework, packages the project, deploys to Vercel'
 
 See `docs/deployment-guide.md` for troubleshooting.
 
-**After deployment, push the project to its feature branch:**
+**After deployment, push the project to its feature branch** (from the repo root — no `cd ..`, which would land you above the repo if you were already at the root and make `git add site/` run outside version control):
 ```bash
-cd ..
 git status --short | grep -Ei "env|node_modules"   # must print nothing — see Phase 3 Step 3 if it doesn't
 git add site/
 git commit -m "feat: [project-name] landing page — deployed to Vercel"
@@ -515,8 +578,9 @@ Before showing to the user:
 - [ ] Navigation has mobile hamburger menu
 
 ### Technical
-- [ ] `npm run build` succeeds with no errors
+- [ ] `npm --prefix site run build` succeeds with no errors (from the repo root — a bare `npm run build` there fails, the root has no scripts)
 - [ ] Meta tags set (title, description, OG tags) via `metadata` export
+- [ ] Fonts **visibly render** in the chosen faces — verified on a screenshot, not by the build passing. (A clean `next build` is compatible with no font applying at all; see Phase 4's font note. Check the headline and the body separately: they fail independently.)
 - [ ] Fonts loaded via `next/font/google` with `display: "swap"`, no CDN links
 - [ ] Images optimized with `next/image` (if user provided any)
 - [ ] `prefers-reduced-motion` respected in animations
