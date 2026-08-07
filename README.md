@@ -141,13 +141,13 @@ You now have:
 
 ## Bundled Skills
 
-This project comes with **18 professional skills pre-installed** in `.claude/skills/`. They load automatically when Claude opens the project — you don't need to install anything extra.
+This project comes with **21 professional skills pre-installed** in `.claude/skills/`. They load automatically when Claude opens the project — you don't need to install anything extra.
 
 | Skill | What It Does |
 |-------|-------------|
 | `frontend-design` | Design methodology that makes designs look professional, not AI-generated |
 | `shadcn-ui` | Component library guide for polished UI with accessibility built in |
-| `humanizer` | Removes AI writing patterns so page copy sounds human |
+| `humanizalo` | Removes AI writing patterns so page copy sounds human |
 | `vercel-react-best-practices` | 62 performance rules for faster page load times |
 | `vercel-deploy` | **Deploy to Vercel instantly — no account needed.** Auto-detects framework and gives you a live URL |
 | `building-components` | Guide for building modern, accessible UI components |
@@ -267,7 +267,7 @@ flowchart TD
     subgraph P4["Phase 4: Build"]
         Layout[Write layout.tsx] --> Page[Write page.tsx]
         Page --> Components[Build all sections]
-        Components --> Humanize[Run copy through humanizer]
+        Components --> Humanize[Run copy through humanizalo]
     end
 
     P4 --> P5
@@ -324,10 +324,10 @@ claude-webkit/
 ├── CLAUDE.md                        # Instructions for Claude (the brain)
 ├── .claude/
 │   ├── settings.local.json          # Tool permissions
-│   └── skills/                      # 18 bundled skills (auto-loaded)
+│   └── skills/                      # 21 bundled skills (auto-loaded)
 │       ├── frontend-design/         # Design methodology + 7 reference docs
 │       ├── shadcn-ui/               # Component library guide
-│       ├── humanizer/               # AI writing pattern removal
+│       ├── humanizalo/              # AI writing pattern removal
 │       ├── vercel-react-best-practices/  # 62 performance rules
 │       ├── vercel-deploy/           # Sandbox deploy (no account needed)
 │       ├── building-components/     # Accessible UI component patterns
@@ -344,10 +344,8 @@ claude-webkit/
 │       ├── imagegen-frontend-web/  # Per-section design reference images
 │       └── redesign-existing-projects/ # Audit + upgrade workflow for existing sites
 ├── docs/
-│   ├── system-prompt.md             # Agent personality (English)
-│   ├── system-prompt-es.md          # Agent personality (Spanish)
-│   ├── questionnaire.md             # Guided questions (English)
-│   ├── questionnaire-es.md          # Guided questions (Spanish)
+│   ├── system-prompt.md             # Agent personality (Spanish — the builder always talks to users in Spanish)
+│   ├── questionnaire.md             # Guided questions (Spanish)
 │   ├── design-guide.md              # Design principles & rules
 │   ├── landing-page-patterns.md     # 8 page archetypes
 │   ├── performance-checklist.md     # Core Web Vitals optimization

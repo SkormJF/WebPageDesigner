@@ -21,6 +21,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# Claude Code local settings (tool-permission allowlist the harness keeps
+# per machine/session -- not project code, nothing to share via git)
+.claude/settings.local.json
+.claude/settings.json
+
 # Vercel
 .vercel/
 
@@ -32,6 +37,10 @@ out/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Python (skill scripts, e.g. ui-ux-pro-max)
+__pycache__/
+*.pyc
 
 # Playwright
 playwright-cli-screenshots/

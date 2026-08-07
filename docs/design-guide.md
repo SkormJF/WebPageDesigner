@@ -1,6 +1,6 @@
 # Design Guide
 
-Fallback reference when the `frontend-design` and `humanizer` skills are not installed. Follow these rules for every landing page you build.
+Fallback reference when the `frontend-design` and `humanizalo` skills are not installed. Follow these rules for every landing page you build.
 
 ---
 
@@ -175,6 +175,37 @@ Use `@container` for component-level responsiveness:
 
 ### Touch Targets
 All interactive elements must be at least 44x44px on touch devices. Use padding to expand small buttons/links to meet this minimum.
+
+### Atomic Design — Control Size Scale
+
+Define this in Phase 2, before Phase 4 build starts. Two heights cover nearly every interactive control in a typical app — pick them once and give the actual component variants those exact values, so nothing downstream needs a one-off `className` override:
+
+- **Compact (~32px):** secondary/inline actions — icon-only row actions, admin-table buttons, badges/pills.
+- **Standard (~44px):** every form field (text input, select trigger, single-line textarea height) and every primary action button. This tier does double duty for the Touch Targets rule above — 44px already clears the 44x44px minimum, so form fields and primary buttons meet accessibility and visual consistency with the same number.
+
+**Why up front, not after:** a component's *declared* default height is not the same as what pages actually end up using — it's common for every real call site to override a variant to a different height by hand (because the declared default was never revisited once real content needed more room), which quietly produces a different padding/font-size combination at the same final height depending on which override path each instance took. Once that drifts across a dozen files it stops being a one-line fix. Assigning the two heights to the actual component variants (`Button`'s primary size, `Input`/`Select`'s default height) in Phase 2 prevents this from ever starting.
+
+Apply the same "pick one value, use it everywhere" discipline to:
+- **Border radius** — use the theme's token scale exclusively (e.g. Tailwind's `--radius-*` if using shadcn); never an arbitrary `rounded-[Npx]` outside of it.
+- **Small-label text size** — one value (e.g. `text-xs`) for every badge/pill/tag across the app, not each settling on its own close-but-different arbitrary size.
+
+### Atomic Design — Molecule Inventory
+
+Also define this in Phase 2, before Phase 4 build starts. A visual reference image (from `imagegen-frontend-web` or elsewhere) only ever shows one instance of a structural block — one service card, one testimonial, one dashboard page header. It never states that the same block is about to repeat.
+
+Look at the archetype's section order (and, for a Full-Stack Extension project, the login/dashboard shell) and name up front every block that will clearly repeat 3+ times: a service/feature card, a testimonial card, a page header used across every panel screen, a form-field wrapper, a table row, a sidebar nav item. Give each one a component name and its rough anatomy (what it takes as props) now — e.g. "`ServiceCard` — icon, title, description; used 4x in Features."
+
+This is the same threshold already used for extraction during a build ("the moment a third occurrence is about to happen") applied one step earlier: deciding it before the first occurrence is written, instead of noticing it after the third copy has already drifted. Write the resulting list into `PROJECT-BRIEF.md`'s Design System section so Phase 4 imports these from the start rather than pasting the same JSX repeatedly.
+
+### Atomic Design — Interaction States
+
+Also define this in Phase 2, alongside the hex colors. A reference image shows a control's default look only — never its hover, keyboard focus, disabled, or (for form fields) error state, because a static image can't show a state that only exists at interaction time. Left undeclared, each component ends up inventing its own version of these as Phase 4 builds each section, and they drift from each other the same way undeclared sizes did.
+
+Fix these once, on the component itself, not per call site:
+- **Hover** — how a button/link's background or underline changes on mouse-over.
+- **Focus** — a visible ring/outline for keyboard navigation (never remove focus outlines without replacing them — WCAG requirement).
+- **Disabled** — reduced opacity + `cursor-not-allowed`, applied consistently across every button/input variant.
+- **Error** (form fields only) — border/text color and where the message renders, fixed once in the shared `FormField`-style wrapper, not improvised per form.
 
 ### Breakpoint Reference
 | Name | Width | Use |

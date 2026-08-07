@@ -28,7 +28,7 @@
 
 ## Claude-Written Tagline
 "One tool. No juggling."
-(Run through humanizer — passes. Short, specific, no AI vocabulary.)
+(Run through humanizalo — passes. Short, specific, no AI vocabulary.)
 
 ## Sections Built
 

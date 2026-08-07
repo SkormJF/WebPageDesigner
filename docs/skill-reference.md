@@ -11,7 +11,7 @@ Skills are markdown files that Claude Code reads automatically. This project bun
 |-------|----------|-------------|
 | `frontend-design` | `.claude/skills/frontend-design/` | Design methodology, anti-AI-slop rules, typography/color/layout/motion guidelines. Includes 7 reference docs. |
 | `shadcn-ui` | `.claude/skills/shadcn-ui/` | React component library with Tailwind CSS. Copy-paste accessible components. |
-| `humanizer` | `.claude/skills/humanizer/` | Removes AI writing patterns from text. 24+ pattern detection. |
+| `humanizalo` | `.claude/skills/humanizalo/` | Removes AI writing patterns from text. 40-pattern detection, personality injection, 6-dimension scoring, self-audit loop. |
 | `vercel-react-best-practices` | `.claude/skills/vercel-react-best-practices/` | 62 performance rules across 8 categories for React/Next.js. Includes full AGENTS.md + 64 rule files. |
 | `vercel-deploy` | `.claude/skills/vercel-deploy/` | **Deploy to Vercel sandbox** — no account or CLI needed. Includes `deploy.sh` script that auto-detects framework, packages, and deploys. MIT licensed by Vercel. |
 | `building-components` | `.claude/skills/building-components/` | Guide for building modern, accessible, composable UI components. Includes 15 reference docs covering accessibility, composition, polymorphism, design tokens, and more. |
@@ -25,10 +25,13 @@ Skills are markdown files that Claude Code reads automatically. This project bun
 | `emil-design-eng` | `.claude/skills/emil-design-eng/` | UI polish & animation craft — Emil Kowalski's philosophy on micro-interactions and invisible details. |
 | `design-taste-frontend` | `.claude/skills/design-taste-frontend/` | Anti-LLM-bias rules for React/Next.js — metric-based typography, spacing, and component architecture. |
 | `full-output-enforcement` | `.claude/skills/full-output-enforcement/` | Prevents truncated code output — enforces complete file generation, bans placeholder patterns. |
-| `imagegen-frontend-web` | `.claude/skills/imagegen-frontend-web/` | Generates one design reference image per page section for Phase 2 visual direction. |
+| `imagegen-frontend-web` | `.claude/skills/imagegen-frontend-web/` | Generates design reference images for Round 4's visual approval conversation in Phase 1 — 1-2 to start (hero + one section with visible components), more later once sections are defined. |
 | `redesign-existing-projects` | `.claude/skills/redesign-existing-projects/` | Structured audit + targeted upgrade workflow for Phase 5 iteration and polish. |
+| `performance-audit` | `.claude/skills/performance-audit/` | Systematic, grep-verified performance audit — duplicate auth checks, un-optimized bundle imports, dead dependencies, sequential queries. Runs automatically in Phase 5, after build. |
+| `pre-deploy-verification` | `.claude/skills/pre-deploy-verification/` | Mandatory pass before a real production deploy: E2E with disposable accounts through the real UI, security review with an explicit verdict (Full-Stack only), subdomain availability check before naming, and real-HTTP verification after deploy. See Phase 6. |
+| `staged-app-builder` | `.claude/skills/staged-app-builder/` | Plans a large Full-Stack Extension backend (3+ related entities, cross-entity logic, or a detailed spec) as dependency-ordered phases tracked in `PROJECT-BRIEF.md`, with a per-phase verification bar and this stack's known gotchas. See Phase 3.5. |
 
-All 18 skills are bundled — no installation needed.
+All 21 skills are bundled — no installation needed.
 
 ---
 
@@ -67,12 +70,13 @@ Automatically loaded. Provides guidance when building UI components during Phase
 Use during Phase 5 (QA) to review the built page against Vercel's Web Interface Guidelines.
 Fetches the latest guidelines from GitHub and checks UI code for compliance.
 
-### humanizer (bundled)
-The humanizer skill loads automatically. To use it:
-- After writing any copy (headlines, body text, CTAs, taglines), review it against the humanizer's pattern list
-- The skill detects 24+ AI writing patterns including: inflated significance, promotional language, vague attributions, em dash overuse, rule of three, AI vocabulary words
+### humanizalo (bundled)
+The humanizalo skill loads automatically. Invoke it after writing any copy (headlines, body text, CTAs, taglines):
+- Detects 40 AI writing tells across 5 categories: content inflation, vocabulary, structure, formatting, and communication artifacts (full list in `.claude/skills/humanizalo/SKILL.md`)
+- Injects personality per its Soul guidelines — opinions, varied rhythm, first person where natural — since voiceless text is itself the biggest tell
+- Scores the draft on 6 dimensions (directness, rhythm, trust, authenticity, density, soul) against a 42/60 threshold
+- Runs a self-audit loop (draft → self-interrogation → rewrite) for up to 3 iterations until the score passes
 - Check all text for banned words: delve, tapestry, landscape, foster, showcase, vibrant, nestled, leverage, innovative, cutting-edge, game-changing, seamless, empower, harness
-- Rewrite any flagged text to sound human: vary sentence length, be specific, have opinions, use "you" and "we"
 
 ### seo-audit (bundled)
 Run after the page is built, during Phase 5 (Preview & QA), before deployment.

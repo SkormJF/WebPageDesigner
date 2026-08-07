@@ -139,13 +139,13 @@ Ahora tienes:
 
 ## Skills Incluidos
 
-Este proyecto viene con **18 skills profesionales pre-instalados** en `.claude/skills/`. Se cargan automaticamente cuando Claude abre el proyecto — no necesitas instalar nada extra.
+Este proyecto viene con **21 skills profesionales pre-instalados** en `.claude/skills/`. Se cargan automaticamente cuando Claude abre el proyecto — no necesitas instalar nada extra.
 
 | Skill | Que hace |
 |-------|---------|
 | `frontend-design` | Metodologia de diseno para que los disenos se vean profesionales, no generados por IA |
 | `shadcn-ui` | Guia de componentes para UI pulida con accesibilidad incluida |
-| `humanizer` | Quita patrones de escritura IA para que el texto suene humano |
+| `humanizalo` | Quita patrones de escritura IA para que el texto suene humano |
 | `vercel-react-best-practices` | 62 reglas de rendimiento para tiempos de carga mas rapidos |
 | `vercel-deploy` | **Publica en Vercel al instante — sin necesidad de cuenta.** Detecta el framework y te da una URL en vivo |
 | `building-components` | Guia para construir componentes de UI modernos y accesibles |
@@ -322,10 +322,10 @@ claude-webkit/
 ├── CLAUDE.md                        # Instrucciones para Claude (el cerebro)
 ├── .claude/
 │   ├── settings.local.json          # Permisos de herramientas
-│   └── skills/                      # 18 skills incluidos (se cargan solos)
+│   └── skills/                      # 21 skills incluidos (se cargan solos)
 │       ├── frontend-design/         # Metodologia de diseno + 7 docs de referencia
 │       ├── shadcn-ui/               # Guia de componentes
-│       ├── humanizer/               # Eliminacion de patrones IA
+│       ├── humanizalo/              # Eliminacion de patrones IA
 │       ├── vercel-react-best-practices/  # 62 reglas de rendimiento
 │       ├── vercel-deploy/           # Deploy sandbox (sin cuenta necesaria)
 │       ├── building-components/     # Patrones de componentes accesibles
@@ -342,10 +342,8 @@ claude-webkit/
 │       ├── imagegen-frontend-web/  # Imagenes de referencia por seccion
 │       └── redesign-existing-projects/ # Auditoria + mejora de sitios existentes
 ├── docs/
-│   ├── system-prompt.md             # Personalidad del agente (ingles)
-│   ├── system-prompt-es.md          # Personalidad del agente (espanol)
-│   ├── questionnaire.md             # Preguntas guiadas (ingles)
-│   ├── questionnaire-es.md          # Preguntas guiadas (espanol)
+│   ├── system-prompt.md             # Personalidad del agente (el builder siempre habla en espanol)
+│   ├── questionnaire.md             # Preguntas guiadas
 │   ├── design-guide.md              # Principios y reglas de diseno
 │   ├── landing-page-patterns.md     # 8 arquetipos de paginas
 │   ├── performance-checklist.md     # Optimizacion de Core Web Vitals
