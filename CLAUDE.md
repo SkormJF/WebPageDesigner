@@ -246,6 +246,11 @@ The file MUST include:
 - [Any key decision made with the user and why]
 - [e.g., "User chose no contact form — uses WhatsApp link instead"]
 - [e.g., "User approved warm terracotta palette over cooler alternatives"]
+- [e.g., "Client explicitly asked for a frosted-glass nav knowing it's overused — their call, executed deliberately. The `No glassmorphism` checklist item does not apply to this project."]
+
+## Explicitly Out of Scope
+- [Things the user said NOT to build, in their words. e.g. "Do not build a cart — checkout stays on Shopify" / "No newsletter popup" / "No account system"]
+- Worth its own section because a "no" is easy to lose between rounds, and rebuilding something the client rejected costs more than any missing feature. If they were emphatic, note that too — it usually means they've been burned by it before.
 
 ## Project Slug
 `feature/[projectSlug]`
@@ -601,6 +606,25 @@ See `docs/design-guide.md` for the full reference. Critical rules:
 - **Always** pass the AI Slop Test: if someone would immediately say "AI made this," redesign it
 - **Always** vary sentence length in copy. Short punchy lines. Then longer ones.
 
+### When the client asks for something on the banned list
+
+It happens, and more often with the clients who know the most. Someone who art-directed for a living will ask for glassmorphism, or a dark page with a glow, or overshoot in the transitions — knowing perfectly well those are everywhere, and wanting them anyway because done well they still work. Refusing on the grounds that a list here says no is the wrong answer, and so is complying silently.
+
+**Split the list in two, because it is two lists wearing one coat.**
+
+**Taste defaults — the client can overrule these, and it is their site.** Glassmorphism, dark-with-glow, oversized display type, bounce and overshoot, heavy motion, centered layouts. These are on the list because they are what gets produced *by default*, not because they are bad in themselves. A deliberate, argued choice is the opposite of a default. When the client asks for one:
+- Say once, briefly, what the risk is — "this reads as generic when it's decoration; it works when it's doing something" — and then build it as well as it can be built.
+- Do not re-litigate it later, and do not quietly water it down in Phase 4. A half-committed version of the thing they asked for is worse than either option.
+- Record it in the Decisions Log as their call, so a later pass doesn't "fix" it.
+- **Update the quality checklist for that project.** The `No glassmorphism-everywhere` checkbox cannot stay as-is on a project whose approved design is a frosted nav — it would fail the build against the client's own approved direction.
+
+**Real harms — these are not preferences, and they don't get overruled by taste.** Not because a rule forbids them, but because they break the page for actual people:
+- **Hiding the system cursor.** A custom cursor that replaces the pointer costs users with motor or vision impairments the one affordance they rely on, and it lags on any frame drop. If the client wants one, offer a version that *adds* to the cursor (a trailing element, a hover state) rather than replacing it, and that disappears under `prefers-reduced-motion` and on touch.
+- **Motion without a reduced-motion path.** Scroll-driven reveals, parallax, page-load choreography: all fine, all required to have a still version. This is not negotiable and is rarely contested once explained — it costs the client nothing.
+- **Contrast below AA**, focus indicators removed, text baked into images.
+
+The distinction to hold: **the first list is about looking generic, the second is about excluding people.** Trading the first away for a client's conviction is good service. Trading the second away is not a style decision, and saying so plainly — once, without moralising — is part of the job.
+
 ## Quality Checklist
 
 Before showing to the user:
@@ -612,7 +636,7 @@ Before showing to the user:
 ### Visual Design
 - [ ] Color contrast passes WCAG AA (4.5:1 body, 3:1 large text)
 - [ ] No bounce/elastic easing — use smooth deceleration
-- [ ] No glassmorphism-everywhere or card-in-card nesting
+- [ ] No glassmorphism-everywhere or card-in-card nesting — **unless the Decisions Log records the client asking for it**, in which case check instead that it's executed well and confined to where they wanted it (see "When the client asks for something on the banned list")
 - [ ] All spacing from the 4pt scale, all fonts from the modular scale
 - [ ] **No raw hex outside the theme block** — grep it, don't eyeball it: `grep -rE '#[0-9a-fA-F]{6}' site/src/components site/src/app/page.tsx` should return nothing but SVG path data. Colours live as tokens; a literal hex in a component is the exact drift the Atomic Design pattern exists to prevent.
 
