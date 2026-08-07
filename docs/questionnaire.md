@@ -17,6 +17,7 @@ Cuatro rondas, cada una con un tema claro: quien sos (1) -> que dice la pagina (
 
 2. **Como se llama tu negocio o proyecto?**
    - Obligatorio. Sin default.
+   - **Mucha gente no tiene nombre comercial, y esta bien.** Un profesional por cuenta propia — profesora de piano, fisioterapeuta, abogado, disenadora — trabaja con su propio nombre y no quiere una marca. Si la pregunta le hace dudar o improvisar uno en el momento, reformulala: "no hace falta que sea un nombre de empresa, con tu nombre basta — como te conoce la gente?" y usa eso. Empujar a alguien a inventarse una marca produce un nombre que ni el usa.
 
 3. **En una oracion, a que se dedican?**
    - Default: Inferir del nombre y el contexto.
@@ -61,11 +62,15 @@ Despues de la Ronda 1, resume: "Perfecto — [negocio] ayuda a [audiencia] con [
    - Default: Escribir uno. Pasar por humanizalo.
 
 10. **Tienes testimonios, resenas o prueba social?**
-    - Default: Crear una seccion de testimonios con placeholders. Usar nombres realistas pero claramente de ejemplo.
+    - **Pregunta por prueba social, no solo por testimonios.** Mucha gente responde "no tengo resenas" y en la misma frase menciona algo mas fuerte: doce alumnos admitidos en el conservatorio, quince anos abiertos, una certificacion, un cliente reconocible. Un dato concreto y verificable convence mas que tres citas entrecomilladas, y encima es cierto. Si sale algo asi, usalo y no montes seccion de testimonios.
+    - Si tiene resenas reales (Google, Instagram, las que sean), usalas.
+    - **Si no tiene nada, la seccion se omite.** No inventes citas: en la pagina de un negocio real, un testimonio fabricado es una mentira dicha a sus clientes, y el dueno es quien la carga. Si aun asi hacen falta placeholders porque el usuario los pidio, que se lean como placeholders y diselo explicitamente.
 
 11. **Tienes redes sociales para incluir?**
     - Instagram, X/Twitter, Facebook, LinkedIn, TikTok, YouTube, etc.
-    - Default: Iconos de redes sociales en el footer como placeholder — el usuario llena las URLs despues.
+    - Default cuando **tiene** pero no las trae a mano: iconos en el footer como placeholder, el usuario llena las URLs despues.
+    - **Si dice que no tiene, o que no quiere: no pongas nada.** Ni iconos, ni seccion, ni un hueco esperando. Un footer con iconos de redes que no existen manda a la gente a ninguna parte y hace que el negocio parezca abandonado. Hay clientes que rechazan las redes a proposito y es una decision valida — respetala y registrala en el `Decisions Log`.
+    - Nota tecnica: **`lucide-react` no trae iconos de marca**, ninguno. Cuando si haya redes, usa SVG inline con el path de cada marca (ver `CLAUDE.md` Phase 4).
 
 Despues de la Ronda 2, resume: "Ya tengo todo el contenido." Si el proyecto es Full-Stack Extension (confirmado en la pregunta 1): "Ahora quiero entender bien como deberia funcionar por dentro." -> segui a la Ronda 3. Si no: "Ahora hablemos de como se ve." -> saltate la Ronda 3 y segui directo a la Ronda 4.
 
@@ -107,6 +112,7 @@ Todo lo visual vive en esta ronda, de lo rapido a lo profundo: primero preferenc
 
 14. **Tema claro u oscuro?**
     - Default: Claro.
+    - **Escucha si detras de la respuesta hay una necesidad, no una preferencia.** "Oscuro no, que luego no veo bien el texto" o "que no me canse la vista" no es gusto: es una condicion de uso, muchas veces compartida con su audiencia (un profesional de 58 anos suele atender a gente de su edad). Cuando aparezca, subir el tamano base de 16px a 18px y registrarlo en el brief **como decision de accesibilidad**, para que una pasada posterior de "pulido" no lo baje otra vez creyendo que es un descuido.
 
 15. **Que onda o sensacion deberian tener los visitantes?**
     - Ofrece opciones: profesional, jugueton, audaz, elegante, minimalista, calido, moderno, atrevido, lujoso.

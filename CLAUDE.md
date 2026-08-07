@@ -345,9 +345,12 @@ npx --yes shadcn@latest add button card navigation-menu separator badge --cwd si
 ```bash
 test -f site/components.json && echo "OK components.json" || echo "FALLO: init no completo"
 ls site/src/components/ui/
+node -e "const d=require('./site/package.json').dependencies; ['framer-motion','lucide-react','clsx','tailwind-merge'].forEach(p=>console.log((p in d?'OK   ':'FALTA')+' '+p))"
 ```
 
-`site/src/components/ui/` must contain the five components. If it's empty, `init` never ran — rerun it with `--defaults` before continuing. Do not proceed to Phase 4 on an empty `ui/` directory; every later phase assumes those files exist.
+`site/src/components/ui/` must contain the five components, and every dependency must report OK. If `ui/` is empty, `init` never ran — rerun it with `--defaults` before continuing. If a package reports FALTA, install it now: a missing dependency doesn't surface until Phase 6's build, after the whole page has been written against it, and the error (`Module not found`) points at the import rather than at the install step that was skipped.
+
+Do not proceed to Phase 4 until both checks pass; every later phase assumes these exist.
 
 **`shadcn init` exits 0 even when it fails outright.** A blocked `ui.shadcn.com` produces `getaddrinfo ENOTFOUND ui.shadcn.com` and still returns success — so exit status proves nothing here and the file check above is the only real signal. If the registry is unreachable (corporate DNS, offline, sandboxed network) while npm still works, install the primitives directly (`npm --prefix site install radix-ui class-variance-authority clsx tailwind-merge`) and hand-write the handful of components the page needs, keeping shadcn's API shape so the skills' examples still apply.
 
@@ -601,7 +604,9 @@ Before showing to the user:
 - [ ] No bounce/elastic easing — use smooth deceleration
 - [ ] No glassmorphism-everywhere or card-in-card nesting
 - [ ] All spacing from the 4pt scale, all fonts from the modular scale
-- [ ] **No raw hex outside the theme block** — grep it, don't eyeball it: `grep -rE '#[0-9a-fA-F]{6}' site/src/components site/src/app/page.tsx` should return nothing but SVG path data. Colours live as tokens; a literal hex in a component is the exact drift the Atomic Design pattern exists to prevent, and it slips in most often on throwaway placeholders (gradient blocks, empty states) that then outlive the placeholder.
+- [ ] **No raw hex outside the theme block** — grep it, don't eyeball it: `grep -rE '#[0-9a-fA-F]{6}' site/src/components site/src/app/page.tsx` should return nothing but SVG path data. Colours live as tokens; a literal hex in a component is the exact drift the Atomic Design pattern exists to prevent.
+
+  **It gets in through placeholders, essentially always.** The gradient block standing in for a photo the client hasn't sent, the empty state, the tinted swatch — they feel temporary, so a hex gets typed instead of a token, and then the placeholder outlives the excuse. This has happened on consecutive projects here, by someone who knew the rule. When you need a placeholder tone, build it from existing tokens (`from-raised to-hairline`) rather than inventing a value; if no token fits, that's a sign the palette is missing one, so add it to `@theme` instead of inlining it.
 - [ ] **No one-off size overrides on call sites** — `grep -rE '<Button[^>]*className="[^"]*h-[0-9]' site/src` returns nothing. Heights come from the declared variant, never from the call site.
 - [ ] No emoji as icons — use Lucide React SVGs (brand/social icons excepted: Lucide has none, use inline SVG)
 
