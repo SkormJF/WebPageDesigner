@@ -26,6 +26,10 @@ Neither tool alone answers "what does this site look like". Use both.
 
 **Default flow: fetch first, then screenshot.** The markup tells you structure and gives you candidate values; the screenshot confirms what actually renders and catches everything the markup hides.
 
+**Set expectations before you start.** On a modern, JS-rendered site — which is most of what people pick as references — `WebFetch` returns the copy and the section order and essentially nothing visual: no fonts, no colours, no button styles, because all of it arrives through scripts and external stylesheets. That is the normal outcome, not a failure to work around. If the screenshot path is also unavailable (no browser installed), you will end up with structure only.
+
+So **ask the user what they like about it before you fetch, not after.** "¿Qué es lo que te gusta de esa página?" gets you the actual signal in one question — people answer things like "se ve limpia y los botones se ven bien hechos", which is a design brief. The fetch then confirms structure and adds detail. Reversing the order means burning the fetch and then asking anyway.
+
 ```bash
 playwright-cli open <url>
 playwright-cli screenshot --filename=ref-desktop.png

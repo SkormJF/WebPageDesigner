@@ -138,6 +138,8 @@ If the user's answers describe needs beyond marketing content — user accounts,
 
 That approval runs on a **published Artifact**, not a generated image: a real HTML page the user opens on claude.ai from any device. Static images can't show hover, keyboard focus, or disabled states, which are exactly the decisions that otherwise go unmade until a component is already written. And because the Artifact is built from real values, approving it approves the spec — Phase 2 copies those hex codes, radii and heights rather than re-deriving them.
 
+**Its one blind spot is typography.** The artifact CSP blocks font CDNs, so the chosen Google Font does not load and the type falls back to the viewer's system fonts. State that limitation on the page, next to the type specimen — everything else there is exact, but the lettering is an approximation, and a user who approves it thinking otherwise is approving something they won't get.
+
 **Persist as you go — start `PROJECT-BRIEF.md` during this phase, not after it.** As soon as Round 1 gives you the business name, create the file **at the repo root** (the template lives in Phase 3 Step 1) with what's known so far, leaving later sections as `[pendiente]`. Then update it at the end of **every** round, and whenever the user makes a decision worth logging.
 
 **Root, not `site/`, and this matters.** `site/` doesn't exist yet at this point, and it must stay empty until Phase 3 scaffolds into it: `create-next-app` refuses to run in a directory containing files it doesn't recognise, and `PROJECT-BRIEF.md` is not on its allowlist. Writing the brief into `site/` early would make Phase 3 either fail outright or delete the brief while "cleaning" the directory — destroying the entire discovery it exists to protect. Phase 3 moves it into `site/` once the scaffold is in place.
@@ -408,6 +410,8 @@ Build the landing page inside `site/`. Write ALL files without asking for per-se
      The rule to apply: for every font token, confirm some `next/font` call actually declares that variable name. Matching names are fine; unmatched ones are the failure.
 
   3. **Delete the hardcoded font on `body`.** The stock `create-next-app` `globals.css` ends with `body { font-family: Arial, Helvetica, sans-serif; }` — a literal declaration that beats the theme regardless of how correctly the tokens are wired, and `Arial` is on this project's banned-font list. Replace it with `font-family: var(--font-sans)`. This is a second, independent trap from the token one above: fixing either alone still leaves the page in the wrong font.
+
+     Reproduced on every scaffold so far, so treat it as certain rather than possible. Confirm with `grep -n "font-family" site/src/app/globals.css` right after scaffolding — the only match should be your own `var(--font-sans)`.
   3. Confirm by looking at the rendered page, not the build. Screenshot it in Phase 5 and check the headline is in the chosen face — a passing build proves nothing here.
 
 #### Section Order
@@ -597,6 +601,8 @@ Before showing to the user:
 - [ ] No bounce/elastic easing — use smooth deceleration
 - [ ] No glassmorphism-everywhere or card-in-card nesting
 - [ ] All spacing from the 4pt scale, all fonts from the modular scale
+- [ ] **No raw hex outside the theme block** — grep it, don't eyeball it: `grep -rE '#[0-9a-fA-F]{6}' site/src/components site/src/app/page.tsx` should return nothing but SVG path data. Colours live as tokens; a literal hex in a component is the exact drift the Atomic Design pattern exists to prevent, and it slips in most often on throwaway placeholders (gradient blocks, empty states) that then outlive the placeholder.
+- [ ] **No one-off size overrides on call sites** — `grep -rE '<Button[^>]*className="[^"]*h-[0-9]' site/src` returns nothing. Heights come from the declared variant, never from the call site.
 - [ ] No emoji as icons — use Lucide React SVGs (brand/social icons excepted: Lucide has none, use inline SVG)
 
 ### Responsive

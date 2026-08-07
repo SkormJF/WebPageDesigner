@@ -182,7 +182,9 @@ Loads automatically during Phase 4 (Build) to prevent truncated files.
 ### imagegen-frontend-web (bundled, but not usable here)
 **There is no image-generation tool in this environment**, so this skill cannot run as written. Round 4's visual approval uses a published **Artifact** instead — see `docs/questionnaire.md`.
 
-The Artifact is the better instrument anyway, not just the available one: it renders real components, so hover, keyboard focus and disabled states are visible (a static image cannot show any of them), the fonts load for real rather than being approximated, and the values the user approves are already written as CSS for Phase 2 to copy.
+The Artifact is the better instrument anyway, not just the available one: it renders real components, so hover, keyboard focus and disabled states are visible (a static image cannot show any of them), and the values the user approves are already written as CSS for Phase 2 to copy.
+
+One thing it cannot do: **show the real typeface.** The artifact CSP blocks font CDNs, and embedding a face needs binaries there's no way to fetch here — so the type is approximated with the viewer's system fonts. Say so on the page itself rather than letting the user approve lettering they won't receive.
 
 Keep this skill only as art-direction reference — its composition and variation rules are sound — in case an image tool ever becomes available.
 

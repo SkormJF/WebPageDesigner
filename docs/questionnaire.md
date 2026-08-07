@@ -49,6 +49,13 @@ Despues de la Ronda 1, resume: "Perfecto — [negocio] ayuda a [audiencia] con [
      - **Simple (default):** Un enlace "mailto:" con estilo de seccion de contacto — no necesita backend.
      - **Formulario con Formspree:** Servicio gratuito, sin backend. Dile al usuario: "Ve a formspree.io, crea una cuenta gratis, crea un formulario, y dame el form ID (se ve asi: 'xpznqkdl')." Si no quiere hacerlo ahora, usa mailto: como default y deja un comentario TODO.
    - Si solo quiere un link de email o telefono, tambien funciona.
+   - **Pregunta aparte si necesita recibir archivos** (foto de referencia, plano, CV, documento). Es un requisito comun — un tatuador quiere la referencia, un arquitecto el plano — y **ninguna de las dos opciones de arriba lo cubre**: `mailto:` no puede adjuntar nada, y el plan gratuito de Formspree tampoco. Si lo necesita, es una decision suya que hay que tomar antes de cablear el formulario, porque implica un servicio de pago o un backend:
+     - Formspree en plan pago, que si acepta adjuntos
+     - Otro servicio de formularios con subida de archivos
+     - Activar la **Full-Stack Extension** y manejar la subida con Supabase Storage
+     - Renunciar al adjunto y pedir que lo manden despues por WhatsApp o correo, con el formulario abriendo la conversacion
+
+     Construye el campo `<input type="file">` igual, para que la pagina este lista, pero **anota en el `Decisions Log` del brief que el destino esta sin definir** y no inventes un endpoint que no existe.
 
 9. **Tienes un eslogan o frase?**
    - Default: Escribir uno. Pasar por humanizalo.
@@ -132,7 +139,9 @@ Todo lo visual vive en esta ronda, de lo rapido a lo profundo: primero preferenc
    - Si el proyecto es Full-Stack Extension: ademas un bloque del login o del shell del panel
    - Si hay logo, incorporalo
 
-   **Por que un Artifact y no una imagen generada:** una imagen estatica no puede mostrar un hover, un focus ni un disabled — y esos son justo los estados que despues se pierden si nadie los decidio. Ademas la tipografia se ve real, no interpretada.
+   **Por que un Artifact y no una imagen generada:** una imagen estatica no puede mostrar un hover, un focus ni un disabled — y esos son justo los estados que despues se pierden si nadie los decidio.
+
+   **Lo que el Artifact NO puede mostrar: la tipografia real.** Su CSP bloquea los CDN de fuentes, asi que Google Fonts no carga, y para incrustarla harian falta los binarios de la fuente, que no hay como conseguir aqui. Se ve una aproximacion con las fuentes del sistema del usuario. **Dilo en la propia pagina**, cerca del especimen tipografico: que las formas, pesos y tamanos son los reales pero el dibujo exacto de las letras cambiara, y que todo lo demas — colores, botones, estados, espaciado — si es exactamente lo que se va a construir. Ocultarlo hace que el usuario apruebe una letra que no va a recibir.
 
    **Y esto es lo importante:** el Artifact esta hecho de los valores reales. Cuando el usuario aprueba el boton, quedan aprobados su hex, su border-radius, su altura, su padding y su color de hover — ya escritos. La Fase 2 no "deriva" el spec despues: lo copia de aqui.
 
