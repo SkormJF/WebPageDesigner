@@ -139,7 +139,7 @@ Ahora tienes:
 
 ## Skills Incluidos
 
-Este proyecto viene con **21 skills profesionales pre-instalados** en `.claude/skills/`. Se cargan automaticamente cuando Claude abre el proyecto — no necesitas instalar nada extra.
+Este proyecto viene con **22 skills profesionales pre-instalados** en `.claude/skills/`. Se cargan automaticamente cuando Claude abre el proyecto — no necesitas instalar nada extra.
 
 | Skill | Que hace |
 |-------|---------|
@@ -322,7 +322,7 @@ claude-webkit/
 ├── CLAUDE.md                        # Instrucciones para Claude (el cerebro)
 ├── .claude/
 │   ├── settings.local.json          # Permisos de herramientas
-│   └── skills/                      # 21 skills incluidos (se cargan solos)
+│   └── skills/                      # 22 skills incluidos (se cargan solos)
 │       ├── frontend-design/         # Metodologia de diseno + 7 docs de referencia
 │       ├── shadcn-ui/               # Guia de componentes
 │       ├── humanizalo/              # Eliminacion de patrones IA

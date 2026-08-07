@@ -1,6 +1,12 @@
 ---
 name: pre-deploy-verification
-description: Mandatory pass before any production deploy. For Full-Stack Extension projects (auth, database, roles): a real end-to-end flow with disposable test accounts, a security review of RLS/secrets/auth, and an explicit go/no-go verdict. For every project regardless of backend: domain-availability-aware Vercel project naming, deploying, and post-deploy verification that the live URL actually works (not just that the deploy status says "ready"). Use in Phase 6, before deploying, whenever the user asks to deploy or asks "is it safe to deploy."
+description: |
+  Mandatory pass before any production deploy. For Full-Stack Extension projects (auth, database,
+  roles) — a real end-to-end flow with disposable test accounts, a security review of RLS/secrets/auth,
+  and an explicit go/no-go verdict. For every project regardless of backend — domain-availability-aware
+  Vercel project naming, deploying, and post-deploy verification that the live URL actually works (not
+  just that the deploy status says "ready"). Use in Phase 6, before deploying, whenever the user asks to
+  deploy or asks "is it safe to deploy."
 ---
 
 # Pre-Deploy Verification

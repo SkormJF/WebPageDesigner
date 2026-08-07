@@ -367,8 +367,9 @@ function DropdownMenu({ items }) {
             <li
               key={item.id}
               role="menuitem"
-              tabIndex={-1}
-              aria-selected={index === selectedIndex}
+              // Roving tabindex: exactly one item is tabbable at a time.
+              tabIndex={index === activeIndex ? 0 : -1}
+              ref={(el) => { itemRefs.current[index] = el; }}
               onClick={() => {
                 item.onClick();
                 setIsOpen(false);
@@ -383,6 +384,22 @@ function DropdownMenu({ items }) {
   );
 }
 ```
+
+Two mistakes to avoid here, both of which produce a menu that looks fine and is unusable:
+
+**Don't put `aria-selected` on a `menuitem`.** It isn't a supported attribute for that role — it belongs to `option` (inside a `listbox`) and `tab`. On a menu, "which item is current" is expressed by *where DOM focus actually is*, not by an attribute. If the item is a persistent on/off choice, the right role is `menuitemcheckbox` or `menuitemradio` with `aria-checked`.
+
+**Tracking an index in state does nothing on its own — you must move real focus.** With every item at `tabIndex={-1}` and no `.focus()` call, a keyboard user can never reach any of them. Arrow-key handling has to move focus for real:
+
+```tsx
+const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+
+useEffect(() => {
+  if (isOpen) itemRefs.current[activeIndex]?.focus();
+}, [isOpen, activeIndex]);
+```
+
+The rest of the pattern: ArrowDown/ArrowUp move `activeIndex` (wrapping at the ends), Home/End jump to first/last, Escape closes and returns focus to the trigger, Enter/Space activate. If you don't need this level of control, use shadcn's `DropdownMenu` — it's Radix-backed and gets all of it right already.
 
 ### Tabs
 
@@ -799,21 +816,40 @@ Always provide accessible text for icon buttons:
 Disabled elements aren't focusable, which can confuse users:
 
 ```tsx
-// ❌ User can't understand why button is disabled
+// ❌ Not focusable, so a keyboard user can never reach it to find out why
 <button disabled={!isValid}>
   Submit
 </button>
 
-// ✅ Use aria-disabled and explain
-<button
-  aria-disabled={!isValid}
-  aria-describedby="submit-help"
-  onClick={isValid ? handleSubmit : undefined}
-  className={!isValid ? 'opacity-50 cursor-not-allowed' : ''}
->
+// ❌ Also broken — and this one looks right, which makes it worse.
+//    A <button> inside a <form> is type="submit" by default, so the form still
+//    submits natively on click or Enter. Dropping onClick prevents nothing.
+<button aria-disabled={!isValid} onClick={isValid ? handleSubmit : undefined}>
   Submit
 </button>
-<span id="submit-help">
-  {!isValid && 'Please fill in all required fields'}
-</span>
+
+// ✅ aria-disabled keeps it focusable and announced; the guard lives in the
+//    handler, where it can actually stop the default submit.
+<form onSubmit={(e) => { e.preventDefault(); if (!isValid) return; handleSubmit(); }}>
+  {/* … fields … */}
+  <button
+    type="submit"
+    aria-disabled={!isValid}
+    aria-describedby={!isValid ? 'submit-help' : undefined}
+    className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+  >
+    Submit
+  </button>
+  {!isValid && (
+    <span id="submit-help">Please fill in all required fields</span>
+  )}
+</form>
 ```
+
+Three things this gets right that the broken version doesn't:
+
+- **The form's `onSubmit` is the real gate.** Pressing Enter inside any text field submits without the button ever being clicked, so a click-only guard leaves that path open.
+- **`aria-describedby` is only set when there's something to describe.** Pointing it at an element that renders empty gives screen readers a dangling reference.
+- **Styling keys off the attribute** (`aria-disabled:`, which Tailwind matches on `[aria-disabled="true"]`), so the visual state can't drift out of sync with the semantic one.
+
+Use real `disabled` when the control is genuinely inert and there is nothing to explain — a submit button during an in-flight request, for instance. Use `aria-disabled` when the user needs to discover *why* it isn't available yet.

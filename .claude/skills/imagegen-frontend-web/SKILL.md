@@ -1,24 +1,39 @@
 ---
 name: imagegen-frontend-web
-description: Elite frontend image-direction skill for generating premium, conversion-aware website design references. CRITICAL OUTPUT RULE — generate ONE separate horizontal image FOR EVERY section. A landing page with 8 sections produces 8 images. Never compress multiple sections into one image. Enforces composition variety (not always left-text / right-image), background-image freedom, varied CTAs, varied hero scales (giant / mid / mini minimalist), narrative concept spine, second-read moments, and a single consistent palette across all images. Optimized for landing pages, marketing sites, and product comps that developers or coding models can accurately recreate.
+description: Elite frontend image-direction skill for generating premium, conversion-aware website design references. Runs in one of two modes — REFERENCE MODE (1-2 images, for the Phase 1 Round 4 visual approval conversation, before sections are decided) or FULL MODE (one separate horizontal image per section, once the section list exists). Never compress multiple sections into one image in either mode. Enforces composition variety (not always left-text / right-image), background-image freedom, varied CTAs, varied hero scales (giant / mid / mini minimalist), narrative concept spine, second-read moments, and a single consistent palette across all images. Optimized for landing pages, marketing sites, and product comps that developers or coding models can accurately recreate.
 ---
 
 # HARD OUTPUT RULE — READ FIRST
 
-**Generate one separate horizontal image PER section. Always. No exceptions.**
+**Pick the mode before generating anything.** The image count depends entirely on which one you are in, and getting this wrong wastes the user's time in both directions.
 
-- 1 section requested -> 1 image
+## REFERENCE MODE — 1-2 images
+
+Use when the section list does not exist yet: the **Phase 1 Round 4 visual approval conversation**, or any time the user is still deciding the overall look rather than reviewing a decided page.
+
+- 1 image of the hero, plus 1 of a section that shows real components (buttons, cards, form fields)
+- For a Full-Stack Extension project, add 1 more: the login screen or dashboard shell
+- That is the ceiling. Do not generate a full page set here.
+
+The point of this mode is a fast approval loop — the user reacts, you adjust palette or type, you regenerate. Eight images make that loop slow and expensive, and most of them illustrate sections nobody has agreed to yet.
+
+## FULL MODE — one image per section
+
+Use once the section list is actually decided (Phase 2 onward), or when the user explicitly asks for the full set.
+
 - 4 sections requested -> 4 images
 - 8 sections requested -> 8 images
 - 12 sections requested -> 12 images
 - "landing page" with no count -> default to 6 sections -> 6 images
 - "full website template" -> default to 8 sections -> 8 images
 
+## Both modes
+
 Each image is one section, generated as its own image call. Never combine multiple sections into one frame. Never return a single tall image that contains the whole page.
 
-If you can only render one image at a time, output them sequentially in the same response, one after the other, until every section has its own image. Announce each one ("Section 1 of 8: Hero", "Section 2 of 8: Trust bar", etc.).
+If you can only render one image at a time, output them sequentially in the same response, one after the other. Announce each one ("Section 1 of 8: Hero", "Section 2 of 8: Trust bar", etc.).
 
-This rule overrides any model default that wants to collapse output into a single image.
+This overrides any model default that wants to collapse output into a single image — but it never overrides REFERENCE MODE's 1-2 ceiling.
 
 ---
 
@@ -396,7 +411,10 @@ instead.
 
 ## 5. IMAGE COUNT & PAGE SLICING
 
-### THIS IS THE PRIMARY OUTPUT RULE
+### THIS IS THE PRIMARY OUTPUT RULE — IN FULL MODE
+
+> In REFERENCE MODE the ceiling is 1-2 images (3 with a login/dashboard shot) and everything about "default high" below does **not** apply. See the mode selection at the top of this file before using anything in this section.
+
 Generate **one separate horizontal image PER section**. Always.
 
 - never combine multiple sections in a single image
@@ -404,7 +422,7 @@ Generate **one separate horizontal image PER section**. Always.
 - never return one "best" image and skip the rest
 - never replace several sections with one collage
 
-If the request is ambiguous about section count, **default high**:
+If the request is ambiguous about section count **and you are in FULL MODE**, default high:
 - "hero" -> 1 image
 - "landing page" / "site template" -> default to 6 sections -> 6 images
 - "full website" -> default to 8 sections -> 8 images

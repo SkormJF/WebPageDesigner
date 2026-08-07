@@ -20,7 +20,7 @@ Skills are markdown files that Claude Code reads automatically. This project bun
 | `chrome-bridge-automation` | `.claude/skills/chrome-bridge-automation/` | Fallback visual QA — connects to user's Chrome via Midscene extension. Vision-driven screenshots. |
 | `seo-audit` | `.claude/skills/seo-audit/` | Technical SEO analysis, meta tags, heading structure. |
 | `ui-ux-pro-max` | `.claude/skills/ui-ux-pro-max/` | Design intelligence database — 161 color palettes, 57 font pairings, 50+ styles. Python CLI for search. |
-| `web-reader` | `.claude/skills/web-reader/` | Extract content from reference URLs the user provides. |
+| `web-reader` | `.claude/skills/web-reader/` | Analyze a reference URL the user provides — palette, typography, layout, component patterns — via `WebFetch` plus a `playwright-cli` screenshot. |
 | `deep-research` | `.claude/skills/deep-research/` | Systematic web research for industry-specific copy and content. |
 | `emil-design-eng` | `.claude/skills/emil-design-eng/` | UI polish & animation craft — Emil Kowalski's philosophy on micro-interactions and invisible details. |
 | `design-taste-frontend` | `.claude/skills/design-taste-frontend/` | Anti-LLM-bias rules for React/Next.js — metric-based typography, spacing, and component architecture. |
@@ -31,7 +31,9 @@ Skills are markdown files that Claude Code reads automatically. This project bun
 | `pre-deploy-verification` | `.claude/skills/pre-deploy-verification/` | Mandatory pass before a real production deploy: E2E with disposable accounts through the real UI, security review with an explicit verdict (Full-Stack only), subdomain availability check before naming, and real-HTTP verification after deploy. See Phase 6. |
 | `staged-app-builder` | `.claude/skills/staged-app-builder/` | Plans a large Full-Stack Extension backend (3+ related entities, cross-entity logic, or a detailed spec) as dependency-ordered phases tracked in `PROJECT-BRIEF.md`, with a per-phase verification bar and this stack's known gotchas. See Phase 3.5. |
 
-All 21 skills are bundled — no installation needed.
+| `navigation-shell` | `.claude/skills/navigation-shell/` | Headers, sticky/scroll behavior, mobile menus, dashboard sidebars, and the app shell. Covers WCAG 2.2 SC 2.4.11 / 2.5.7 / 1.4.13, the `position: sticky` failure modes, and the three gaps shadcn's `sidebar` leaves unfilled. |
+
+All 22 skills are bundled — no installation needed.
 
 ---
 
@@ -149,7 +151,7 @@ Invoke by telling Claude to use the web-reader skill to analyze a URL.
 Example: "Use web-reader to analyze https://example.com and note its
 colors, layout approach, typography, and overall design direction."
 ```
-The skill extracts page content, metadata, and structure — useful for understanding what the user likes about a reference site.
+It pairs `WebFetch` (structure, copy, section order, whatever CSS is inline) with a `playwright-cli` screenshot (what actually renders, at desktop and mobile width) — neither alone tells you what a site looks like. Output is concrete values for Phase 2: hex codes, font families, layout rhythm. It always separates what the reference does from what's worth borrowing.
 
 ### deep-research (bundled)
 Use when you need industry-specific knowledge for writing better copy or making design decisions.

@@ -29,7 +29,7 @@ Unless the user explicitly specifies a different stack, adhere to these structur
   * Contain page layouts using `max-w-[1400px] mx-auto` or `max-w-7xl`.
   * **Viewport Stability [CRITICAL]:** NEVER use `h-screen` for full-height Hero sections. ALWAYS use `min-h-[100dvh]` to prevent catastrophic layout jumping on mobile browsers (iOS Safari).
   * **Grid over Flex-Math:** NEVER use complex flexbox percentage math (`w-[calc(33%-1rem)]`). ALWAYS use CSS Grid (`grid grid-cols-1 md:grid-cols-3 gap-6`) for reliable structures.
-* **Icons:** You MUST use exactly `@phosphor-icons/react` or `@radix-ui/react-icons` as the import paths (check installed version). Standardize `strokeWidth` globally (e.g., exclusively use `1.5` or `2.0`).
+* **Icons:** Use **one** icon library across the whole project and never mix — mixed sets are immediately visible, because stroke weights and optical sizing don't match. In this repo that library is **`lucide-react`**, installed by `CLAUDE.md` Phase 3; use it rather than the `@phosphor-icons/react` / `@radix-ui/react-icons` this skill originally specified. Standardize `strokeWidth` globally (`1.5` or `2.0`, pick one). Never use emoji as icons.
 
 
 ## 3. DESIGN ENGINEERING DIRECTIVES (Bias Correction)
@@ -114,14 +114,15 @@ To guarantee a premium, non-generic output, you MUST strictly avoid these common
 * **NO 3-Column Card Layouts:** The generic "3 equal cards horizontally" feature row is BANNED. Use a 2-column Zig-Zag, asymmetric grid, or horizontal scrolling approach instead.
 
 ### Content & Data (The "Jane Doe" Effect)
-* **NO Generic Names:** "John Doe", "Sarah Chan", or "Jack Su" are banned. Use highly creative, realistic-sounding names.
+* **NO Generic Names:** "John Doe", "Sarah Chan", or "Jack Su" are banned — they read as unfilled template. Use specific, textured names that fit the brand's region and audience.
+  * **Exception — testimonials and reviews.** Placeholder social proof must stay visibly provisional, never polished into something that reads as a real endorsement. A convincing fabricated testimonial on a real business's live page is a lie told to that business's customers, and the owner is the one who wears it. Keep the name plausible but pair it with obvious placeholder context so nobody mistakes it for shipped-ready content, and tell the user in plain words that these are stand-ins to replace with real quotes before launch (see `docs/questionnaire.md` Q10: "nombres realistas pero claramente de ejemplo").
 * **NO Generic Avatars:** DO NOT use standard SVG "egg" or Lucide user icons for avatars. Use creative, believable photo placeholders or specific styling.
 * **NO Fake Numbers:** Avoid predictable outputs like `99.99%`, `50%`, or basic phone numbers (`1234567`). Use organic, messy data (`47.2%`, `+1 (312) 847-1928`).
 * **NO Startup Slop Names:** "Acme", "Nexus", "SmartFlow". Invent premium, contextual brand names.
 * **NO Filler Words:** Avoid AI copywriting clichés like "Elevate", "Seamless", "Unleash", or "Next-Gen". Use concrete verbs.
 
 ### External Resources & Components
-* **NO Broken Unsplash Links:** Do not use Unsplash. Use absolute, reliable placeholders like `https://picsum.photos/seed/{random_string}/800/600` or SVG UI Avatars.
+* **NO Hotlinked Placeholder Images:** Do not use Unsplash, and do not ship `picsum.photos` or similar remote placeholder services either — a deployed page that hotlinks a third-party image host has an uptime and privacy dependency nobody signed up for, and it breaks the moment that host rate-limits or disappears. Assets belong in `public/images/`, referenced through `next/image` (see `CLAUDE.md` Phase 4 → Image Handling). Default to no photography at all: geometric patterns, gradients, or generated SVG carry a design better than generic stock. A remote placeholder is acceptable only in a throwaway local prototype that will never be deployed.
 * **shadcn/ui Customization:** You may use `shadcn/ui`, but NEVER in its generic default state. You MUST customize the radii, colors, and shadows to match the high-end project aesthetic.
 * **Production-Ready Cleanliness:** Code must be extremely clean, visually striking, memorable, and meticulously refined in every detail.
 
@@ -201,10 +202,21 @@ When generating modern SaaS dashboards or feature sections, you MUST utilize the
 * **Pixel-Perfection:** Use generous `p-8` or `p-10` padding inside cards.
 
 ### B. The Animation Engine Specs (Perpetual Motion)
-All cards must contain **"Perpetual Micro-Interactions."** Use the following Framer Motion principles:
-* **Spring Physics:** No linear easing. Use `type: "spring", stiffness: 100, damping: 20` for a premium, weighty feel.
+
+> **ACCESSIBILITY GATE — applies to everything in this section and to the 5 archetypes below.**
+>
+> Infinite motion is a legal accessibility failure if shipped unconditionally. **WCAG 2.2 SC 2.2.2 (Pause, Stop, Hide, Level A)**: any content that moves automatically, runs longer than five seconds, and sits alongside other content must give the user a way to pause, stop, or hide it. Every perpetual loop below qualifies.
+>
+> Two requirements, both mandatory, no exceptions:
+> 1. **Gate every infinite loop behind `prefers-reduced-motion`.** Under `(prefers-reduced-motion: reduce)` the loop does not run — the element renders in its resting state. "Reduced" means the interface still communicates the same thing without the movement; it does not mean a broken or empty component.
+> 2. **Perpetual motion is opt-in per surface, never blanket.** Apply it to at most one or two focal elements — the piece the user is meant to look at. A grid where every card loops simultaneously reads as noise, competes with itself for attention, and drains battery through continuous compositor work. It is also, ironically, a recognizable AI tell: the exact "everything is alive" look this skill exists to avoid.
+>
+> If a surface cannot satisfy both, it does not get perpetual motion. Ship it static.
+
+Use the following Framer Motion principles:
+* **Spring Physics:** No linear easing for interactive transitions. Use `type: "spring", stiffness: 100, damping: 20` — that pairing is critically damped, so it settles without the bounce/elastic overshoot that reads as dated. (Linear easing remains correct for genuinely continuous motion such as a constant-speed marquee.)
 * **Layout Transitions:** Heavily utilize the `layout` and `layoutId` props to ensure smooth re-ordering, resizing, and shared element state transitions.
-* **Infinite Loops:** Every card must have an "Active State" that loops infinitely (Pulse, Typewriter, Float, or Carousel) to ensure the dashboard feels "alive".
+* **Infinite Loops:** Where the accessibility gate above allows one, an "Active State" may loop (Pulse, Typewriter, Float, or Carousel) to make a focal surface feel alive.
 * **Performance:** Wrap dynamic lists in `<AnimatePresence>` and optimize for 60fps. **PERFORMANCE CRITICAL:** Any perpetual motion or infinite loop MUST be memoized (React.memo) and completely isolated in its own microscopic Client Component. Never trigger re-renders in the parent layout.
 
 ### C. The 5-Card Archetypes (Micro-Animation Specs)

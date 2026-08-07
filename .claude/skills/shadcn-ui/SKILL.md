@@ -9,6 +9,18 @@ progressive_disclosure:
 ---
 # shadcn/ui - Component Library
 
+## Read this first
+
+**The installed components in `site/src/components/ui/` are the source of truth for this project.** shadcn is not a dependency — the CLI copies code into your repo and you own it from that moment, so there is no `npm update` that reconciles this document with what you actually have. When they disagree, the files win. Read the component before writing code that assumes its API.
+
+Two things this document deliberately does not pin down, because both have moved and would go stale again:
+
+**The primitive base.** shadcn now ships on more than one headless library and the default has shifted over time, so "shadcn wraps Radix" is no longer safe to assert. Check `components.json` and `package.json` for what this project actually installed.
+
+**The CLI surface.** `init` and `add` are stable; anything else should be confirmed with `npx shadcn@latest --help` rather than trusted from here.
+
+Everything below has been checked against the current stack (Tailwind v4, React 19). Configuration specifically is *not* reproduced here — see "Tailwind & theme tokens" for why, and read the project's real `globals.css` instead.
+
 ---
 progressive_disclosure:
   entry_point: summary, when_to_use, quick_start
@@ -46,7 +58,7 @@ shadcn/ui is a collection of re-usable React components built with Radix UI prim
 
 ```bash
 # Initialize shadcn/ui in your project
-npx shadcn-ui@latest init
+npx shadcn@latest init
 
 # Follow interactive prompts:
 # - TypeScript? (yes/no)
@@ -64,12 +76,12 @@ npx shadcn-ui@latest init
 
 ```bash
 # Add individual components
-npx shadcn-ui@latest add button
-npx shadcn-ui@latest add card
-npx shadcn-ui@latest add dialog
+npx shadcn@latest add button
+npx shadcn@latest add card
+npx shadcn@latest add dialog
 
 # Add multiple components at once
-npx shadcn-ui@latest add button card dialog form input
+npx shadcn@latest add button card dialog form input
 ```
 
 ### Basic Usage
@@ -137,22 +149,25 @@ src/
 
 **Radix UI Integration**:
 ```tsx
-// shadcn/ui components wrap Radix primitives
+// A shadcn component is a thin styled wrapper over a headless primitive.
+// Check components.json / package.json for which primitive library this
+// project actually uses — it is not always Radix.
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 
-// Add styling and variants
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger
-const DialogContent = React.forwardRef<...>(
-  ({ className, children, ...props }, ref) => (
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn("fixed ...", className)}
-      {...props}
-    />
+
+// React 19: ref is a normal prop. No forwardRef wrapper needed.
+function DialogContent({ className, children, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+  return (
+    <DialogPrimitive.Content className={cn("fixed ...", className)} {...props}>
+      {children}
+    </DialogPrimitive.Content>
   )
-)
+}
 ```
+
+The shape to notice: the primitive supplies behaviour and accessibility, the wrapper supplies styling, and `className` is merged through `cn()` rather than replaced — so a call site can adjust without losing the base styles.
 
 ## Configuration
 
@@ -165,7 +180,7 @@ const DialogContent = React.forwardRef<...>(
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "tailwind.config.ts",
+    "config": "",
     "css": "app/globals.css",
     "baseColor": "slate",
     "cssVariables": true,
@@ -187,155 +202,24 @@ const DialogContent = React.forwardRef<...>(
 - `cssVariables`: Use CSS variables for theming
 - `prefix`: Tailwind class prefix (optional)
 
-### Tailwind Configuration
+### Tailwind & theme tokens — read the project, don't copy from here
 
-```ts
-// tailwind.config.ts
-import type { Config } from "tailwindcss"
+This section is deliberately not a config template. `CLAUDE.md` Phase 3 scaffolds **Tailwind v4**, where the theme is declared in CSS via `@theme` and there is no `tailwind.config.ts` by default. Any config block written into a document like this one goes stale as soon as the tooling moves — and a stale config that looks authoritative is worse than none, because it gets copied before it gets questioned.
 
-const config = {
-  darkMode: ["class"],
-  content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-  ],
-  prefix: "",
-  theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
-    extend: {
-      colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-      },
-    },
-  },
-  plugins: [require("tailwindcss-animate")],
-} satisfies Config
+The authoritative sources for this project, in order:
 
-export default config
-```
+1. **`site/src/app/globals.css`** — the real theme tokens. Read it before writing any colour, radius, or spacing utility.
+2. **`site/components.json`** — the aliases, style variant, and base colour the CLI was initialised with. `npx shadcn@latest add` reads this file; so should you.
+3. **`site/src/components/ui/*.tsx`** — the installed components themselves. They live in your repo and you own them, so their actual props and variants beat any catalog, including the one below.
 
-### CSS Variables (globals.css)
+What holds regardless of Tailwind version:
 
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+- Theming runs on **CSS custom properties**, so changing a colour is a token edit in one file — never a find-and-replace across components.
+- The semantic pairs (`background`/`foreground`, `card`/`card-foreground`, `muted`/`muted-foreground`, `destructive`/`destructive-foreground`) exist so that foreground contrast is correct by construction. Use them as pairs; don't put one pair's foreground on another pair's background.
+- Adding a colour means adding a token and referencing it, not hardcoding a hex inside a component.
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
+If you need current syntax for something specific, check the installed `globals.css` first. If it genuinely isn't there, check the live shadcn docs — don't infer it from this file.
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-```
 
 ## Component Catalog
 
@@ -567,6 +451,20 @@ import {
 </Table>
 ```
 
+### Sidebar
+
+The backbone of every Full-Stack Extension panel, and the one component this catalog used to omit entirely.
+
+```bash
+npx shadcn@latest add sidebar
+```
+
+It ships a lot: 20+ composable parts, `collapsible="offcanvas" | "icon" | "none"`, a `sidebar_state` cookie, a Cmd/Ctrl+B shortcut, correct `Sheet`-based mobile behaviour, and real `<ul>`/`<li>` markup.
+
+**It leaves three gaps you must fill every time** — it renders a `<div>` rather than a `<nav>` landmark, its `isActive` prop only emits `data-active` (styling, not `aria-current`), and it writes the state cookie but never reads it, so the sidebar flashes the wrong state on every full page load.
+
+**Read the `navigation-shell` skill before building one.** It carries the fixes for all three, plus the sticky/scroll and focus-order rules that go with an app shell.
+
 ### Additional Components
 
 **Available via CLI**:
@@ -608,7 +506,7 @@ import {
 **Change base color scheme**:
 ```bash
 # Regenerate components with new base color
-npx shadcn-ui@latest init
+npx shadcn@latest init
 
 # Choose new base: Slate, Gray, Zinc, Neutral, Stone
 ```
@@ -753,10 +651,10 @@ npx create-next-app@latest my-app --typescript --tailwind --app
 
 # Initialize shadcn/ui
 cd my-app
-npx shadcn-ui@latest init
+npx shadcn@latest init
 
 # Add components
-npx shadcn-ui@latest add button card form
+npx shadcn@latest add button card form
 ```
 
 ### Server Components
@@ -1055,61 +953,61 @@ export function PricingCard({
 
 ```bash
 # Interactive init
-npx shadcn-ui@latest init
+npx shadcn@latest init
 
 # Non-interactive with defaults
-npx shadcn-ui@latest init -y
+npx shadcn@latest init -y
 
 # Specify options
-npx shadcn-ui@latest init --typescript --tailwind
+npx shadcn@latest init --typescript --tailwind
 ```
 
 ### Add Components
 
 ```bash
 # Single component
-npx shadcn-ui@latest add button
+npx shadcn@latest add button
 
 # Multiple components
-npx shadcn-ui@latest add button card dialog form
+npx shadcn@latest add button card dialog form
 
 # All components (not recommended - adds everything)
-npx shadcn-ui@latest add --all
+npx shadcn@latest add --all
 
 # Specific version
-npx shadcn-ui@latest add button@1.0.0
+npx shadcn@latest add button@1.0.0
 
 # Overwrite existing
-npx shadcn-ui@latest add button --overwrite
+npx shadcn@latest add button --overwrite
 
 # Different path
-npx shadcn-ui@latest add button --path src/components/ui
+npx shadcn@latest add button --path src/components/ui
 ```
 
 ### Diff Components
 
 ```bash
 # Check for component updates
-npx shadcn-ui@latest diff
+npx shadcn@latest diff
 
 # Diff specific component
-npx shadcn-ui@latest diff button
+npx shadcn@latest diff button
 
 # Show what would change
-npx shadcn-ui@latest diff --check
+npx shadcn@latest diff --check
 ```
 
 ### Update Components
 
 ```bash
 # Update all components
-npx shadcn-ui@latest update
+npx shadcn@latest update
 
 # Update specific components
-npx shadcn-ui@latest update button card
+npx shadcn@latest update button card
 
 # Preview changes before applying
-npx shadcn-ui@latest update --dry-run
+npx shadcn@latest update --dry-run
 ```
 
 ## Advanced Patterns
@@ -1279,15 +1177,17 @@ const item = {
 }
 ```
 
-**Tailwind classes not applying**:
-```ts
-// Ensure content paths include your components
-// tailwind.config.ts
-content: [
-  './src/components/**/*.{ts,tsx}',  // Add this
-  './src/app/**/*.{ts,tsx}',
-]
+**Tailwind classes not applying**: on **Tailwind v4** (what Phase 3 scaffolds) there is no `content` array to fix — v4 discovers sources automatically, and the usual culprit is instead a class built by string concatenation (`` `text-${color}-500` ``), which nothing can detect statically. Write complete class names and select between them:
+
+```tsx
+// ❌ never produced in the output
+<p className={`text-${color}-500`}>
+
+// ✅ full class names, chosen at runtime
+const tone = { danger: "text-red-500", ok: "text-green-500" }[status];
 ```
+
+On an older v3 project, check that `content` in `tailwind.config.ts` covers your component directories.
 
 **Dark mode not working**:
 ```tsx

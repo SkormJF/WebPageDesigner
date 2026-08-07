@@ -141,7 +141,7 @@ You now have:
 
 ## Bundled Skills
 
-This project comes with **21 professional skills pre-installed** in `.claude/skills/`. They load automatically when Claude opens the project — you don't need to install anything extra.
+This project comes with **22 professional skills pre-installed** in `.claude/skills/`. They load automatically when Claude opens the project — you don't need to install anything extra.
 
 | Skill | What It Does |
 |-------|-------------|
@@ -324,7 +324,7 @@ claude-webkit/
 ├── CLAUDE.md                        # Instructions for Claude (the brain)
 ├── .claude/
 │   ├── settings.local.json          # Tool permissions
-│   └── skills/                      # 21 bundled skills (auto-loaded)
+│   └── skills/                      # 22 bundled skills (auto-loaded)
 │       ├── frontend-design/         # Design methodology + 7 reference docs
 │       ├── shadcn-ui/               # Component library guide
 │       ├── humanizalo/              # AI writing pattern removal

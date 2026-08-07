@@ -216,6 +216,12 @@ elif [ -d "$INPUT_PATH" ]; then
         --exclude='.codex' \
         --exclude='.env' \
         --exclude='.env.*' \
+        --exclude='auth.json' \
+        --exclude='storage-state*.json' \
+        --exclude='.playwright-cli' \
+        --exclude='playwright-cli-screenshots' \
+        --exclude='*.pem' \
+        --exclude='*.key' \
         -cf - . | tar -C "$STAGING_DIR" -xf -
 
     # Check if this is a static HTML project (no package.json)

@@ -174,14 +174,22 @@ Use `@container` for component-level responsiveness:
 ```
 
 ### Touch Targets
-All interactive elements must be at least 44x44px on touch devices. Use padding to expand small buttons/links to meet this minimum.
+
+Two different numbers, and confusing them causes real mistakes in both directions:
+
+- **24×24 CSS px is the WCAG 2.2 AA requirement** (SC 2.5.8, Target Size Minimum). This is the conformance bar every project here commits to.
+- **44×44 CSS px is AAA** (SC 2.5.5, Target Size Enhanced), and matches Apple's HIG recommendation. It is the target this project *chooses* for primary touch targets because it genuinely feels better on a phone — not because AA demands it.
+
+So: the **standard ~44px tier** (every form field, every primary button) clears AAA. The **compact ~32px tier** from the Atomic Design scale above is for secondary and pointer-oriented actions — inline row actions, admin-table buttons — and is **comfortably AA-compliant**. It is not a violation, and a later pass should not "fix" it by inflating everything to 44px; doing that flattens the size hierarchy the scale exists to create.
+
+Where a target must genuinely be small (a dense data table, an icon in a toolbar), SC 2.5.8 offers documented outs: sufficient **spacing** between targets counts, as does an equivalent larger control elsewhere on the page. Use padding to grow the hit area beyond the visual box before shrinking the visual box itself.
 
 ### Atomic Design — Control Size Scale
 
 Define this in Phase 2, before Phase 4 build starts. Two heights cover nearly every interactive control in a typical app — pick them once and give the actual component variants those exact values, so nothing downstream needs a one-off `className` override:
 
 - **Compact (~32px):** secondary/inline actions — icon-only row actions, admin-table buttons, badges/pills.
-- **Standard (~44px):** every form field (text input, select trigger, single-line textarea height) and every primary action button. This tier does double duty for the Touch Targets rule above — 44px already clears the 44x44px minimum, so form fields and primary buttons meet accessibility and visual consistency with the same number.
+- **Standard (~44px):** every form field (text input, select trigger, single-line textarea height) and every primary action button. This tier does double duty for the Touch Targets rule above — 44px clears WCAG's AAA target size (SC 2.5.5) outright, so form fields and primary buttons get accessibility and visual consistency from the same number.
 
 **Why up front, not after:** a component's *declared* default height is not the same as what pages actually end up using — it's common for every real call site to override a variant to a different height by hand (because the declared default was never revisited once real content needed more room), which quietly produces a different padding/font-size combination at the same final height depending on which override path each instance took. Once that drifts across a dozen files it stops being a one-line fix. Assigning the two heights to the actual component variants (`Button`'s primary size, `Input`/`Select`'s default height) in Phase 2 prevents this from ever starting.
 
@@ -405,7 +413,7 @@ Before showing the landing page to the user, verify:
 - [ ] Works at 768px (tablet)
 - [ ] Works at 1024px (desktop)
 - [ ] Works at 1440px (wide desktop)
-- [ ] Touch targets are at least 44x44px on mobile
+- [ ] Touch targets meet WCAG 2.2 AA (24×24px, SC 2.5.8); the standard ~44px tier is used for form fields and primary actions
 
 ### Performance
 - [ ] No layout-triggering animations (only transform/opacity)

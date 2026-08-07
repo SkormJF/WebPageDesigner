@@ -22,6 +22,21 @@ allowed-tools:
 
 # Chrome Bridge Automation
 
+> **BEFORE USING THIS — understand what it exposes.**
+>
+> Two properties combine into real risk, and neither is obvious from the description above:
+>
+> 1. **It drives the user's actual Chrome profile**, with their live logged-in sessions — Supabase, Vercel, GitHub, email, anything else they have open. It is not a clean throwaway browser.
+> 2. **It works by sending screenshots to a vision model over the network.** The configuration section below points at third-party endpoints (Google, Alibaba DashScope, OpenRouter, ByteDance Volces) depending on which the user set up. Every screenshot goes to whichever one is configured.
+>
+> Together: a screenshot taken while an authenticated dashboard, a private repo, or an inbox is visible sends that content to a third party. This is a fallback QA tool, not the default one.
+>
+> **Rules for using it here:**
+> - Prefer `playwright-cli` (clean, headless, local, nothing leaves the machine). Reach for this skill only when `playwright-cli` cannot do the job and the user already has Midscene configured — that is exactly how `CLAUDE.md` Phase 5 orders the options.
+> - Before the first screenshot of a session, tell the user plainly that screenshots go to their configured vision provider, and ask them to close or switch away from tabs holding anything they would not send there.
+> - Keep it pointed at the page under test — normally `localhost:3000`. Never navigate their browser somewhere unrelated to the task.
+> - Never screenshot a page showing credentials, tokens, or `.env` contents, whatever the reason.
+
 > **CRITICAL RULES — VIOLATIONS WILL BREAK THE WORKFLOW:**
 >
 > 1. **Never run midscene commands in the background.** Each command must run synchronously so you can read its output (especially screenshots) before deciding the next action. Background execution breaks the screenshot-analyze-act loop.

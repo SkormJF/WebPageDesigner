@@ -114,14 +114,29 @@ export type AccordionTriggerProps = React.ComponentProps<"button"> & {
   asChild?: boolean;
 };
 
-export const Trigger = ({ asChild, ...props }: AccordionTriggerProps) => (
-  <AccordionContext.Consumer>
-    {({ open, setOpen }) => (
-      <button onClick={() => setOpen(!open)} {...props} />
-    )}
-  </AccordionContext.Consumer>
-);
+export const Trigger = ({ asChild, ...props }: AccordionTriggerProps) => {
+  const { open, setOpen, contentId } = useContext(AccordionContext);
+  const Comp = asChild ? Slot : "button";
+
+  return (
+    <Comp
+      type="button"
+      aria-expanded={open}
+      aria-controls={contentId}
+      onClick={() => setOpen(!open)}
+      {...props}
+    />
+  );
+};
 ```
+
+Three things here that are easy to drop and that the component is broken without:
+
+- **`asChild` has to actually do something.** Declaring the prop and destructuring it away — leaving a hardcoded `<button>` — is worse than not offering it, because the API advertises flexibility it doesn't have. Render `Slot` when it's set.
+- **`aria-expanded` is what makes this a disclosure.** Without it a screen reader announces a button with no indication that it controls anything or what state that thing is in.
+- **`aria-controls` needs a stable id**, so `Root` should mint one with `useId()` and put it in context alongside `open`/`setOpen`. `Content` consumes the same id.
+
+Also note `type="button"`: inside a `<form>` a bare `<button>` defaults to `type="submit"`, so an accordion trigger would submit the form on every toggle.
 
 ### 4. Content Component
 
@@ -137,12 +152,17 @@ export type AccordionContentProps = React.ComponentProps<"div"> & {
   asChild?: boolean;
 };
 
-export const Content = ({ asChild, ...props }: AccordionContentProps) => (
-  <AccordionContext.Consumer>
-    {({ open }) => <div {...props} />}
-  </AccordionContext.Consumer>
-);
+export const Content = ({ asChild, ...props }: AccordionContentProps) => {
+  const { open, contentId } = useContext(AccordionContext);
+  const Comp = asChild ? Slot : "div";
+
+  return <Comp id={contentId} hidden={!open} {...props} />;
+};
 ```
+
+The mistake to avoid: reading `open` out of context and then not using it. `<div {...props} />` renders identically whether the accordion is open or closed — the panel is simply always visible, and the component does nothing at all.
+
+`hidden={!open}` rather than `{open && <div/>}` is deliberate: it keeps the element mounted so the trigger's `aria-controls` always points at something real. If you need to animate the open/close, replace `hidden` with a `grid-template-rows: 0fr → 1fr` transition (see `motion-design.md`) — but keep the element in the DOM either way.
 
 ### 5. Putting it all together
 

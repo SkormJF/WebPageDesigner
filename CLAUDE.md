@@ -32,7 +32,7 @@ This builder always talks to the user in Spanish — `docs/questionnaire.md` and
 
 ## Skills
 
-**21 skills are bundled** in `.claude/skills/` and load automatically — no installation needed:
+**22 skills are bundled** in `.claude/skills/` and load automatically — no installation needed:
 
 | Bundled Skill | Purpose |
 |---------------|---------|
@@ -57,6 +57,7 @@ This builder always talks to the user in Spanish — `docs/questionnaire.md` and
 | `imagegen-frontend-web` | Generates design reference images for Round 4's visual approval conversation in Phase 1 — 1-2 to start (hero + one section with visible components), more later once sections are defined |
 | `redesign-existing-projects` | Structured audit + targeted upgrade workflow for Phase 5 iteration and polish |
 | `staged-app-builder` | Plans a large Full-Stack Extension backend as dependency-ordered phases tracked in `PROJECT-BRIEF.md`, with a per-phase verification bar. See Phase 3.5. |
+| `navigation-shell` | Headers, sticky/scroll behavior, mobile menus, and dashboard sidebars — the WCAG criteria they fail by default, the CSS traps that silently break `position: sticky`, and the gaps shadcn's `sidebar` leaves for you. Use in Phase 4. |
 
 See `docs/skill-reference.md` for full invocation examples and all `--domain` values.
 
@@ -321,6 +322,7 @@ Build the landing page inside `site/`. Write ALL files without asking for per-se
 - Apply `frontend-design` skill guidelines (or `docs/design-guide.md`)
 - Apply `vercel-react-best-practices` guidelines
 - Use `shadcn-ui` for component patterns and `building-components` when writing the shared molecules declared in Phase 2 — composition, prop shape, accessibility
+- Use `navigation-shell` for the header, mobile menu, and (Full-Stack projects) the dashboard sidebar — these fail WCAG by default and break in non-obvious ways; don't hand-roll them from memory
 - Apply `design-taste-frontend` (anti-LLM-bias: metric-based type/spacing) while writing components, and `emil-design-eng` for micro-interactions and the hover/focus states Phase 2 declared
 - `full-output-enforcement` applies to every file written in this phase — complete files only, never a placeholder comment standing in for real code
 - See `docs/performance-checklist.md` for Core Web Vitals optimization
@@ -509,7 +511,7 @@ Before showing to the user:
 
 ### Responsive
 - [ ] Works at 375px (mobile), 768px (tablet), 1024px (desktop), 1440px (wide)
-- [ ] Touch targets at least 44x44px on mobile
+- [ ] Touch targets meet WCAG 2.2 AA (24×24px, SC 2.5.8); primary actions and form fields use the standard ~44px tier. The compact ~32px tier for secondary actions is compliant — don't inflate it.
 - [ ] Navigation has mobile hamburger menu
 
 ### Technical
