@@ -331,6 +331,10 @@ ls site/src/components/ui/
 
 `site/src/components/ui/` must contain the five components. If it's empty, `init` never ran — rerun it with `--defaults` before continuing. Do not proceed to Phase 4 on an empty `ui/` directory; every later phase assumes those files exist.
 
+**`shadcn init` exits 0 even when it fails outright.** A blocked `ui.shadcn.com` produces `getaddrinfo ENOTFOUND ui.shadcn.com` and still returns success — so exit status proves nothing here and the file check above is the only real signal. If the registry is unreachable (corporate DNS, offline, sandboxed network) while npm still works, install the primitives directly (`npm --prefix site install radix-ui class-variance-authority clsx tailwind-merge`) and hand-write the handful of components the page needs, keeping shadcn's API shape so the skills' examples still apply.
+
+**A general note on checking commands in this workflow:** piping to `| tail` or `| head` replaces the command's exit code with the pipe's, so a failed build reads as `EXIT=0`. Redirect to a file and inspect afterwards (`cmd > /tmp/out.log 2>&1; echo $?`) whenever the exit code is what you're relying on.
+
 **Add more shadcn components based on the page needs:**
 
 | Section | Components to Add |
@@ -386,6 +390,8 @@ Build the landing page inside `site/`. Write ALL files without asking for per-se
      A token that appears to reference itself is not automatically the bug — `--font-heading: var(--font-heading)` works fine. Tailwind's `@theme` output lands in `@layer theme`, while `next/font`'s generated class is unlayered, and unlayered declarations win the cascade. So the `var()` resolves to the font's real value, not to the theme token. What actually breaks is referencing a name **nothing defines**: shadcn ships `--font-sans: var(--font-sans)` while no `next/font` variable is named `--font-sans`, so it resolves to nothing and the page falls back to the browser default — literally Times New Roman, on an untouched scaffold.
 
      The rule to apply: for every font token, confirm some `next/font` call actually declares that variable name. Matching names are fine; unmatched ones are the failure.
+
+  3. **Delete the hardcoded font on `body`.** The stock `create-next-app` `globals.css` ends with `body { font-family: Arial, Helvetica, sans-serif; }` — a literal declaration that beats the theme regardless of how correctly the tokens are wired, and `Arial` is on this project's banned-font list. Replace it with `font-family: var(--font-sans)`. This is a second, independent trap from the token one above: fixing either alone still leaves the page in the wrong font.
   3. Confirm by looking at the rendered page, not the build. Screenshot it in Phase 5 and check the headline is in the chosen face — a passing build proves nothing here.
 
 #### Section Order
@@ -398,7 +404,7 @@ Use the archetype from `docs/landing-page-patterns.md` that best fits the user's
 - **Features section:** From Q7 (3-4 key things to highlight).
 - **Testimonials:** From Q10 (user-provided or placeholder).
 - **Contact section:** From Q8 (mailto, Formspree, or phone).
-- **Social links in footer:** From Q11.
+- **Social links in footer:** From Q11. **`lucide-react` ships no brand icons** — `Instagram`, `Facebook`, `Twitter`, `Github`, `Linkedin` and `Youtube` were all removed and none of them exist. Importing one is a hard build failure (`Export Instagram doesn't exist in target module`), and since most clients answer Q11 with at least one network, this breaks the build on a typical project. Use an inline `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>` with the brand's path for each network, sized with the same `size-4`/`size-5` classes as the Lucide icons around it so they stay optically consistent.
 - **Meta title:** Business name + tagline. Meta description from Q3.
 - **Page language:** From Q5. All content, labels, meta tags, and placeholders in that language.
 
@@ -459,7 +465,12 @@ Run this with the tool's background option. `npm run dev` never returns: in the 
 
 **Visual QA — try in this order:**
 
-**Option 1: playwright-cli** (fastest, headless):
+**Option 1: playwright-cli** (fastest, headless). Two setup snags hit on a clean machine, both fixable in under a minute:
+
+- **It defaults to the system Google Chrome**, and fails with `Chromium distribution 'chrome' is not found` if that isn't installed — having Playwright's bundled browsers is not enough. Install the one it wants: `npx --yes @playwright/cli@latest install-browser chrome-for-testing`.
+- **The bundled skill can lag the CLI.** If the tool prints "the playwright-cli skill … does not match the tool version", run `playwright-cli install --skills` to refresh it before trusting the command list below.
+
+If neither resolves quickly, don't burn time on it — go to Option 3 and have the user look. Visual QA is worth having, not worth a browser-install rabbit hole.
 ```bash
 playwright-cli open http://localhost:3000
 playwright-cli screenshot --filename=preview-desktop.png
@@ -570,7 +581,7 @@ Before showing to the user:
 - [ ] No bounce/elastic easing — use smooth deceleration
 - [ ] No glassmorphism-everywhere or card-in-card nesting
 - [ ] All spacing from the 4pt scale, all fonts from the modular scale
-- [ ] No emoji as icons — use Lucide React SVGs
+- [ ] No emoji as icons — use Lucide React SVGs (brand/social icons excepted: Lucide has none, use inline SVG)
 
 ### Responsive
 - [ ] Works at 375px (mobile), 768px (tablet), 1024px (desktop), 1440px (wide)
