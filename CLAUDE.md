@@ -79,7 +79,11 @@ Three rules, and they apply to every phase:
 
 ## MCP Availability
 
-Backend (Supabase) and deploy (Vercel) work always goes through their MCP tools — never manual API calls, raw `curl`, or hand-rolled credentials as a substitute. Before starting work that depends on one (Phase 3.5 for Supabase, Phase 6 for Vercel), verify it's actually connected with a lightweight call (e.g. `list_projects` / `get_project`) — don't assume it's available just because it appears in the tool list. If it isn't connected, stop and tell the user which MCP is missing; don't work around it. Wait until the user connects it, then continue from where you stopped.
+Backend (Supabase) and deploy (Vercel) work always goes through their MCP tools — never manual API calls, raw `curl`, or hand-rolled credentials as a substitute. Before starting work that depends on one (Phase 3.5 for Supabase, Phase 6 for Vercel), verify it's actually connected. If it isn't, stop and tell the user which MCP is missing; don't work around it.
+
+**Check the capability you're about to use, not just that the server answers.** `list_teams` succeeding proves the Vercel MCP is reachable — it does not prove it can read or modify projects, and those are different grants. On this setup `list_teams` returns the team while `list_projects` returns an empty array and `get_project` 404s on a project ID read straight out of `.vercel/project.json`, so a check that stopped at "the server responded" would have passed and the actual work would still fail. Exercise the specific call you need.
+
+**The Vercel CLI and the Vercel MCP can see different things.** `vercel --cwd site` creates and deploys a project fine while the MCP cannot then find it. Where the flow uses both — the CLI to deploy, the MCP to turn off deployment protection or read logs — expect the handoff to be where it breaks, and be ready to finish through the dashboard rather than assuming the deploy failed.
 
 ## Full-Stack Extension (Optional)
 
@@ -567,6 +571,10 @@ This script auto-detects the framework, packages the project, deploys to Vercel'
 - **Claim URL (optional):** "If you want to keep this permanently, you can claim it at [claimUrl] with a free Vercel account."
 
 **Production deploy — real Vercel account, personalized URL:** use once the user has confirmed they want this (not the sandbox default) and has an authenticated Vercel CLI (`vercel whoami`; if it fails, `vercel login` requires an interactive browser flow only the user can complete — ask them to run it and confirm before continuing). Then follow the `pre-deploy-verification` skill's domain-check and deploy steps: pick a candidate name, confirm it's free, create/rename the Vercel project to that name, push the `NEXT_PUBLIC_*` env vars from `site/.env.local`, set `vercel.json`'s framework explicitly, disable the default SSO deployment protection, deploy with `vercel --prod`, and verify with real `curl` requests before telling the user it's live.
+
+**`--cwd site` names the project after the directory — i.e. `site`.** So the subdomain you carefully checked was free is not the one you get: the deploy lands on `site-<hash>-<team>.vercel.app` and the project is called `site` in the dashboard, which also collides with the next project built this way. Pass the name explicitly (`vercel --cwd site --name <slug>`) or rename right after creating, *then* claim the clean alias — `vercel project rename` does not move the `.vercel.app` alias by itself, so finish with `vercel alias set <deployment-url> <slug>.vercel.app`. Checking availability and then accepting a generated name wastes the check.
+
+**Expect the first deploy to answer 302, not 200.** Vercel turns on "Vercel Authentication" for new projects by default, so every route — including the public landing page — redirects to `vercel.com/sso-api` until it's disabled. Reproduced on a fresh project; it is the default, not a misconfiguration. Confirm it's the cause by following the redirect (`curl -sS -D - <url> -o /dev/null | grep -i location`) rather than assuming the build broke, then turn it off before reporting the site as live.
 
 See `docs/deployment-guide.md` for troubleshooting.
 
