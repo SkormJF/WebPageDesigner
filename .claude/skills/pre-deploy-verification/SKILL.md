@@ -22,6 +22,17 @@ This codifies what a real pre-deploy pass caught in practice on a Next.js + Supa
 
 Don't simulate the approval flow entirely by SQL — it proves the database logic works but not that the actual UI path (the button someone will really click) works. Use SQL only for the one step that has no other way to happen (bootstrapping the very first admin).
 
+**Before starting, confirm sign-up actually returns a session.** A Supabase project with "Confirm email" still on creates the user and returns *no* session, and the first login answers `400 email_not_confirmed` — so step 2 below appears to succeed and step 4 cannot happen, with no SMTP configured to deliver the confirmation. Phase 3.5 is supposed to have settled this; if it wasn't, stop here and settle it rather than working around it with SQL, because working around it is exactly what makes this pass meaningless. Quick check:
+
+```bash
+curl -s -X POST "$SUPABASE_URL/auth/v1/signup" -H "apikey: $ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"probe@example.com","password":"..."}' | grep -c access_token
+```
+`1` means sessions come back and the pass can run; `0` means confirmation is on and it cannot.
+
+**Two environment notes that bite on Windows.** Playwright's CLI defaults to the system Google Chrome and fails with `Chromium distribution 'chrome' is not found` if it isn't installed — run `npx --yes @playwright/cli@latest install-browser chrome-for-testing` first. And don't stage scratch files in `/tmp/`: Git Bash resolves it to a path Windows-native binaries can't open, so a `curl -o /tmp/x.json` followed by `node` reading it fails with `MODULE_NOT_FOUND`. Keep scratch inside the repo and delete it after.
+
 1. Set up Playwright **isolated from the project's own dependencies** — don't add it to `site/package.json`. Create a scratch directory, `npm init -y && npm install playwright`, `npx playwright install chromium`, and run scripts from there. This keeps a one-off testing tool out of the shipped app's dependency tree.
 2. Create two disposable accounts through the **real signup form**, not by inserting into `auth.users` directly — email pattern `test-e2e-<role>-<timestamp>@example.com` so cleanup can target them with a single `LIKE` query later.
 3. Promote exactly one of them to `role='admin', status='approved'` via SQL (`execute_sql`) — this is the one unavoidable manual step, since there's no UI path to create the first admin.
