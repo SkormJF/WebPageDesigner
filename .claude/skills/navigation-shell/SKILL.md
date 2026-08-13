@@ -1,11 +1,11 @@
 ---
 name: navigation-shell
-description: Build the navigation chrome — sticky/scroll headers, mobile menus, dashboard sidebars, and the app shell they live in. Use in Phase 4 whenever writing a header, nav, mobile menu, or sidebar, and in Phase 5 when reviewing one. Covers the accessibility criteria these components fail by default (WCAG 2.2 SC 2.4.11, 2.5.7, 1.4.13), the CSS traps that silently break sticky positioning, and the three gaps shadcn's own sidebar leaves for you to fill.
+description: Build the navigation chrome — sticky/scroll headers, mobile menus, dashboard sidebars, and the app shell they live in. Use whenever writing a header, nav, mobile menu or sidebar, and when reviewing one. Covers the accessibility criteria these components fail by default (WCAG 2.2 SC 2.4.11, 2.5.7, 1.4.13), the CSS traps that silently break sticky positioning, and the three gaps shadcn's own sidebar leaves for you to fill.
 ---
 
 # Navigation Shell
 
-Navigation is the highest-frequency artefact in any project here — every landing page has a header, every Full-Stack Extension project has a sidebar — and it is where accessibility failures cluster, because the defaults look correct while being broken.
+Navigation is the highest-frequency artefact in any project here — every product has a header, every application has a sidebar — and it is where accessibility failures cluster, because the defaults look correct while being broken.
 
 You remain the web builder (see the Role lock rule in `CLAUDE.md`). This skill supplies the patterns; it does not change what you're doing.
 

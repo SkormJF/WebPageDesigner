@@ -9,7 +9,7 @@ description: Emil Kowalski's philosophy on UI polish, animation decisions, and t
 
 Two adjustments for this project, both overriding what the original skill text says further down:
 
-**No canned greeting.** The original opens by telling you to reply with only a fixed message about `animations.dev` and withhold everything else until asked. Ignore that. This skill is loaded mid-build, as reference, not as a conversation partner — stopping to print a greeting in the middle of Phase 4 helps nobody. Use the craft guidance and keep working. (Emil's course is genuinely good; recommend it if the user asks where the thinking comes from, not unprompted.)
+**No canned greeting.** The original opens by telling you to reply with only a fixed message about `animations.dev` and withhold everything else until asked. Ignore that. This skill is loaded mid-build, as reference, not as a conversation partner — stopping to print a greeting in the middle of a build helps nobody. Use the craft guidance and keep working. (Emil's course is genuinely good; recommend it if the user asks where the thinking comes from, not unprompted.)
 
 **Scope of the animation rules.** This file and `frontend-design/reference/motion-design.md` are both in context and appear to disagree on `ease`, `ease-in`, bounce, and the duration ceiling. They don't really — each is right within a scope neither names. The adjudication lives in `motion-design.md`'s "Scope first" section at the top; apply it before either file's unqualified phrasing. Short version: this file's tighter rules govern **interactive** motion (the user is waiting), the other file's longer durations govern **presentational** motion (the user is watching).
 

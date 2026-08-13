@@ -1,6 +1,6 @@
 ---
 name: deep-research
-description: Systematic multi-angle web research methodology, for questions where a single search would give a shallow or one-sided answer. In this builder, use it when the user's industry or domain is unfamiliar and the page copy needs real substance behind it (Phase 1 Discovery), or when the user explicitly asks to research or compare something. Do not use it for quick factual lookups, for checking a library's current API, or for anything a single WebSearch answers well — the overhead is not free.
+description: Systematic multi-angle web research methodology, for questions where a single search would give a shallow or one-sided answer. Use it when the product's industry or domain is unfamiliar and the copy or the design decisions need real substance behind them, or when the user explicitly asks to research or compare something. Do not use it for quick factual lookups, for checking a library's current API, or for anything a single WebSearch answers well — the overhead is not free.
 ---
 
 # Deep Research Skill

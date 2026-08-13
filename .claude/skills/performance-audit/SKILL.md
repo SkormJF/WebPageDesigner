@@ -1,6 +1,6 @@
 ---
 name: performance-audit
-description: Systematic performance audit for a Next.js + Supabase project — run automatically as part of Phase 5 (Preview & QA), right after Phase 4 Build, before showing the built page to the user. Catalogs grep-verified inconsistencies with file:line citations rather than generic advice — duplicate auth checks between middleware and pages, un-optimized bundle imports, dead dependencies, sequential queries that could run in parallel. Produces a prioritized plan (criticality / impact / rationale) and implements it in verified phases. Also invoke on explicit request ("audit performance", "is this slow", "optimize this").
+description: Systematic performance audit of a built project, run as a Quality Gate input. Catalogs grep-verified inconsistencies with file:line citations rather than generic advice — duplicate auth checks between middleware and pages, un-optimized bundle imports, dead dependencies, sequential queries that could run in parallel. Produces a prioritized plan (criticality / impact / rationale) and implements it in verified phases. Also invoke on explicit request ("audit performance", "is this slow", "optimize this").
 ---
 
 # Performance Audit
@@ -9,7 +9,7 @@ The rule that matters most here: **every finding must be provable by grep or by 
 
 ## When to run this
 
-Automatically, as a standard step of Phase 5, immediately after Phase 4 Build finishes and before presenting the page to the user — not something the user has to remember to request. Re-run it after any later pass that touches shared components, data-fetching, or dependencies in a meaningful way; skip it after a small, isolated copy or styling tweak.
+As a Quality Gate input, once the build is complete and before deploy readiness is claimed — not something the user has to remember to request. Re-run it after any later pass that touches shared components, data-fetching, or dependencies in a meaningful way; skip it after a small, isolated copy or styling tweak.
 
 ## What to check
 

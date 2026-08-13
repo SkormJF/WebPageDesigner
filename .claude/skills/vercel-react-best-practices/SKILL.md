@@ -136,6 +136,22 @@ Each rule file contains:
 - Correct code example with explanation
 - Additional context and references
 
-## Full Compiled Document
+## Progressive disclosure
 
-For the complete guide with all rules expanded: `AGENTS.md`
+This index is the whole of what loads by default. A rule file loads only when its rule is relevant, which
+is what keeps 62 rules affordable to carry.
+
+There is deliberately **no compiled all-rules document**. One previously sat beside `rules/` containing the
+same 62 rules expanded into a single 94KB file — reading it meant loading every rule to consult one, which
+defeats the structure it was sitting next to. Its only unique content was the reference list below, kept
+here.
+
+## References
+
+1. [react.dev](https://react.dev)
+2. [nextjs.org](https://nextjs.org)
+3. [SWR](https://swr.vercel.app)
+4. [better-all](https://github.com/shuding/better-all)
+5. [node-lru-cache](https://github.com/isaacs/node-lru-cache)
+6. [How we optimized package imports in Next.js](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js)
+7. [How we made the Vercel dashboard twice as fast](https://vercel.com/blog/how-we-made-the-vercel-dashboard-twice-as-fast)

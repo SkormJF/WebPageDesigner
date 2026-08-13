@@ -1,12 +1,26 @@
-# Vocabulary and word-level patterns
+# Vocabulary — a symptom list, not a rule
 
-Complete reference lists for patterns P09-P14, plus phrase lists for P35, P36, P38, and P39.
+**This is not a blacklist and nothing here fires on a match.** These words appear disproportionately in
+generated text, which makes them a useful prompt to *look at the sentence* — where the real problem usually
+is. The word is often a side effect of the sentence having no opinion or no specific in it.
+
+Two directions to keep in mind:
+
+- **A listed word can be the right word.** A structural engineer's page may need "robust" in its literal
+  load-bearing sense; a policy page may need "comprehensive" because it is a defined term. Replacing those
+  makes the text less accurate, and accuracy outranks this file.
+- **Avoiding every word here proves nothing.** Prose can be clean against this list and still read as
+  generated, because the tell is rhythm and absence of a point of view, not vocabulary.
+
+Where a specification, brand voice, legal requirement or approved SEO term calls for one of these words, it
+stays. See `SKILL.md` — this skill defers to all of them.
 
 ---
 
-## AI vocabulary words (P09)
+## Words that often signal a sentence worth rereading
 
-Words that appear disproportionately in AI-generated text (post-2023). When you spot these, replace with plainer alternatives or restructure the sentence.
+When one of these shows up, check whether the sentence has a claim, a specific, and a position. Usually the
+plainer alternative is better; sometimes the sentence needs restructuring instead.
 
 | Avoid | Use instead |
 |-------|-------------|

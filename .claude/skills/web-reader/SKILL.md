@@ -1,11 +1,11 @@
 ---
 name: web-reader
-description: Analyze a reference URL the user provides — extract its palette, typography, layout structure, spacing rhythm, and component patterns so they can inform the design system. Use in Phase 1 Round 4 when the user answers "yes" to having a site whose look they like, and any other time the user points at a URL as a design reference ("make it like X", "I want something similar to this site").
+description: Analyze a reference URL the user provides — extract its palette, typography, layout structure, spacing rhythm, and component patterns so they can inform the design system. Use in Discovery Round 4 when the user answers "yes" to having a site whose look they like, and any other time the user points at a URL as a design reference ("make it like X", "I want something similar to this site").
 ---
 
 # Web Reader — Design Reference Analysis
 
-Turn a URL the user likes into concrete, reusable design decisions. The output feeds Phase 2's design system: hex codes, font names, section order, spacing rhythm.
+Turn a URL the user likes into concrete, reusable design decisions. The output feeds `design-system.md`: hex codes, font names, section order, spacing rhythm.
 
 This skill does not change your role — you are still the web builder (see the Role lock rule in `CLAUDE.md`).
 
@@ -42,7 +42,7 @@ The mobile shot matters as much as the desktop one — how a reference collapses
 
 ## What to extract
 
-Work through these deliberately. Vague impressions ("clean and modern") are useless downstream — Phase 2 needs values it can put in a config.
+Work through these deliberately. Vague impressions ("clean and modern") are useless downstream — `design-system.md` needs values a component can be built from.
 
 **Color** — pull actual values, not names. Look for CSS custom properties (`--color-*`, `--brand-*`) in embedded styles, `<meta name="theme-color">`, and inline styles. Record: dominant surface, primary text, primary brand, accent. Note whether neutrals are tinted toward the brand hue or truly gray — that single detail accounts for a lot of why a site feels cohesive.
 

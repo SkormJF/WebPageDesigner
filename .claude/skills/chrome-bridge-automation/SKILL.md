@@ -32,7 +32,7 @@ allowed-tools:
 > Together: a screenshot taken while an authenticated dashboard, a private repo, or an inbox is visible sends that content to a third party. This is a fallback QA tool, not the default one.
 >
 > **Rules for using it here:**
-> - Prefer `playwright-cli` (clean, headless, local, nothing leaves the machine). Reach for this skill only when `playwright-cli` cannot do the job and the user already has Midscene configured — that is exactly how `CLAUDE.md` Phase 5 orders the options.
+> - Prefer `playwright-cli` (clean, headless, local, nothing leaves the machine). Reach for this skill only when `playwright-cli` cannot do the job and the user already has Midscene configured — Playwright is the first choice and this is the documented exception, which needs explicit human approval.
 > - Before the first screenshot of a session, tell the user plainly that screenshots go to their configured vision provider, and ask them to close or switch away from tabs holding anything they would not send there.
 > - Keep it pointed at the page under test — normally `localhost:3000`. Never navigate their browser somewhere unrelated to the task.
 > - Never screenshot a page showing credentials, tokens, or `.env` contents, whatever the reason.

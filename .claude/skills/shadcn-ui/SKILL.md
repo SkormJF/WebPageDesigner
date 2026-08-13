@@ -11,7 +11,7 @@ progressive_disclosure:
 
 ## Read this first
 
-**The installed components in `site/src/components/ui/` are the source of truth for this project.** shadcn is not a dependency — the CLI copies code into your repo and you own it from that moment, so there is no `npm update` that reconciles this document with what you actually have. When they disagree, the files win. Read the component before writing code that assumes its API.
+**The installed components in `src/components/ui/` are the source of truth for this project.** shadcn is not a dependency — the CLI copies code into your repo and you own it from that moment, so there is no `npm update` that reconciles this document with what you actually have. When they disagree, the files win. Read the component before writing code that assumes its API.
 
 Two things this document deliberately does not pin down, because both have moved and would go stale again:
 
@@ -204,13 +204,13 @@ The shape to notice: the primitive supplies behaviour and accessibility, the wra
 
 ### Tailwind & theme tokens — read the project, don't copy from here
 
-This section is deliberately not a config template. `CLAUDE.md` Phase 3 scaffolds **Tailwind v4**, where the theme is declared in CSS via `@theme` and there is no `tailwind.config.ts` by default. Any config block written into a document like this one goes stale as soon as the tooling moves — and a stale config that looks authoritative is worse than none, because it gets copied before it gets questioned.
+This section is deliberately not a config template. the stack template ships **Tailwind v4**, where the theme is declared in CSS via `@theme` and there is no `tailwind.config.ts` by default. Any config block written into a document like this one goes stale as soon as the tooling moves — and a stale config that looks authoritative is worse than none, because it gets copied before it gets questioned.
 
 The authoritative sources for this project, in order:
 
-1. **`site/src/app/globals.css`** — the real theme tokens. Read it before writing any colour, radius, or spacing utility.
-2. **`site/components.json`** — the aliases, style variant, and base colour the CLI was initialised with. `npx shadcn@latest add` reads this file; so should you.
-3. **`site/src/components/ui/*.tsx`** — the installed components themselves. They live in your repo and you own them, so their actual props and variants beat any catalog, including the one below.
+1. **the project's global stylesheet** — the real theme tokens. Read it before writing any colour, radius, or spacing utility.
+2. **`components.json`** — the aliases, style variant, and base colour the CLI was initialised with. `npx shadcn@latest add` reads this file; so should you.
+3. **`src/components/ui/*.tsx`** — the installed components themselves. They live in your repo and you own them, so their actual props and variants beat any catalog, including the one below.
 
 What holds regardless of Tailwind version:
 
@@ -453,7 +453,7 @@ import {
 
 ### Sidebar
 
-The backbone of every Full-Stack Extension panel, and the one component this catalog used to omit entirely.
+The backbone of every application panel, and the one component this catalog used to omit entirely.
 
 ```bash
 npx shadcn@latest add sidebar
@@ -1177,7 +1177,7 @@ const item = {
 }
 ```
 
-**Tailwind classes not applying**: on **Tailwind v4** (what Phase 3 scaffolds) there is no `content` array to fix — v4 discovers sources automatically, and the usual culprit is instead a class built by string concatenation (`` `text-${color}-500` ``), which nothing can detect statically. Write complete class names and select between them:
+**Tailwind classes not applying**: on **Tailwind v4** (what the stack template ships) there is no `content` array to fix — v4 discovers sources automatically, and the usual culprit is instead a class built by string concatenation (`` `text-${color}-500` ``), which nothing can detect statically. Write complete class names and select between them:
 
 ```tsx
 // ❌ never produced in the output

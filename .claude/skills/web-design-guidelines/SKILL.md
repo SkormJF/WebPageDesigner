@@ -1,6 +1,6 @@
 ---
 name: web-design-guidelines
-description: Review UI code for Web Interface Guidelines compliance. Use when asked to "review my UI", "check accessibility", "audit design", "review UX", or "check my site against best practices". Runs automatically in Phase 5 (Preview & QA) before showing the built page to the user.
+description: Review UI code for Web Interface Guidelines compliance. Use when asked to "review my UI", "check accessibility", "audit design", "review UX", or "check my site against best practices". Runs as a Quality Gate input, before deploy readiness is claimed.
 metadata:
   author: vercel
   version: "1.1.0"
@@ -56,6 +56,6 @@ When a user provides a file or pattern argument:
 3. Evaluate the code against the rules
 4. Report findings as `file:line — what's wrong — how to fix it`
 
-If no files are specified, ask which files to review. In Phase 5, default to the built page and its components.
+If no files are specified, ask which files to review. Default to the page under review and its components.
 
 Report only real violations found in the code you actually read. A review that lists rules without pointing at specific lines is not a review.

@@ -205,6 +205,41 @@ human, not a decision for a checklist.
 
 ---
 
+## E2E
+
+Playwright Test, over the flows that were actually agreed. Persistent specs in the repository, not a
+throwaway script — the point is that they run again next month.
+
+**Drive the real UI.** Simulating a flow by writing directly to the database proves the data layer works and
+says nothing about the button someone will actually click. Use a direct write only for the one step that has
+no UI path at all, such as bootstrapping the very first privileged account.
+
+When the product has accounts:
+
+1. **Confirm sign-up returns a usable session before building the rest.** A backend with email confirmation
+   enabled and no mail delivery configured creates the account and returns no session, so the first login
+   fails and every later step is untestable. Settle it at design time; discovering it here means the whole
+   pass was written around a hole.
+2. Create disposable accounts **through the real sign-up form**, with an email pattern that a single query
+   can find again — cleanup depends on it.
+3. Exercise the privileged path by clicking the real control, not by calling the function behind it. That is
+   what tests the action *and* its access policy together.
+4. Run a full create / edit / delete cycle through the UI for each core entity, plus validation errors on
+   empty and invalid submits, plus what a non-privileged account sees where it should see less.
+5. **Verify isolation with the UI, not by reading the policy.** Log in as the second account and confirm the
+   first account's data is not on the list page. A policy that reads correctly and a policy that works are
+   different claims.
+6. **Clean up completely.** Null out self-referencing columns first so constraints do not block the delete,
+   then remove the accounts and let cascades do the rest — and confirm with a count per affected table.
+   Assuming the cascade worked is how test rows end up in production.
+
+**When a spec fails, query the data before blaming the app.** A failing assertion after a create or delete
+is, in practice, more often a selector matching the wrong element than a real defect — a broad locator with
+`.first()` will happily match an outer wrapper spanning several rows. Confirming the data is correct takes
+seconds and tells you which of the two you are debugging.
+
+---
+
 ## Deploy
 
 Ready to deploy requires **all** of:
