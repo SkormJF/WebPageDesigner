@@ -71,6 +71,13 @@ Create visual rhythm through varied spacing—not the same padding everywhere. E
 **DON'T**: Use rounded rectangles with generic drop shadows—safe, forgettable, could be any AI output
 **DON'T**: Use modals unless there's truly no better alternative—modals are lazy
 
+**DON'T**: Fill an empty section with a remote placeholder image service (`picsum.photos` and friends). A
+deployed page that hotlinks a third-party image host carries an uptime and privacy dependency the site owner
+never agreed to, and it breaks the day that host rate-limits or disappears. Assets belong in the repository,
+served through the project's own image handling. Where there is no real photography, generated SVG, CSS
+gradients and geometric patterns carry a design better than generic stock anyway — and cost nothing at
+runtime.
+
 ### Motion
 → *Consult [motion reference](reference/motion-design.md) for timing, easing, and reduced motion.*
 
