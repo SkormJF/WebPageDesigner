@@ -365,10 +365,14 @@ Same format as above
 
 ---
 
-## References
+## Copy quality is not this skill's job
 
-- [AI Writing Detection](references/ai-writing-detection.md): Common AI writing patterns to avoid (em dashes, overused phrases, filler words)
-- For AI search optimization (AEO, GEO, LLMO, AI Overviews), see the **ai-seo** skill
+`humanizalo` owns whether prose reads as written by a person. This skill owns whether a page can be found
+and understood by a crawler. They meet at metadata and headings, and that is the whole overlap — a title
+tag has to be accurate and the right length, not well-written in a literary sense.
+
+Do not audit copy for AI writing patterns here. Do not restate `humanizalo`'s guidance. If page copy needs
+work, that is a finding to route, not a section to duplicate.
 
 ---
 
@@ -402,11 +406,18 @@ Same format as above
 
 ---
 
-## Related Skills
+## Where this skill stops
 
-- **ai-seo**: For optimizing content for AI search engines (AEO, GEO, LLMO)
-- **programmatic-seo**: For building SEO pages at scale
-- **site-architecture**: For page hierarchy, navigation design, and URL structure
-- **schema-markup**: For implementing structured data
-- **page-cro**: For optimizing pages for conversion (not just ranking)
-- **analytics-tracking**: For measuring SEO performance
+**Applicability comes from product intent**, recorded in `design.md`. A public or organic product needs
+indexability, robots, sitemap, canonical URLs, metadata, heading structure, clean URLs and structured data
+where it applies. A private application appropriately gets minimal metadata and `noindex` — that is
+compliance with a decision, not a gap to fix.
+
+**Do not invent an SEO strategy.** Keyword targeting, content programmes and information architecture are
+product decisions. If the specs do not say, that is a question for the human, not a default to apply during
+an audit.
+
+**Related skills in this system:** `humanizalo` for prose, `accessibility-audit` for semantics and
+structure that also happen to help crawlers, `performance-audit` for the loading behaviour that feeds Core
+Web Vitals. Nothing else — an earlier version of this file pointed at half a dozen skills that do not exist
+here.

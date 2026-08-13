@@ -92,9 +92,11 @@ AI avoids simple "is" and "has" constructions. It uses fancier substitutes that 
 
 ---
 
-## Adverbs to kill (P11)
+## Adverbs that often carry no weight (P11)
 
-Remove these. If cutting them weakens the sentence, the sentence was weak.
+Stacked adverbs are a common way a sentence gets longer without getting more specific. When several of these
+appear close together, the sentence is usually reaching for emphasis it has not earned — and the fix is
+almost always a more concrete noun or verb, not a deletion.
 
 **Intensifiers:** really, very, literally, genuinely, truly, fundamentally, inherently, deeply, incredibly, remarkably, absolutely, definitely, certainly, undoubtedly, undeniably, profoundly
 
@@ -102,7 +104,13 @@ Remove these. If cutting them weakens the sentence, the sentence was weak.
 
 **Filler adverbs:** inevitably, interestingly, importantly, crucially, significantly, notably, ultimately, effectively, increasingly, arguably
 
-**Rule:** If it ends in -ly, cut it. Read the sentence without it. If the meaning holds, leave it out.
+**This is a signal, not a rule.** "Cut anything ending in -ly" is wrong often enough to do real damage:
+*only*, *early*, *daily*, *family*, *likely* and *legally* all end in -ly, and softeners frequently carry
+the meaning. "Simply add water" is an instruction about difficulty. "We only work with two clients at a
+time" is a fact. Removing either changes what the sentence says.
+
+Read the sentence without the adverb. If nothing is lost, it was decoration. If something is lost, it was
+doing a job — and where a spec, a legal requirement or the brand's own voice put it there, it stays.
 
 ---
 
