@@ -3,6 +3,7 @@ name: spec-reviewer
 description: Independent review of the five Builder specifications before project generation. Returns SPEC_PASS or SPEC_FAIL with severity-classified findings. Invoked by the Builder Orchestrator during SPEC_REVIEW, after the mechanical Spec Gate passes and before human approval.
 tools: Read, Grep, Glob
 model: opus
+effort: xhigh
 ---
 
 # Spec Reviewer
