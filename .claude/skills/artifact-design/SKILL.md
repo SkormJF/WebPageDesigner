@@ -13,8 +13,12 @@ show a hover, a keyboard focus ring, or a disabled control, and those are precis
 otherwise go unmade until a component is already written and somebody improvises them per section.
 
 **And what gets approved becomes fact.** The artifact is built from real values, so approving the button
-approves its exact colour, radius, height, padding and hover state — already written down. The design
-system copies those values afterwards. It does not re-derive them and it does not quietly improve on them.
+approves its exact colour, radius, height, padding and hover state — already written down.
+
+`design-system.md` is written **from** this artifact: it copies the approved values verbatim. It does not
+re-derive them and it does not quietly improve on them. That makes this the one place in the system where a
+visual decision is genuinely made — and the reason everything downstream, this skill included, defers to the
+contract once it exists.
 
 ---
 
