@@ -99,12 +99,18 @@ export function expectedSkills(profileId) {
   for (const [name, entry] of Object.entries(manifest.skills)) {
     switch (entry.distribution) {
       case "inherited-standard":
-      case "optional":
         expected.push(name);
         break;
       case "profile-inherited":
         if ((entry.profiles ?? []).includes(profileId)) expected.push(name);
         break;
+      /* Optional/emergency skills are NOT inherited. The set is exactly
+         inherited-standard + the selected profile's additions.
+         An optional skill reaches a project only through an explicit later
+         decision -- copying it by default would make "requires explicit human
+         approval" a sentence in a document rather than a property of the
+         repository. */
+      case "optional":
       case "builder-only":
         break;
       default:

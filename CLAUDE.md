@@ -369,15 +369,26 @@ template really installs, lints, typechecks, builds and smoke-starts.
 `config/skill-manifest.json` classifies every skill and drives distribution:
 
 ```
+generated project skills = INHERITED-STANDARD + PROFILE-INHERITED
+```
+
+That is the whole set. Nothing else is copied.
+
+```
 BUILDER-ONLY          stays here
 INHERITED-STANDARD    copied into every generated project
 PROFILE-INHERITED     copied when the selected profile declares it
-OPTIONAL/EMERGENCY    copied, but used only with explicit human approval
+OPTIONAL/EMERGENCY    NOT copied — stays here, and reaches a project only
+                      through an explicit later decision
 ```
 
+**Optional is not inherited.** Shipping it by default would make "requires explicit human approval" a
+sentence in a document rather than a property of the repository — the skill would already be sitting there,
+and the approval would be the only thing standing between it and use.
+
 `create-project` copies the fixed inherited set plus the profile's fixed additions — it does not choose
-skills ad hoc. `validate-project` computes the same expected set and fails on a missing required skill or an
-unexpected extra one.
+skills ad hoc. `validate-project` computes the same expected set through the same function and fails on a
+missing required skill or an unexpected extra one, which is what catches an optional skill that slipped in.
 
 The manifest controls **physical distribution**, not when a skill loads into context. On disk is not in
 context.

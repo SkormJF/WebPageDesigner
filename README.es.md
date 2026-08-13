@@ -100,7 +100,7 @@ proyecto/
 ├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
 │   ├── agents/            planner · builder · reviewer
-│   └── skills/            18-20, determinístico según el perfil
+│   └── skills/            17 estándar + lo que agregue el perfil (19 hoy)
 ├── .workflow/             state.json + current/
 ├── .mcp.json              Vercel + Supabase
 ├── src/  public/

@@ -4,13 +4,14 @@
   "_doc": {
     "purpose": "Single source of truth for which skills are physically copied into a generated project. create-project copies from it; validate-project computes the same expected set and fails on a missing required skill or an unexpected extra one.",
     "not_this": "It does not control when a skill loads into context. On disk is not in context.",
+    "inherited_set": "generated project skills = INHERITED-STANDARD + PROFILE-INHERITED. Nothing else.",
     "distribution": {
       "builder-only": "Stays in the Builder. Never copied.",
       "inherited-standard": "Copied into every generated project, regardless of profile.",
       "profile-inherited": "Copied when the selected profile lists it in profile_skills.",
-      "optional": "Copied, but used only with explicit human approval."
+      "optional": "NOT copied. Stays in the Builder and reaches a project only through an explicit later decision. Copying it by default would make 'requires explicit human approval' a sentence in a document rather than a property of the repository."
     },
-    "ceiling": "Project skills are dropped silently past roughly 28. A generated project receives 18 (17 standard + 1 optional) plus the selected profile's additions. Adding to the standard set is not free."
+    "ceiling": "Project skills are dropped silently past roughly 28. A generated project receives the 17 standard skills plus the selected profile's additions -- 19 for both current profiles. Adding to the standard set is not free."
   },
 
   "skills": {
@@ -96,7 +97,8 @@
 
     "chrome-bridge-automation": {
       "distribution": "optional",
-      "purpose": "Vision-driven automation through the human's own Chrome. Exceptional path only -- Playwright is first choice, and using this needs explicit human approval."
+      "purpose": "Vision-driven automation through the human's own Chrome. Exceptional path only -- Playwright is first choice.",
+      "not_inherited": "Deliberately absent from every generated project. It drives the human's real browser with their live sessions and cookies, so it reaches a project only when someone decides it should, never because it came in the box."
     }
   }
 }

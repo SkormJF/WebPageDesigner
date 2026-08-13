@@ -228,6 +228,22 @@ check(
   skillsWithoutBody.join(", "),
 );
 
+/* Stated separately from the set comparison above, even though the set already
+   implies it. An optional skill arriving by default is the specific failure
+   worth naming in the output -- "unexpected: chrome-bridge-automation" buried in
+   a diff is easy to read past. */
+const optionalSkills = Object.entries(
+  readJson(paths.skillManifest).skills,
+).flatMap(([name, entry]) => (entry.distribution === "optional" ? [name] : []));
+const optionalPresent = optionalSkills.filter((s) => actual.includes(s));
+check(
+  "No optional/emergency skill inherited by default",
+  optionalPresent.length === 0,
+  optionalPresent.length
+    ? `${optionalPresent.join(", ")} must reach a project only through an explicit decision`
+    : undefined,
+);
+
 /* ---------- legacy residue ---------- */
 
 ui.step("Legacy residue");
