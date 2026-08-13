@@ -56,12 +56,15 @@ query returned nothing.
 | `ux` | UX guidelines and anti-patterns |
 | `chart` | Chart type selection |
 | `icons` | Icon sets |
-| `react`, `web` | Implementation notes for those targets |
+| `react` | React and Next.js implementation notes |
 
 `--json` returns machine-readable output when you need to pull one field out.
 
-**On `--stack`:** the flag exists but the corpus only carries React Native data, a leftover from where this
-skill came from. It is not useful here. Ignore it.
+**The corpus is web-only.** The skill came from a cross-platform ancestor and carried React Native, Expo,
+SwiftUI and VisionOS material — including a `web` domain that was, row for row, native app guidance
+(`Pressable`, `accessibilityLabel`, `SafeAreaView`). The Builder targets Next and React/Vite, so that
+material is gone rather than one query away from a web project. Mobile *web* and responsive behaviour are
+fully in scope and stayed.
 
 **The tool reads. It does not write.** An earlier version could also generate and persist a
 `design-system/MASTER.md` tree from search results — a second visual contract for the same decisions,

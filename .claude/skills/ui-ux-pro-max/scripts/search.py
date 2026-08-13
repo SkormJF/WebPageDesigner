@@ -5,7 +5,7 @@ UI/UX Pro Max Search - BM25 search over the UI/UX corpus.
 
 Usage: python search.py "<query>" --domain <domain> [--max-results 3] [--json]
 
-Domains: style, color, chart, landing, product, ux, typography, icons, react, web,
+Domains: style, color, chart, landing, product, ux, typography, icons, react,
          google-fonts
 
 This tool reads the corpus and prints what it found. It writes nothing.
@@ -17,14 +17,16 @@ This tool reads the corpus and prints what it found. It writes nothing.
     decisions, produced by a query rather than approved by anyone. That generator and
     every flag reaching it have been removed.
 
-    --stack still works but is of limited use here: the corpus carries only React
-    Native data under that flag, a leftover from where this skill came from.
+    The corpus is web-only. The upstream skill also carried React Native, Expo and
+    VisionOS material behind a --stack flag and a "web" domain that was in fact
+    native app guidance; the Builder targets Next and React/Vite, so all of it is
+    gone rather than one query away from a web project.
 """
 
 import argparse
 import sys
 import io
-from core import CSV_CONFIG, AVAILABLE_STACKS, MAX_RESULTS, search, search_stack
+from core import CSV_CONFIG, MAX_RESULTS, search
 
 # Force UTF-8 for stdout/stderr to handle emojis on Windows (cp1252 default)
 if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
@@ -39,12 +41,8 @@ def format_output(result):
         return f"Error: {result['error']}"
 
     output = []
-    if result.get("stack"):
-        output.append(f"## UI Pro Max Stack Guidelines")
-        output.append(f"**Stack:** {result['stack']} | **Query:** {result['query']}")
-    else:
-        output.append(f"## UI Pro Max Search Results")
-        output.append(f"**Domain:** {result['domain']} | **Query:** {result['query']}")
+    output.append(f"## UI Pro Max Search Results")
+    output.append(f"**Domain:** {result['domain']} | **Query:** {result['query']}")
     output.append(f"**Source:** {result['file']} | **Found:** {result['count']} results\n")
 
     for i, row in enumerate(result['results'], 1):
@@ -63,16 +61,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="UI Pro Max Search")
     parser.add_argument("query", help="Search query")
     parser.add_argument("--domain", "-d", choices=list(CSV_CONFIG.keys()), help="Search domain")
-    parser.add_argument("--stack", "-s", choices=AVAILABLE_STACKS, help="Stack-specific search")
     parser.add_argument("--max-results", "-n", type=int, default=MAX_RESULTS, help="Max results (default: 3)")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
 
-    if args.stack:
-        result = search_stack(args.query, args.stack, args.max_results)
-    else:
-        result = search(args.query, args.domain, args.max_results)
+    result = search(args.query, args.domain, args.max_results)
 
     if args.json:
         import json

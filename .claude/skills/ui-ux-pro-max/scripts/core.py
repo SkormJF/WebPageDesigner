@@ -60,29 +60,12 @@ CSV_CONFIG = {
         "search_cols": ["Category", "Issue", "Keywords", "Description"],
         "output_cols": ["Category", "Issue", "Platform", "Description", "Do", "Don't", "Code Example Good", "Code Example Bad", "Severity"]
     },
-    "web": {
-        "file": "app-interface.csv",
-        "search_cols": ["Category", "Issue", "Keywords", "Description"],
-        "output_cols": ["Category", "Issue", "Platform", "Description", "Do", "Don't", "Code Example Good", "Code Example Bad", "Severity"]
-    },
     "google-fonts": {
         "file": "google-fonts.csv",
         "search_cols": ["Family", "Category", "Stroke", "Classifications", "Keywords", "Subsets", "Designers"],
         "output_cols": ["Family", "Category", "Stroke", "Classifications", "Styles", "Variable Axes", "Subsets", "Designers", "Popularity Rank", "Google Fonts URL"]
     }
 }
-
-STACK_CONFIG = {
-    "react-native": {"file": "stacks/react-native.csv"},
-}
-
-# Common columns for all stacks
-_STACK_COLS = {
-    "search_cols": ["Category", "Guideline", "Description", "Do", "Don't"],
-    "output_cols": ["Category", "Guideline", "Description", "Do", "Don't", "Code Good", "Code Bad", "Severity", "Docs URL"]
-}
-
-AVAILABLE_STACKS = list(STACK_CONFIG.keys())
 
 
 # ============ BM25 IMPLEMENTATION ============
@@ -194,8 +177,7 @@ def detect_domain(query):
         "typography": ["font pairing", "typography pairing", "heading font", "body font"],
         "google-fonts": ["google font", "font family", "font weight", "font style", "variable font", "noto", "font for", "find font", "font subset", "font language", "monospace font", "serif font", "sans serif font", "display font", "handwriting font", "font", "typography", "serif", "sans"],
         "icons": ["icon", "icons", "lucide", "heroicons", "symbol", "glyph", "pictogram", "svg icon"],
-        "react": ["react", "next.js", "nextjs", "suspense", "memo", "usecallback", "useeffect", "rerender", "bundle", "waterfall", "barrel", "dynamic import", "rsc", "server component"],
-        "web": ["aria", "focus", "outline", "semantic", "virtualize", "autocomplete", "form", "input type", "preconnect"]
+        "react": ["react", "next.js", "nextjs", "suspense", "memo", "usecallback", "useeffect", "rerender", "bundle", "waterfall", "barrel", "dynamic import", "rsc", "server component"]
     }
 
     scores = {domain: sum(1 for kw in keywords if re.search(r'\b' + re.escape(kw) + r'\b', query_lower)) for domain, keywords in domain_keywords.items()}
@@ -220,28 +202,6 @@ def search(query, domain=None, max_results=MAX_RESULTS):
         "domain": domain,
         "query": query,
         "file": config["file"],
-        "count": len(results),
-        "results": results
-    }
-
-
-def search_stack(query, stack, max_results=MAX_RESULTS):
-    """Search stack-specific guidelines"""
-    if stack not in STACK_CONFIG:
-        return {"error": f"Unknown stack: {stack}. Available: {', '.join(AVAILABLE_STACKS)}"}
-
-    filepath = DATA_DIR / STACK_CONFIG[stack]["file"]
-
-    if not filepath.exists():
-        return {"error": f"Stack file not found: {filepath}", "stack": stack}
-
-    results = _search_csv(filepath, _STACK_COLS["search_cols"], _STACK_COLS["output_cols"], query, max_results)
-
-    return {
-        "domain": "stack",
-        "stack": stack,
-        "query": query,
-        "file": STACK_CONFIG[stack]["file"],
         "count": len(results),
         "results": results
     }
