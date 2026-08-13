@@ -41,6 +41,22 @@ real and what is approximated. A human who approves lettering they will not rece
 
 ---
 
+## This skill has no aesthetic of its own
+
+The direction comes from Discovery — from what the user said, what they showed you, and what the product
+needs. The artifact's job is to render **that** direction faithfully enough to be judged.
+
+It must be able to carry any of these equally well, and favour none of them in advance:
+
+```
+minimal · maximal · editorial · corporate · playful · luxury · brutalist
+centred · asymmetric · monochrome · colourful · static · motion-heavy
+```
+
+If the discovered direction is rigorously centred, symmetrical, monochrome and still, then a lopsided,
+colourful, animated artifact is not a better proposal — it is the wrong proposal, and approving it would
+commit the product to something nobody asked for. Build what was discovered, at full strength.
+
 ## Composition — what makes it worth approving
 
 An artifact that is a tidy grid of swatches is a style guide. It shows the parts and hides the decision.
@@ -48,24 +64,25 @@ An artifact that is a tidy grid of swatches is a style guide. It shows the parts
 **Lead with the idea.** Every direction worth approving has one sentence behind it — what it is doing and
 why it fits this product. Put that first, then let the page demonstrate it.
 
-**Vary the scale.** A page where everything is medium-sized has no hierarchy to approve. Something should
-dominate. Something should be quiet.
+**Show the hierarchy the direction actually has, at full strength.** If it is dramatic, let something
+dominate and something be quiet. If it is deliberately even and systematic — a Swiss grid, a dense
+dashboard — show that evenness convincingly. What must not happen is hierarchy flattening into "everything
+medium" by accident, because then there is nothing for the human to approve or reject.
 
-**Vary the rhythm.** If every section is the same height with the same padding, the artifact is telling the
-human that the product will be monotonous, and they will approve that without noticing.
-
-**Do not centre everything.** Symmetry is the default that arrives when no compositional decision was made,
-and it reads as such.
+**Show the section rhythm the direction implies**, whether that is strong variation or a steady beat. The
+artifact is a promise about how the product will feel to move through.
 
 **Show the real content shape.** Real-length headlines, plausible names, believable numbers. Lorem ipsum
 and "Card Title" hide exactly the problems the artifact should surface — the headline that wraps to three
 lines, the name that overflows, the price column that does not align.
 
-**Materiality over decoration.** Texture, weight and surface treatment that mean something in this product.
-Not effects applied because they are available.
+**Materiality with intent.** Texture, weight and surface treatment that mean something in this product —
+whether that means rich material or none at all. Not effects applied because they are available.
 
-**Restraint in colour.** One dominant surface, one accent doing real work. A palette where five colours all
-compete is a palette nobody can apply consistently afterwards.
+**Make the colour structure legible.** However many colours the direction uses, the artifact should make
+clear what each one is *for* — which surface dominates, what an accent marks, what stays neutral. A
+five-colour palette is fine when each colour has a job; it is a problem when nobody could apply it
+consistently afterwards. That is a question about roles, not about count.
 
 ---
 
@@ -106,10 +123,10 @@ project.
 
 ## What the artifact must never trade away
 
-The human may overrule taste. This project's defaults — restraint, asymmetry, quiet motion — are defaults,
-and a client who deliberately wants a heavily blurred surface or oversized display type is making a
-decision, not a mistake. Say the risk once, briefly, then build it as well as it can be built, and record it
-as their call so a later pass does not "fix" it.
+The human decides the taste, and there is no house style here to defend. A client who wants a heavily
+blurred surface, oversized display type, a centred layout or motion everywhere is making a decision, not a
+mistake. Where a choice is one that commonly goes wrong, say the risk once, briefly — then build it as well
+as it can be built and record it as their call, so a later pass does not "fix" it.
 
 These are not on that list, because they are not preferences:
 

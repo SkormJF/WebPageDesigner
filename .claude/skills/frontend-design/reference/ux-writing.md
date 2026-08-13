@@ -2,7 +2,7 @@
 
 ## The Button Label Problem
 
-**Never use "OK", "Submit", or "Yes/No".** These are lazy and ambiguous. Use specific verb + object patterns:
+**"OK", "Submit" and "Yes/No" are almost always the wrong label** — they describe the mechanism, not the outcome, so the user has to reconstruct what will happen from the surrounding text. Prefer a specific verb + object:
 
 | Bad | Good | Why |
 |-----|------|-----|
@@ -50,7 +50,7 @@ Empty states are onboarding moments: (1) Acknowledge briefly, (2) Explain the va
 | Loading | Reassuring: "Saving your work..." |
 | Destructive confirm | Serious, clear: "Delete this project? This can't be undone." |
 
-**Never use humor for errors.** Users are already frustrated. Be helpful, not cute.
+**Be careful with humour in errors.** The user is already blocked, and a joke that delays the fix reads as the product not taking their problem seriously. A playful brand can carry lightness here — the brand voice in `PROJECT.md` and `design-system.md` decides — but the sentence still has to say what happened and what to do next before it does anything else.
 
 ## Writing for Accessibility
 

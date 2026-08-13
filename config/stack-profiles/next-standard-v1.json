@@ -73,7 +73,6 @@
     "The stock scaffold hardcodes `font-family: Arial, Helvetica, sans-serif` on body in globals.css, which beats the theme regardless of how correctly the font tokens are wired. Both fonts download, neither is used, and the build reports no error. This template ships the fix (`font-family: var(--font-sans)`); do not reintroduce a literal family there.",
     "Every font token in @theme must name a variable that some next/font call actually declares. A token pointing at an undefined name resolves to nothing and the page silently falls back to the browser default -- matching names are fine, unmatched ones are the failure.",
     "Layout props are typed explicitly rather than via the generated LayoutProps global, so `tsc --noEmit` passes on a fresh clone before any build has generated .next/types.",
-    "lucide-react ships no brand icons -- Instagram, Facebook, Twitter, Github, LinkedIn and YouTube were all removed. Importing one is a hard build failure. Use an inline SVG with the brand path, sized with the same classes as the surrounding icons.",
-    "next dev rewrites AGENTS.md on every run. It is gitignored rather than deleted: this project is Claude-only, CLAUDE.md is its harness contract, and a second agent-instruction file at the root would compete with it."
+    "lucide-react ships no brand icons -- Instagram, Facebook, Twitter, Github, LinkedIn and YouTube were all removed. Importing one is a hard build failure. Use an inline SVG with the brand path, sized with the same classes as the surrounding icons."
   ]
 }

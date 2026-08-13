@@ -1,28 +1,48 @@
 ---
 name: frontend-design
 description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications. Generates creative, polished code that avoids generic AI aesthetics.
-license: Apache 2.0. Based on Anthropic's frontend-design skill. See NOTICE.md for attribution.
+license: Apache 2.0. Based on Anthropic's frontend-design skill.
 ---
 
-This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
+This skill helps an interface arrive at a direction **on purpose** rather than by default, and then execute
+it precisely. It supplies craft and judgement. It carries no workflow and no authority.
+
+## Where the direction comes from
+
+```
+Discovery → Artifact → human approval → design-system.md
+```
+
+**Once `design-system.md` exists, it decides and this skill executes.** If the approved direction is Inter,
+centred, pure black on pure white, perfectly symmetrical, with three accent colours — that is the answer,
+and the work here is to build it beautifully. Nothing below overrules an approved contract, and a skill
+that "improves" on one is changing a product the human already signed off.
+
+Before that contract exists — during Discovery, while proposing a direction — everything below is live.
+
+**What "anti-generic" means here:** avoiding choices made *by default*, not banning particular styles. A
+centred layout chosen because centring was easiest is the problem. A centred layout chosen because the
+content is a single column of prose is just correct. The test is always *why*, never *what*.
 
 ## Design Direction
 
-Commit to a BOLD aesthetic direction:
+When there is a direction to find, find a committed one:
+
 - **Purpose**: What problem does this interface solve? Who uses it?
-- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
-- **Constraints**: Technical requirements (framework, performance, accessibility).
-- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+- **Tone**: Somewhere real on the range — brutally minimal, maximalist, retro-futuristic, organic, luxury,
+  playful, editorial, brutalist, art deco, soft/pastel, industrial. Many flavours; pick one and mean it.
+- **Constraints**: Framework, performance, accessibility.
+- **Differentiation**: What is the one thing someone will remember?
 
-**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work—the key is intentionality, not intensity.
+Bold maximalism and refined minimalism both work. The variable is intentionality, not intensity.
 
-Then implement working code that is:
-- Production-grade and functional
-- Visually striking and memorable
-- Cohesive with a clear aesthetic point-of-view
-- Meticulously refined in every detail
+Then implement working code that is production-grade, cohesive, and refined in its details.
 
 ## Frontend Aesthetics Guidelines
+
+Everything in this section is a **heuristic for spotting a default**, not a rule. Each `DON'T` names
+something that is frequently generated without a reason — which makes it worth a second look, not
+forbidden. When the approved direction calls for it, or when you have a reason, do it and do it well.
 
 ### Typography
 → *Consult [typography reference](reference/typography.md) for scales, pairing, and loading strategies.*
@@ -31,8 +51,8 @@ Choose fonts that are beautiful, unique, and interesting. Pair a distinctive dis
 
 **DO**: Use a modular type scale with fluid sizing (clamp)
 **DO**: Vary font weights and sizes to create clear visual hierarchy
-**DON'T**: Use overused fonts—Inter, Roboto, Arial, Open Sans, system defaults
-**DON'T**: Use monospace typography as lazy shorthand for "technical/developer" vibes
+**WATCH**: Reaching for Inter, Roboto, Arial, Open Sans or a system stack *because it was the first thing to hand*. Each is an excellent typeface — Inter in particular is a deliberate, defensible choice for dense product UI, and the system stack is the right answer when the first paint matters more than the personality. The question is whether it was chosen or defaulted into
+**WATCH**: Monospace as shorthand for "technical" when nothing is actually code or data
 **DON'T**: Put large icons with rounded corners above every heading—they rarely add value and make sites look templated
 
 ### Color & Theme
@@ -43,25 +63,24 @@ Commit to a cohesive palette. Dominant colors with sharp accents outperform timi
 **DO**: Use modern CSS color functions (oklch, color-mix, light-dark) for perceptually uniform, maintainable palettes
 **DO**: Tint your neutrals toward your brand hue—even a subtle hint creates subconscious cohesion
 **DON'T**: Use gray text on colored backgrounds—it looks washed out; use a shade of the background color instead
-**DON'T**: Use pure black (#000) or pure white (#fff)—always tint; pure black/white never appears in nature
-**DON'T**: Use the AI color palette: cyan-on-dark, purple-to-blue gradients, neon accents on dark backgrounds
-**DON'T**: Use gradient text for "impact"—especially on metrics or headings; it's decorative rather than meaningful
-**DON'T**: Default to dark mode with glowing accents—it looks "cool" without requiring actual design decisions
+**WATCH**: Untinted pure black (#000) and pure white (#fff). A slight tint usually reads warmer and more deliberate — but pure monochrome is a real editorial and brutalist position, and when that is the direction, commit to it rather than softening it into off-grey
+**WATCH**: The generated palette — cyan-on-dark, purple-to-blue gradients, neon on black. Common because it is the default output, not because it is wrong
+**WATCH**: Gradient text on metrics and headings; usually decorative rather than meaningful
+**WATCH**: Landing on dark mode with glowing accents without deciding to. Dark is a strong direction when chosen for the content
 
 ### Layout & Space
 → *Consult [spatial reference](reference/spatial-design.md) for grids, rhythm, and container queries.*
 
-Create visual rhythm through varied spacing—not the same padding everywhere. Embrace asymmetry and unexpected compositions. Break the grid intentionally for emphasis.
+Create visual rhythm through varied spacing—not the same padding everywhere.
 
 **DO**: Create visual rhythm through varied spacing—tight groupings, generous separations
 **DO**: Use fluid spacing with clamp() that breathes on larger screens
-**DO**: Use asymmetry and unexpected compositions; break the grid intentionally for emphasis
 **DON'T**: Wrap everything in cards—not everything needs a container
 **DON'T**: Nest cards inside cards—visual noise, flatten the hierarchy
-**DON'T**: Use identical card grids—same-sized cards with icon + heading + text, repeated endlessly
-**DON'T**: Use the hero metric layout template—big number, small label, supporting stats, gradient accent
-**DON'T**: Center everything—left-aligned text with asymmetric layouts feels more designed
-**DON'T**: Use the same spacing everywhere—without rhythm, layouts feel monotonous
+**WATCH**: Identical card grids — same-sized cards with icon + heading + text, repeated endlessly
+**WATCH**: The hero metric template — big number, small label, supporting stats, gradient accent
+**WATCH**: Uniform spacing everywhere; without rhythm, layouts feel monotonous
+**WATCH**: Centring by reflex. Asymmetry and a deliberately broken grid are strong tools, and so is a rigorously centred, symmetrical composition — classical, editorial and luxury directions depend on it. Neither is the default answer; the content and the approved direction decide
 
 ### Visual Details
 **DO**: Use intentional, purposeful decorative elements that reinforce brand
@@ -84,10 +103,10 @@ runtime.
 Focus on high-impact moments: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions.
 
 **DO**: Use motion to convey state changes—entrances, exits, feedback
-**DO**: Use exponential easing (ease-out-quart/quint/expo) for natural deceleration
+**DO**: Prefer transform and opacity: they are the two properties the compositor can animate without layout or paint, which is why they stay smooth under load
 **DO**: For height animations, use grid-template-rows transitions instead of animating height directly
-**DON'T**: Animate layout properties (width, height, padding, margin)—use transform and opacity only
-**DON'T**: Use bounce or elastic easing—they feel dated and tacky; real objects decelerate smoothly
+**WATCH**: Animating width, height, padding or margin. Each forces layout every frame. Sometimes it is genuinely the only way to express the change — measure it rather than assume it is fine, and rather than assume it is forbidden
+**WATCH**: Bounce and elastic easing. Overused, and dated when applied to everything — but exactly right for a playful direction, and `emil-design-eng` owns the judgement about when
 
 ### Interaction
 → *Consult [interaction reference](reference/interaction-design.md) for forms, focus, and loading patterns.*
@@ -150,13 +169,15 @@ alike, the table was used as an answer rather than a place to start.
 
 A distinctive interface should make someone ask "how was this made?" not "which AI made this?"
 
-Review the DON'T guidelines above—they are the fingerprints of AI-generated work.
+Review the `WATCH` and `DON'T` guidelines above — they are the fingerprints of AI-generated work.
 
 These fingerprints move. Each one became a tell because it was briefly the default output of whatever model everyone was using, and the current crop has its own. So treat the list as evidence of a habit, not as the complete set: if a choice arrived because it is what gets generated by default rather than because this specific project called for it, it belongs on the list whether or not it is written above.
 
+And the test runs on the *reason*, not the appearance. An interface that looks like a lot of AI output because the client asked for exactly that, and it was built well, passes. One that looks unusual because a skill told it to break symmetry fails — that is still a default, just a less common one.
+
 ---
 
-## When the client asks for something on the DON'T list
+## When the client asks for something on the list
 
 It happens, and most often with the clients who know the most. Someone who art-directed for a living will
 ask for glassmorphism, or a dark page with a glow, or overshoot in the transitions — knowing perfectly well
@@ -200,6 +221,8 @@ decision, and saying so plainly — once, without moralising — is part of the 
 
 Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details.
 
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices across generations.
+Interpret creatively and make choices that feel genuinely designed for *this* context. Where a direction is still being found, do not let every project converge on the same palette, the same faces and the same layout out of habit — variety across projects should come from the projects actually differing, not from rotating through options for its own sake.
 
-Remember: Claude is capable of extraordinary creative work. Don't hold back—show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+Where the direction is already approved, this section stops applying. Two projects that both approved a warm minimal direction are *supposed* to resemble each other, and reaching for novelty to avoid that is how an approved contract gets quietly edited.
+
+Remember: Claude is capable of extraordinary creative work. Don't hold back — show what can truly be created when committing fully to the vision this project actually has.

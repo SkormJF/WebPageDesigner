@@ -82,9 +82,11 @@ These commonly fail contrast or cause readability issues:
 - Yellow text on white (almost always fails)
 - Thin light text on images (unpredictable contrast)
 
-### Never Use Pure Gray or Pure Black
+### Tinted Neutrals, By Default
 
-Pure gray (`oklch(50% 0 0)`) and pure black (`#000`) don't exist in nature—real shadows and surfaces always have a color cast. Even a chroma of 0.005-0.01 is enough to feel natural without being obviously tinted. (See tinted neutrals example above.)
+Pure gray (`oklch(50% 0 0)`) and pure black (`#000`) don't exist in nature—real shadows and surfaces always have a color cast. Even a chroma of 0.005-0.01 is enough to feel natural without being obviously tinted, and it is the better default. (See tinted neutrals example above.)
+
+**Pure monochrome is a position, not an oversight.** Editorial, brutalist and high-contrast directions use `#000`/`#FFF` deliberately, and it is also the simplest route to AAA contrast. When the approved direction calls for it, commit — softening it to off-grey to satisfy this page would be the actual mistake.
 
 ### Testing
 

@@ -51,7 +51,7 @@ When pairing, contrast on multiple axes:
 - Geometric + Humanist (personality contrast)
 - Condensed display + Wide body (proportion contrast)
 
-**Never pair fonts that are similar but not identical** (e.g., two geometric sans-serifs). They create visual tension without clear hierarchy.
+**Avoid pairing fonts that are similar but not identical** (e.g., two unrelated geometric sans-serifs). They create visual tension without clear hierarchy. The exception is a deliberate one: two cuts of the same superfamily, or one family across weights and widths, where the relationship is exact rather than approximate.
 
 ### Web Font Loading
 
