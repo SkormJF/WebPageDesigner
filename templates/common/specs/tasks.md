@@ -80,12 +80,15 @@ Bad    Auth works correctly.
 If a criterion cannot fail, it is not a criterion. If checking it requires knowing what the implementer
 intended, it is not written yet.
 
-## Progress log
+## No progress log
 
-<!-- SLOT: One line per completed task: ID, one sentence on what changed, and the commit hash.
-     Never the full narrative -- that belongs in the commit message, and anyone who needs it is one
-     `git show` away. This terseness is what keeps the file readable in full after a hundred tasks. -->
+This file holds **current state**, not history. A task's `Status` column is the whole record: `PENDING`,
+`ACTIVE`, `DONE`.
 
-| Task | What changed | Commit |
-|---|---|---|
-| — | — | — |
+There is deliberately no running log of what changed when, or which commit did it. Git already holds that,
+with more detail and no chance of drifting from reality — `git log`, `git show`, `git blame` answer it
+better than a hand-maintained table ever will, and the table is one forgotten update away from being wrong.
+
+The cost of the alternative is what makes this worth stating: a log that grows by a row per task is a file
+that has to be read in full at every session start and gets longer for the entire life of the project.
+

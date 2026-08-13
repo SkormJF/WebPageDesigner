@@ -62,23 +62,34 @@ reconciliation across three files where each has picked up a slightly different 
 
 ## The size scale
 
-Two heights cover nearly every interactive control. Pick them once and assign them **to the component
-variants themselves**, so no call site ever needs a height override.
+**What matters is that there is a scale, not what the numbers are.**
 
-| Tier | Height | For |
-|---|---|---|
-| Compact | ~32px | Secondary and inline actions, icon-only row actions, badges, table controls |
-| Standard | ~44px | Every form field, every primary action |
+Pick a small number of control heights — two is usually enough — and assign them **to the component variants
+themselves**, so no call site ever needs a height override. A typical pairing is a compact tier around 32px
+for secondary and inline actions, and a standard tier around 44px for form fields and primary actions. That
+is a common starting point, not a law.
 
-**Why up front:** a component's declared default height is not what pages end up using unless it was chosen
-against real content. Otherwise every call site quietly overrides it, and the same final height arrives via
-a different padding and font-size combination in each file depending on which override path it took. At a
-dozen occurrences that stops being a one-line fix.
+**The real numbers come from the approved contract.** `design-system.md` records what a human approved from
+a real artifact, and it decides. So do the things it was decided against: the platform, the interaction
+model, the information density, whether the product is touch-first, and what accessibility the audience
+actually needs. A dense data tool and a phone-first booking flow have no business sharing a number just
+because a skill file suggested one.
+
+**Why fix it up front at all:** a component's declared default height is not what pages end up using unless
+it was chosen against real content. Otherwise every call site quietly overrides it, and the same final
+height arrives via a different padding and font-size combination in each file depending on which override
+path it took. At a dozen occurrences that stops being a one-line fix. The discipline is *one declared value
+per tier*, whatever the values are.
 
 **On touch targets, two numbers get confused in both directions.** 24×24 CSS px is the WCAG 2.2 AA
-requirement. 44×44 is AAA. So the standard tier clears AAA, and the compact tier is **comfortably
-AA-compliant** — it is not a violation, and a later pass must not "fix" it by inflating everything to 44px.
-Doing that flattens the size hierarchy the scale exists to create.
+requirement; 44×44 is AAA. So a ~44px tier clears AAA and a ~32px tier is comfortably AA-compliant — a
+compact control is not a violation, and inflating every control to 44px flattens the hierarchy the scale
+exists to create.
+
+That said, **accessibility outranks the hierarchy**, not the other way round. If a real audience needs
+larger targets — a product for people with motor impairments, a kiosk, an audience the human told you about
+— the sizes go up and the scale is rebuilt around that. Record it in `design-system.md` with its reason, so
+a later pass reads it as a decision rather than an inconsistency.
 
 Where a target must genuinely be small — a dense table, a toolbar icon — grow the hit area with padding
 beyond the visual box before shrinking the box. Sufficient spacing between targets is also a documented way

@@ -69,8 +69,15 @@
 
 ## Decisions log
 
-<!-- SLOT: One line per decision: the decision and its one-line reason. Not the discussion that led
-     to it. Anyone who needs the full story is one `git show` away from it. This terseness is what
-     keeps the file affordable to read in full at every session start, however long the project runs. -->
+<!-- SLOT: Decisions currently IN FORCE, one line each: the decision and its one-line reason.
+
+     This is current truth, not a chronology. When a decision is superseded, the old line is
+     REPLACED, not kept with a date beside it -- a reader needs to know what holds now, and a list
+     where half the entries are historically interesting but no longer true is worse than no list,
+     because every line has to be checked against the rest before it can be trusted.
+
+     Why a decision was reversed belongs in the commit that reversed it. Anyone who needs the story
+     is one `git log` away. This is what keeps the file affordable to read in full at every session
+     start, however long the project runs. -->
 
 - [TBD]

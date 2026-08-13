@@ -77,22 +77,33 @@ and UI components 3:1. A palette that has not been measured has not been checked
 
 ## Control sizes
 
-<!-- SLOT: Two heights cover nearly every interactive control. They are assigned to the component
+<!-- SLOT: A small number of control heights -- two is usually enough -- assigned to the component
      variants themselves, so no call site ever needs a one-off height override.
+
+     THESE VALUES ARE THIS PROJECT'S, decided from the approved artifact and from what the product
+     actually is: its platform, interaction model, information density and audience. A compact tier
+     near 32px and a standard near 44px is a common pairing, not a requirement -- a dense data tool
+     and a phone-first booking flow have no business sharing a number.
+
      Decided before the build, not after: a component's declared default is not what pages end up
      using unless it was chosen with real content in mind, and once every instance has its own
      override the same final height arrives via a different padding/font-size combination in each
-     file. That stops being a one-line fix at about a dozen occurrences. -->
+     file. That stops being a one-line fix at about a dozen occurrences. The discipline is one
+     declared value per tier, whatever the values are. -->
 
 | Tier | Height | Used by |
 |---|---|---|
-| Compact | [TBD ~32px] | Secondary and inline actions, icon-only row actions, badges |
-| Standard | [TBD ~44px] | Every form field and every primary action button |
+| Compact | [TBD] | [TBD — secondary and inline actions] |
+| Standard | [TBD] | [TBD — form fields and primary actions] |
 
-**Touch targets:** the standard tier clears WCAG 2.2 AAA (SC 2.5.5). The compact tier is comfortably AA
-(SC 2.5.8, 24×24) and **must not be inflated to 44px by a later pass** — doing that flattens the size
-hierarchy this scale exists to create. Where a target is genuinely small, grow the hit area with padding
-before shrinking the visual box.
+**Touch targets:** WCAG 2.2 AA requires 24×24 (SC 2.5.8); AAA is 44×44 (SC 2.5.5). A compact tier above the
+AA floor is compliant, not a defect, and inflating every control to the AAA number flattens the hierarchy
+this scale exists to create. Where a target is genuinely small, grow the hit area with padding before
+shrinking the visual box.
+
+**Accessibility outranks the hierarchy.** If this product's audience needs larger targets, the sizes go up
+and the scale is rebuilt around that — record the reason here so a later pass reads it as a decision rather
+than an inconsistency.
 
 ## Interaction states
 
