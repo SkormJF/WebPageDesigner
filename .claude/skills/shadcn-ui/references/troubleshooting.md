@@ -81,13 +81,10 @@ npx shadcn@latest add button
 # Multiple components
 npx shadcn@latest add button card dialog form
 
-# All components (not recommended - adds everything)
-npx shadcn@latest add --all
-
 # Specific version
 npx shadcn@latest add button@1.0.0
 
-# Overwrite existing
+# Overwrite existing -- see the warning below before using this
 npx shadcn@latest add button --overwrite
 
 # Different path

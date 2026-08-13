@@ -2,16 +2,23 @@
 # -*- coding: utf-8 -*-
 """
 UI/UX Pro Max Search - BM25 search engine for UI/UX style guides
-Usage: python search.py "<query>" [--domain <domain>] [--stack <stack>] [--max-results 3]
-       python search.py "<query>" --design-system [-p "Project Name"]
-       python search.py "<query>" --design-system --persist [-p "Project Name"] [--page "dashboard"]
 
-Domains: style, prompt, color, chart, landing, product, ux, typography, google-fonts
-Stacks: html-tailwind, react, nextjs
+Usage: python search.py "<query>" --domain <domain> [--max-results 3] [--json]
 
-Persistence (Master + Overrides pattern):
-  --persist    Save design system to design-system/MASTER.md
-  --page       Also create a page-specific override file in design-system/pages/
+Domains: style, color, chart, landing, product, ux, typography, icons, react, web,
+         google-fonts
+
+NOT FOR USE IN THIS PROJECT: --design-system, --persist, --page
+
+  Those flags generate and write a design-system/MASTER.md tree. This project has
+  exactly one visual contract -- design-system.md -- and a human approved it from a
+  real artifact, element by element. A second design system produced by a search
+  would be a competing source of truth for the same decisions.
+
+  The flags remain implemented because the corpus tooling is shared, not because
+  they should be called here. See SKILL.md.
+
+  --stack is likewise not useful here: the corpus only carries React Native data.
 """
 
 import argparse
