@@ -63,9 +63,10 @@ query returned nothing.
 **On `--stack`:** the flag exists but the corpus only carries React Native data, a leftover from where this
 skill came from. It is not useful here. Ignore it.
 
-**Do not use `--design-system`, `--persist` or `--page`.** They generate and write a `design-system/MASTER.md`
-tree — a second, competing source of visual truth, produced by a search rather than approved by a human.
-This project has exactly one visual contract and a human approved it.
+**The tool reads. It does not write.** An earlier version could also generate and persist a
+`design-system/MASTER.md` tree from search results — a second visual contract for the same decisions,
+produced by a query instead of approved by anyone. That generator and every flag reaching it are gone, so
+there is no longer a way to do this by accident.
 
 ---
 
@@ -90,9 +91,12 @@ When a result and the approved contract disagree, the contract wins and there is
 ## What lives here
 
 ```
-data/       the corpus — CSVs by domain, several megabytes
-scripts/    the query tool
+data/       the corpus — one CSV per domain, several megabytes
+scripts/    core.py (the BM25 engine) and search.py (the CLI)
 ```
+
+Every CSV here is reachable through a domain above, and every domain resolves to a CSV. Nothing else is
+kept.
 
 Do not read the CSVs directly into context. They are large, and the point of the query tool is that you
 never have to.
