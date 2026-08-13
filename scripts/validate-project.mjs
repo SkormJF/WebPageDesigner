@@ -20,6 +20,13 @@
  * cannot be supplied directly. npm install, a build and a server start are not
  * things to point at an arbitrary directory.
  *
+ * While a Builder handoff is in flight -- .builder/current/state.json naming this
+ * slug at CREATING_PROJECT or VALIDATING_PROJECT -- it additionally compares the
+ * five generated specifications against the approved ones, so a recovery cannot
+ * mistake somebody else's repository at the same path for its own output. With no
+ * active Builder project, validation of an independent repository does not depend
+ * on .builder/current at all.
+ *
  * Exit 0 on PASS, 1 on FAIL.
  */
 
@@ -146,6 +153,53 @@ check(
   specPlaceholders.length === 0,
   specPlaceholders.length ? `Still templated: ${specPlaceholders.join(", ")}` : undefined,
 );
+
+/* ---------- identity against an active Builder handoff ---------- */
+
+/* Only while a Builder handoff is actually in flight. A generated repository is
+   independent, and validating one on a machine whose Builder is IDLE must not
+   depend on .builder/current existing at all.
+
+   But during CREATING_PROJECT or VALIDATING_PROJECT the recovery path may find a
+   directory already sitting at the target, and "it looks like a project" is not
+   evidence that it is *this* project. Comparing the five specifications byte for
+   byte distinguishes a target this handoff published from a path conflict with
+   somebody else's repository -- which is the difference between continuing a
+   handoff and validating a stranger.
+
+   The comparison is byte for byte because create-project copies the specs
+   verbatim and the Spec Gate refuses a specification still carrying
+   [PROJECT_NAME], so token substitution has nothing to rewrite inside them. If
+   that ever stops being true, this check has to learn about it.
+
+   It reports. It does not repair, copy or delete. */
+const activeStateFile = path.join(paths.builderCurrent, "state.json");
+if (fs.existsSync(activeStateFile)) {
+  const activeState = readJson(activeStateFile);
+  const midHandoff = ["CREATING_PROJECT", "VALIDATING_PROJECT"].includes(activeState.phase);
+
+  if (midHandoff && activeState.slug === args.slug) {
+    ui.step(`Identity against the active Builder project (${activeState.phase})`);
+
+    const differing = [];
+    for (const spec of SPEC_FILES) {
+      const approved = path.join(paths.builderCurrent, spec);
+      const generated = path.join(target, spec);
+      if (!fs.existsSync(approved)) differing.push(`${spec} (absent from .builder/current)`);
+      else if (!fs.existsSync(generated)) differing.push(`${spec} (absent from the target)`);
+      else if (!fs.readFileSync(approved).equals(fs.readFileSync(generated))) differing.push(spec);
+    }
+
+    check(
+      "Generated specifications match the active approved specifications",
+      differing.length === 0,
+      differing.length
+        ? `Generated specifications do not match active approved specifications: ${differing.join(", ")}. ` +
+          `Nothing was repaired, copied or deleted. ${target} may belong to a different project.`
+        : undefined,
+    );
+  }
+}
 
 /* ---------- harness ---------- */
 

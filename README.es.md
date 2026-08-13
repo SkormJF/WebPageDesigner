@@ -133,9 +133,12 @@ Exactamente tres, y son solo mecánicos. Acá nada razona sobre un producto: des
 revisar son conversaciones, y un script que fingiera hacerlas solo estaría escondiendo el criterio que se
 salteó.
 
-`create-project` rechaza más de lo que hace: fase equivocada, slug que no coincide, spec faltante, compuerta
-fallada, skill ausente y, sobre todo, un destino ocupado — nunca sobreescribe, nunca fusiona y nunca se
-inventa un `<slug>-2`.
+`create-project` rechaza más de lo que hace: cualquier fase que no sea `CREATING_PROJECT`, slug que no
+coincide, spec faltante, compuerta fallada, skill ausente y, sobre todo, un destino ocupado — nunca
+sobreescribe, nunca fusiona y nunca se inventa un `<slug>-2`.
+
+El perfil de stack sale del `design.md` aprobado. `--profile`, en cualquiera de los dos scripts, es una
+aserción y no un selector: puede confirmar lo que dice `design.md`, no puede contradecirlo.
 
 `validate-project` demuestra y no repara nada. Un validador que arregla lo que encuentra ya no puede
 contarte qué estaba roto.
@@ -151,18 +154,19 @@ contarte qué estaba roto.
   agents/spec-reviewer.md     el único subagente del Builder
   skills/                     20 skills, la fuente de distribución
 config/
-  skill-manifest.json         qué skills hereda cada proyecto
-  stack-profiles/             los dos perfiles
+  skill-manifest.json         clasifica cómo se distribuye cada skill
+  stack-profiles/             los dos perfiles, cada uno dueño de sus profile_skills
 templates/
   common/                     cómo funciona todo proyecto generado
   stacks/                     bases de stack validadas y ejecutables
 scripts/                      create · validate · reset
+tests/                        el contrato del core, como invariantes de node --test
 .builder/current/             el proyecto activo (fuera de git)
 ```
 
-[`CLAUDE.md`](CLAUDE.md) es el contrato operativo. [`REBUILD-PLAN.md`](REBUILD-PLAN.md) y
-[`MIGRATION-MAP.md`](MIGRATION-MAP.md) registran la arquitectura sobre la que se reconstruyó esto y dónde
-quedó cada pieza del sistema anterior.
+[`CLAUDE.md`](CLAUDE.md) es el contrato operativo; este README lo describe y nunca lo pisa.
+[`tests/core-contract.test.mjs`](tests/core-contract.test.mjs) guarda las invariantes que no pueden
+regresionar — se corre con `node --test tests/core-contract.test.mjs`.
 
 ---
 

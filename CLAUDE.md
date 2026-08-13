@@ -359,6 +359,11 @@ react-vite-standard-v1
 Configured in `builder.config.json`; defined in `config/stack-profiles/`; backed by real templates in
 `templates/stacks/`.
 
+**A project's approved profile lives in `design.md` and nowhere else** — the line `- **Profile:** <id>` under
+`## Stack profile`. Not duplicated into `state.json`, not restated in `PROJECT.md`, not selected at a command
+line. `default_stack_profile` proposes a starting point while you are planning; once `design.md` records the
+decision, that is the answer, and `--profile` on either script can only assert it.
+
 A profile points at a **validated** stack template. Real frozen versions live in that template's
 `package.json` and lockfile — skills do not own framework versions, and a profile does not restate them. An
 existing project never silently upgrades because a newer profile appeared; evolution creates
@@ -391,6 +396,17 @@ OPTIONAL/EMERGENCY    NOT copied — stays here, and reaches a project only
 sentence in a document rather than a property of the repository — the skill would already be sitting there,
 and the approval would be the only thing standing between it and use.
 
+**Two owners, one decision each.** The manifest classifies a skill's distribution; the stack profile owns
+which profile-inherited skills it takes, in its own `profile_skills`. The manifest never restates the
+recipient list — two places naming the same fact is how they come to disagree.
+
+```
+expectedSkills(profile) = every inherited-standard skill + profile.profile_skills
+```
+
+Today: 17 inherited-standard + 2 profile-inherited = 19 skills in a generated project, on both profiles. The
+Builder's own catalogue is 20 — the extra one is `chrome-bridge-automation`, classified `optional`.
+
 `create-project` copies the fixed inherited set plus the profile's fixed additions — it does not choose
 skills ad hoc. `validate-project` computes the same expected set through the same function and fails on a
 missing required skill or an unexpected extra one, which is what catches an optional skill that slipped in.
@@ -417,8 +433,17 @@ pretends otherwise just hides the judgement it skipped.
 
 ### `create-project`
 
-Preconditions: phase is `READY_TO_CREATE`, approved specs exist, the selected profile exists, and the target
+Preconditions: phase is `CREATING_PROJECT`, approved specs exist, the approved profile exists, and the target
 does **not**.
+
+`READY_TO_CREATE` is what the Spec Gate, the Spec Reviewer and human approval produce. You then persist
+`CREATING_PROJECT` and run the script — write **before** the consequential action, as everywhere else. The
+script asserts `CREATING_PROJECT` and never writes phase itself; a script that demanded `READY_TO_CREATE`
+could only be satisfied by skipping the write that makes an interrupted creation recoverable.
+
+The stack profile comes from the approved `design.md` and from nowhere else. `--profile` is optional and only
+*asserts* that value: matching is allowed, differing is `PROFILE_MISMATCH`. `default_stack_profile` in
+`builder.config.json` is a Planning-time proposal, never a generation-time answer.
 
 ```
 COMMON TEMPLATE + STACK TEMPLATE + INHERITED SKILLS + PROFILE SKILLS + APPROVED SPECS
@@ -443,7 +468,15 @@ Code session?**
 Checks location, git baseline and clean tree, required specs, generated `CLAUDE.md`/agents/workflow, initial
 `READY_TO_BUILD`, the deterministic expected skill set, stack and profile files, `.mcp.json` well-formed with
 both servers and no secrets, absence of legacy residue, and the technical scaffold (`npm ci`, lint,
-typecheck, build, minimal smoke start).
+typecheck, build, minimal smoke start). The project's own `design.md` owns its profile here too; `--profile`
+asserts and cannot replace it.
+
+**While a handoff is in flight** — `state.json` naming this slug at `CREATING_PROJECT` or
+`VALIDATING_PROJECT` — it also compares the five generated specifications, byte for byte, against the
+approved ones in `.builder/current/`. A difference is `VALIDATION_FAIL`: the target may be somebody else's
+repository sitting at the same path, and "it looks like a project" is not evidence that it is *this* one.
+With no active Builder project, validating an independent repository does not depend on `.builder/current/`
+at all.
 
 It does **not** run product E2E, does **not** authenticate MCP servers, and **repairs nothing**. It returns
 structured PASS/FAIL evidence. A validator that fixes what it finds cannot tell you what was broken.
@@ -467,6 +500,40 @@ READY_TO_CREATE → CREATING_PROJECT → create-project → baseline commit
 Then tell the user, in Spanish, exactly this shape: open `<projects_root>\<slug>` in VS Code, start a fresh
 Claude Code session, approve the MCP sessions when prompted, and say `inicia`. Implementation begins there
 and only there.
+
+### Recovery during handoff
+
+A session can end anywhere in that line. Recovery reads `state.json` and the filesystem — never the
+conversation — and it introduces no new phase and no new script.
+
+**`CREATING_PROJECT`.** Derive the target from `projects_root + slug` and look at it.
+
+```
+target does NOT exist
+  → creation never published anything; the staging directory is internal to the script
+  → safe to re-run create-project unchanged, without touching the specs
+
+target DOES exist
+  → do NOT re-run create-project, do NOT delete it, do NOT overwrite it
+  → persist VALIDATING_PROJECT
+  → run the full validate-project
+```
+
+The second branch is why the validator compares the generated specifications against the approved ones: a
+directory at the target is not proof that this handoff put it there.
+
+**`VALIDATING_PROJECT`.** The validator is local, deterministic and repairs nothing, so an interrupted run
+simply runs again — in full.
+
+```
+VALIDATION_PASS → persist HANDOFF_COMPLETE
+VALIDATION_FAIL → stay blocked and report the evidence
+```
+
+There is no partial pass and no resuming halfway through the checks.
+
+**`HANDOFF_COMPLETE`.** The target is already validated. Report the path if the user has not seen it, run
+`reset-builder`, go `IDLE`. Regenerate nothing.
 
 ---
 

@@ -307,7 +307,7 @@ verify the Supabase MCP is authorized
 → rewrite this repository's .mcp.json entry to
      https://mcp.supabase.com/mcp?project_ref=<PROJECT_REF>
 → commit that change with the foundation work
-→ persist pending_action, tell the human to restart, and STOP
+→ persist pending_action with that same project_ref, tell the human to restart, and STOP
 ```
 
 **Editing `.mcp.json` does not rescope the session you are in.** The server was connected when this session
@@ -318,12 +318,21 @@ was meant to remove — while the file on disk says otherwise, which is worse th
 So the write is the *start* of the operation, not the end of it:
 
 ```json
-{ "pending_action": { "type": "RESTART_FOR_SUPABASE_MCP_SCOPE" } }
+{
+  "pending_action": {
+    "type": "RESTART_FOR_SUPABASE_MCP_SCOPE",
+    "project_ref": "abc123"
+  }
+}
 ```
 
+**`project_ref` is mandatory in that record**, not optional detail. It is the expectation the next session
+checks the file against: without it, recovery can confirm that *a* `project_ref` is present in `.mcp.json`
+and has no way to know whether it is the right one. An identifier, not a secret — no key, token or
+connection string is persisted anywhere.
+
 Persist that, tell the human to close and reopen the session, and **stop**. No further Supabase operation
-runs in this session. `project_ref` goes in `pending_action`'s record only if you need it there; it is an
-identifier, not a secret, and no key, token or connection string is persisted anywhere.
+runs in this session.
 
 On the next `inicia`, the ordinary recovery path picks it up — see **Recovery**. This uses the existing
 `pending_action` mechanism. It is not a new phase and does not change the lifecycle.
@@ -420,15 +429,28 @@ restarted for it to take effect:
 
 ```
 pending_action.type = RESTART_FOR_SUPABASE_MCP_SCOPE
-  → read .mcp.json and confirm the Supabase entry carries ?project_ref=<ref>
-  → exercise a real Supabase call and confirm it answers within that project
-      PASS → pending_action = null, continue FOUNDATION
-      FAIL → stay blocked, tell the human exactly what is missing
+
+  expected_ref = pending_action.project_ref
+  disk_ref     = the project_ref in .mcp.json's Supabase URL
+
+  expected_ref != disk_ref  or either is missing
+      → stay blocked, tell the human exactly what is missing
+      → run nothing against Supabase
+
+  expected_ref == disk_ref
+      → make one read-only Supabase call that names the project it answered for
+        PASS → pending_action = null, continue FOUNDATION
+        FAIL → stay blocked, tell the human exactly what is missing
 ```
 
-**Do not run any Supabase operation before that check passes.** A session that resumes and starts working
-on the assumption that the restart happened is doing the precise thing the block exists to prevent, and it
-will look like it worked.
+**The verification has to prove identity, not connectivity.** A generic call that returns 200 shows a server
+is reachable; it does not show *which* project the session is scoped to, which is the entire question. Read
+something that carries the project's own identity back — and if what you get cannot distinguish this project
+from another, it did not verify anything and `pending_action` stays where it is.
+
+**Do not run any Supabase operation before that check passes** — no schema, no data, no migration. A session
+that resumes on the assumption that the restart happened is doing the precise thing the block exists to
+prevent, and it will look like it worked.
 
 Clearing `pending_action` is what records that the condition was actually met. It is not a formality, and
 it is never cleared on the way in.

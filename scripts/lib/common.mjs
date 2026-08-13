@@ -95,20 +95,40 @@ export function loadProfile(id) {
  * nothing else, because guessing from prose is how a project gets generated on a
  * foundation nobody approved.
  *
- * Returns null when the section is absent or still unfilled.
+ * Line-based on purpose. The previous version delimited the section with
+ * `(?=^##\s|\Z)`, and JavaScript has no `\Z`: in a regular expression it is an
+ * identity escape for the letter Z, so the alternative that was supposed to mean
+ * "end of input" only matched a literal Z somewhere later in the file. A
+ * design.md whose `## Stack profile` was the final section parsed as null and
+ * creation stopped on a profile the human had in fact approved. Walking lines
+ * has no end-of-input case to get wrong.
+ *
+ * Handles LF and CRLF, a final newline or none, and the section appearing first,
+ * in the middle, or last. Returns null when the section is absent or unfilled.
  */
 export function parseApprovedProfile(designText) {
   if (typeof designText !== "string") return null;
 
-  const section = designText.match(/^##\s+Stack profile\s*$([\s\S]*?)(?=^##\s|\Z)/m);
-  if (!section) return null;
+  let insideSection = false;
 
-  const line = section[1].match(/^\s*[-*]\s*\*\*Profile:\*\*\s*(.+?)\s*$/m);
-  if (!line) return null;
+  for (const line of designText.split(/\r\n|\n|\r/)) {
+    /* A level-2 heading either opens the section or closes it. `###` and deeper
+       belong to whichever section is currently open. */
+    if (/^##[^#]/.test(line) || /^##$/.test(line)) {
+      insideSection = /^##\s+Stack profile\s*$/.test(line);
+      continue;
+    }
+    if (!insideSection) continue;
 
-  const value = line[1].replace(/^`|`$/g, "").trim();
-  if (!value || /^\[/.test(value)) return null; // [TBD] and friends are not a decision
-  return value;
+    const match = line.match(/^\s*[-*]\s*\*\*Profile:\*\*\s*(.+?)\s*$/);
+    if (!match) continue;
+
+    const value = match[1].replace(/^`+|`+$/g, "").trim();
+    if (!value || value.startsWith("[")) return null; // [TBD] and friends are not a decision
+    return value;
+  }
+
+  return null;
 }
 
 /**

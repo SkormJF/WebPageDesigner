@@ -4,6 +4,10 @@
  *
  *   node scripts/create-project.mjs --slug <slug> [--profile <id>]
  *
+ * Runs at phase CREATING_PROJECT. The Orchestrator persists that phase *before*
+ * calling this script -- write-before-act -- and this script never changes phase
+ * itself. Lifecycle state has exactly one writer.
+ *
  * The stack profile comes from the approved design.md. --profile is optional and
  * asserts that value; a mismatch fails with PROFILE_MISMATCH rather than picking
  * one of the two.
@@ -67,13 +71,22 @@ if (!fs.existsSync(statePath)) {
 }
 const state = readJson(statePath);
 
-if (state.phase !== "READY_TO_CREATE") {
+/* The harness persists state BEFORE a consequential action, so by the time this
+   script runs the phase is already CREATING_PROJECT -- that write is what makes
+   an interrupted handoff recoverable. Demanding READY_TO_CREATE here would mean
+   the only way to satisfy the script is to skip the write, which is the
+   contradiction this guard used to encode.
+
+   READY_TO_CREATE is the state the Spec Gate, the Spec Reviewer and human
+   approval produce; CREATING_PROJECT is the Orchestrator's record that it is
+   about to create. This script asserts the second and never writes either. */
+if (state.phase !== "CREATING_PROJECT") {
   abort(
-    `Phase is ${state.phase}, not READY_TO_CREATE.`,
-    "Creation runs only after the mechanical Spec Gate, the Spec Reviewer, and explicit human approval have all passed.",
+    `Phase is ${state.phase}, not CREATING_PROJECT.`,
+    "Creation follows READY_TO_CREATE -- reached only after the mechanical Spec Gate, the Spec Reviewer and explicit human approval -- and runs once the Orchestrator has persisted CREATING_PROJECT. This script does not change phase.",
   );
 }
-ui.pass(`Phase is READY_TO_CREATE (project "${state.project_name ?? slug}")`);
+ui.pass(`Phase is CREATING_PROJECT (project "${state.project_name ?? slug}")`);
 
 if (state.slug && state.slug !== slug) {
   abort(
@@ -347,7 +360,8 @@ rmrf(staging);
 ui.pass(`Created ${target}`);
 
 console.log(`
-Next: validate it before reporting anything to the human.
+Next: persist phase VALIDATING_PROJECT, then validate. Nothing is reported to the
+human before the validator passes.
 
   node scripts/validate-project.mjs --slug ${slug}
 `);

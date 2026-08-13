@@ -130,8 +130,12 @@ Exactly three, and they are mechanical only. Nothing here reasons about a produc
 design and review are conversations, and a script that pretended to do them would only be hiding the
 judgement it skipped.
 
-`create-project` refuses more than it does: wrong phase, mismatched slug, missing spec, failed gate, absent
-skill, and above all an occupied target — it never overwrites, never merges, and never invents `<slug>-2`.
+`create-project` refuses more than it does: any phase other than `CREATING_PROJECT`, a mismatched slug, a
+missing spec, a failed gate, an absent skill, and above all an occupied target — it never overwrites, never
+merges, and never invents `<slug>-2`.
+
+The stack profile is read from the approved `design.md`. `--profile` on either script is an assertion, not a
+selector: it may confirm what `design.md` says and it may not overrule it.
 
 `validate-project` proves and repairs nothing. A validator that fixed what it found could not tell you what
 was broken.
@@ -147,18 +151,19 @@ was broken.
   agents/spec-reviewer.md     the Builder's only subagent
   skills/                     20 skills, the distribution source
 config/
-  skill-manifest.json         which skills each project inherits
-  stack-profiles/             the two profiles
+  skill-manifest.json         classifies how each skill is distributed
+  stack-profiles/             the two profiles, each owning its own profile_skills
 templates/
   common/                     how every generated project works
   stacks/                     validated, runnable stack baselines
 scripts/                      create · validate · reset
+tests/                        the core contract, as node --test invariants
 .builder/current/             the active project (gitignored)
 ```
 
-[`CLAUDE.md`](CLAUDE.md) is the operating contract. [`REBUILD-PLAN.md`](REBUILD-PLAN.md) and
-[`MIGRATION-MAP.md`](MIGRATION-MAP.md) record the architecture this was rebuilt to and how each legacy piece
-was placed.
+[`CLAUDE.md`](CLAUDE.md) is the operating contract; this README describes it and never overrides it.
+[`tests/core-contract.test.mjs`](tests/core-contract.test.mjs) holds the invariants that must not regress —
+run it with `node --test tests/core-contract.test.mjs`.
 
 ---
 
