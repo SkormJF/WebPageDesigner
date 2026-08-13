@@ -85,6 +85,63 @@ export function loadProfile(id) {
   return readJson(file);
 }
 
+/* ---------- the approved stack profile ---------- */
+
+/**
+ * Extract the approved stack profile id from design.md's text.
+ *
+ * Pure and string-in/string-out so it can be exercised directly. It matches the
+ * template's own line -- `- **Profile:** <id>` under `## Stack profile` -- and
+ * nothing else, because guessing from prose is how a project gets generated on a
+ * foundation nobody approved.
+ *
+ * Returns null when the section is absent or still unfilled.
+ */
+export function parseApprovedProfile(designText) {
+  if (typeof designText !== "string") return null;
+
+  const section = designText.match(/^##\s+Stack profile\s*$([\s\S]*?)(?=^##\s|\Z)/m);
+  if (!section) return null;
+
+  const line = section[1].match(/^\s*[-*]\s*\*\*Profile:\*\*\s*(.+?)\s*$/m);
+  if (!line) return null;
+
+  const value = line[1].replace(/^`|`$/g, "").trim();
+  if (!value || /^\[/.test(value)) return null; // [TBD] and friends are not a decision
+  return value;
+}
+
+/**
+ * The approved profile for the active Builder project. design.md owns this --
+ * it is not duplicated into state.json, which stays minimal operational memory.
+ */
+export function readApprovedProfile(dir = paths.builderCurrent) {
+  const file = path.join(dir, "design.md");
+  if (!fs.existsSync(file)) return null;
+  return parseApprovedProfile(fs.readFileSync(file, "utf8"));
+}
+
+/**
+ * Resolve a slug to its target directory under projects_root, refusing anything
+ * that would land outside it. Deterministic by construction rather than by
+ * inspecting a caller-supplied path afterwards.
+ */
+export function resolveProjectTarget(slug, config) {
+  if (!isValidSlug(slug)) {
+    abort(
+      "A valid --slug is required.",
+      "Lowercase letters, digits and hyphens; starts with a letter; 2-64 characters.",
+    );
+  }
+  const root = path.resolve(config.projects_root);
+  const target = path.resolve(path.join(root, slug));
+  const withinRoot = target === root ? false : target.startsWith(root + path.sep);
+  if (!withinRoot) {
+    abort(`Refusing to resolve "${slug}" outside ${root}.`, `Resolved to ${target}.`);
+  }
+  return target;
+}
+
 /* ---------- skills ---------- */
 
 /**

@@ -4,6 +4,10 @@
  *
  *   node scripts/create-project.mjs --slug <slug> [--profile <id>]
  *
+ * The stack profile comes from the approved design.md. --profile is optional and
+ * asserts that value; a mismatch fails with PROFILE_MISMATCH rather than picking
+ * one of the two.
+ *
  *   COMMON TEMPLATE + STACK TEMPLATE + INHERITED SKILLS + PROFILE SKILLS
  *   + APPROVED SPECS = NEW INDEPENDENT PROJECT
  *
@@ -35,6 +39,8 @@ import {
   parseArgs,
   isValidSlug,
   describeExecFailure,
+  readApprovedProfile,
+  resolveProjectTarget,
 } from "./lib/common.mjs";
 import { runSpecGate, reportSpecGate } from "./lib/spec-gate.mjs";
 
@@ -75,9 +81,30 @@ if (state.slug && state.slug !== slug) {
   );
 }
 
-const profileId = args.profile ?? state.stack_profile ?? config.default_stack_profile;
-const profile = loadProfile(profileId);
-ui.pass(`Stack profile "${profile.id}" resolves to ${profile.template}`);
+/* The approved stack profile lives in design.md and nowhere else. It is not
+   duplicated into state.json, and builder.config.default_stack_profile is a
+   Planning-time proposal, not an answer -- reaching for it here is how a project
+   whose design.md approved Vite gets generated on Next. */
+const approvedProfile = readApprovedProfile();
+if (!approvedProfile) {
+  abort(
+    "design.md does not state an approved stack profile.",
+    'Expected "- **Profile:** <id>" under "## Stack profile". A generated project must rest on a foundation someone approved, not on a default.',
+  );
+}
+
+/* --profile is an assertion, never a second opinion. It may confirm what
+   design.md says; it may not overrule it, and a mismatch is a stop rather than
+   a choice between two answers. */
+if (args.profile && args.profile !== true && args.profile !== approvedProfile) {
+  abort(
+    `CREATE_FAILED  code: PROFILE_MISMATCH`,
+    `--profile "${args.profile}" does not match the profile approved in design.md ("${approvedProfile}"). Nothing was written.`,
+  );
+}
+
+const profile = loadProfile(approvedProfile);
+ui.pass(`Stack profile "${profile.id}" (approved in design.md) resolves to ${profile.template}`);
 
 const templateDir = path.join(BUILDER_ROOT, profile.template);
 if (!fs.existsSync(path.join(templateDir, "package.json"))) {
@@ -100,7 +127,7 @@ if (!gate.pass) {
 /* The single most destructive thing this script could do is write over
    somebody's project. It never overwrites, never merges, and never invents
    <slug>-2 -- an occupied target is a stop, not a naming problem. */
-const target = path.join(config.projects_root, slug);
+const target = resolveProjectTarget(slug, config);
 if (fs.existsSync(target)) {
   abort(
     `Target already exists: ${target}`,

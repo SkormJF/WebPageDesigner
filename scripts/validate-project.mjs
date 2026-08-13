@@ -2,7 +2,7 @@
 /**
  * validate-project — prove a generated repository is ready for a fresh session.
  *
- *   node scripts/validate-project.mjs --slug <slug> [--profile <id>] [--quick]
+ *   node scripts/validate-project.mjs --slug <slug> [--profile <id>]
  *
  * It answers one question and nothing else: did the Builder generate a valid
  * independent repository?
@@ -10,6 +10,15 @@
  * It does not run product E2E, does not authenticate MCP servers, and repairs
  * nothing. A validator that fixes what it finds cannot tell you what was
  * broken.
+ *
+ * There is one PASS and one way to reach it. Every check runs, every time --
+ * structure, git, specs, harness, skills, stack, npm ci, lint, typecheck, build
+ * and smoke start. No --quick, no partial or soft pass: a VALIDATION_PASS that
+ * could mean "most of it" is worth nothing to whoever reads it.
+ *
+ * The target is derived from --slug against builder.config.projects_root and
+ * cannot be supplied directly. npm install, a build and a server start are not
+ * things to point at an arbitrary directory.
  *
  * Exit 0 on PASS, 1 on FAIL.
  */
@@ -30,16 +39,27 @@ import {
   listFiles,
   parseArgs,
   describeExecFailure,
+  resolveProjectTarget,
 } from "./lib/common.mjs";
 
 const args = parseArgs(process.argv.slice(2));
 const config = loadConfig();
 
-const target = args.path
-  ? path.resolve(args.path)
-  : args.slug
-    ? path.join(config.projects_root, args.slug)
-    : abort("Pass --slug <slug> or --path <dir>.");
+for (const removed of ["quick", "path"]) {
+  if (removed in args) {
+    abort(
+      `--${removed} no longer exists.`,
+      removed === "quick"
+        ? "There is one validation and one PASS. Run it in full: node scripts/validate-project.mjs --slug <slug>"
+        : "Pass --slug <slug>; the target is derived from builder.config.projects_root.",
+    );
+  }
+}
+
+/* Derived, never supplied. The old form accepted --path and then checked it with
+   startsWith afterwards, which is a fragile way to decide where npm ci, a build
+   and a server start are allowed to run. */
+const target = resolveProjectTarget(args.slug, config);
 
 if (!fs.existsSync(target)) abort(`No such directory: ${target}`);
 
@@ -61,16 +81,14 @@ const read = (rel) => fs.readFileSync(path.join(target, rel), "utf8");
 
 ui.step(`Validating ${target}`);
 
+/* The target is resolved from the slug against projects_root, so location is
+   guaranteed by construction rather than asserted after the fact. What is still
+   worth checking is that projects_root itself has not been pointed inside the
+   Builder, which would defeat the boundary no matter how the path was derived. */
 check(
-  "Lives under the configured projects root",
-  path.resolve(target).startsWith(path.resolve(config.projects_root)),
-  `Expected a directory under ${config.projects_root}`,
-);
-
-check(
-  "Is not inside the Builder repository",
-  !path.resolve(target).startsWith(path.resolve(paths.builderCurrent, "..", "..")),
-  "A generated project inside the Builder repository defeats the whole boundary.",
+  "Projects root is outside the Builder repository",
+  !path.resolve(config.projects_root).startsWith(path.resolve(paths.builderCurrent, "..", "..")),
+  `builder.config.json points projects_root at ${config.projects_root}, which is inside the Builder.`,
 );
 
 /* ---------- git baseline ---------- */
@@ -297,10 +315,7 @@ check(
 
 /* ---------- technical scaffold ---------- */
 
-if (args.quick) {
-  ui.step("Technical scaffold");
-  ui.info("skipped (--quick)");
-} else {
+{
   ui.step("Technical scaffold");
   const run = (label, command) => {
     try {
