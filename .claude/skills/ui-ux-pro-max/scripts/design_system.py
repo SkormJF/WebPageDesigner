@@ -4,6 +4,18 @@
 Design System Generator - Aggregates search results and applies reasoning
 to generate comprehensive design system recommendations.
 
+NOT USED IN THIS PROJECT.
+
+    This module generates a design system from search results and can persist it
+    as design-system/MASTER.md. This project already has exactly one visual
+    contract -- design-system.md -- approved by a human from a real artifact,
+    element by element. A second one produced by a search would compete with it
+    for the same decisions, and the approved one wins by definition.
+
+    The module is kept because the corpus tooling is shared and search.py imports
+    from the same package. Nothing in this project should call it. See the skill's
+    SKILL.md for what to use instead.
+
 Usage:
     from design_system import generate_design_system
     result = generate_design_system("SaaS dashboard", "My Project")
