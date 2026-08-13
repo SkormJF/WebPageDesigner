@@ -65,7 +65,25 @@ hidden until focused; it may not be absent.
 
 ---
 
-## 4. Dialogs and overlays
+## 4. Images, icons and structure
+
+- **Informative images describe what they convey**, not what they are. "Team of four at a shared desk"
+  tells someone something; "image1.jpg" and "photo" tell them nothing, and neither does a filename.
+- **Decorative images take an empty alt**, so a screen reader skips them. An empty alt is a decision; a
+  missing alt attribute is an omission, and they are read differently.
+- **Icon-only controls have accessible names.** The icon itself is hidden from assistive technology and the
+  name lives on the control.
+- **Icons beside text are hidden**, otherwise the label is announced twice.
+- **No text baked into images.** It cannot be resized, translated, selected or read aloud.
+- **Landmarks are used** — header, nav, main, footer — so someone can jump between regions instead of
+  tabbing through everything.
+- **One `h1`, and no skipped levels.** Heading order is how most screen-reader users navigate a page; a
+  heading chosen for its font size rather than its rank breaks that.
+- **Lists are lists.** Related items in a `<ul>`, not a stack of divs.
+
+---
+
+## 5. Dialogs and overlays
 
 - Correct role, and a name — `aria-labelledby` pointing at the title.
 - Focus moves into the dialog on open, and to a sensible element, not the close button by default.
@@ -79,7 +97,7 @@ because the library's version did not fit is the one that will fail.
 
 ---
 
-## 5. Navigation
+## 6. Navigation
 
 - The current page is identified — `aria-current="page"`, not colour alone.
 - The mobile menu is reachable, operable and dismissible by keyboard.
@@ -90,7 +108,7 @@ because the library's version did not fit is the one that will fail.
 
 ---
 
-## 6. Dynamic state
+## 7. Dynamic state
 
 Anything that changes without a page load needs to reach someone who is not watching.
 
@@ -102,7 +120,7 @@ Anything that changes without a page load needs to reach someone who is not watc
 
 ---
 
-## 7. Reflow and zoom
+## 8. Reflow and zoom
 
 - **200% browser zoom**: content reflows, nothing is cut off, nothing needs horizontal scrolling.
 - **320 CSS pixels wide**: the WCAG reflow criterion. No two-dimensional scrolling.
@@ -111,7 +129,7 @@ Anything that changes without a page load needs to reach someone who is not watc
 
 ---
 
-## 8. Colour and contrast
+## 9. Colour and contrast
 
 - Body text 4.5:1, large text and UI components 3:1. Measure, do not estimate.
 - **Colour is never the only carrier of meaning.** An error that is only red, a required field that is only
@@ -122,7 +140,7 @@ Anything that changes without a page load needs to reach someone who is not watc
 
 ---
 
-## 9. Motion
+## 10. Motion
 
 Every animation has a still path under `prefers-reduced-motion`. This is not a preference to weigh against
 the design — it costs nothing and vestibular disorders are common enough that any real audience includes

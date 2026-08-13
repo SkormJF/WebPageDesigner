@@ -11,6 +11,28 @@ The rule that matters most here: **every finding must be provable by grep or by 
 
 As a Quality Gate input, once the build is complete and before deploy readiness is claimed — not something the user has to remember to request. Re-run it after any later pass that touches shared components, data-fetching, or dependencies in a meaningful way; skip it after a small, isolated copy or styling tweak.
 
+## Targets
+
+Measure against these, and interpret rather than chase. A perfect score bought by gutting the approved
+design is a failed audit — the design was approved by a human and the score was not.
+
+| Metric | Target | What it actually measures |
+|---|---|---|
+| LCP | < 2.5s | How fast the main content appears |
+| INP | < 200ms | How fast the page answers an interaction |
+| CLS | < 0.1 | How much the layout moves while loading |
+
+The wins that are almost always available, in rough order of payoff:
+
+- **The hero image is the LCP element.** Prioritise it explicitly; lazy-loading it is a common own goal.
+- **Give every image explicit dimensions.** Missing width and height is the most frequent CLS cause.
+- **Load only the font weights in use**, with a swap strategy, and prefer a variable face over five files.
+- **Keep the client boundary tight.** A client directive on a component that does not need one drags its
+  whole import graph into the browser bundle.
+- **Import from source, not barrels.** A barrel re-export can cost hundreds of milliseconds of import time
+  for one symbol.
+- **Defer below-the-fold and third-party work** until after hydration.
+
 ## What to check
 
 **1. Duplicate auth/session verification.** If there's a middleware (`proxy.ts`/`middleware.ts`) that checks the session, and a separate page-level helper that also calls the equivalent of `auth.getUser()` + a profile query, check whether both run on every navigation. `React.cache()` only deduplicates calls within a single render pass — it does **not** deduplicate across the middleware→page boundary, since those are separate execution phases. If both are verified to run on every request, the fix is: middleware sets the verified result on trusted **request** headers via `Headers.set()` (never `.append()`, since `.set()` unconditionally overwrites anything a client tried to send under the same header name) after validating; the page-level helper reads those headers first and only falls back to a full re-check when they're absent. Document explicitly why the header can be trusted (who sets it, and that the real data access still goes through RLS with the actual session cookie regardless — the header only saves a redundant lookup, it isn't itself the security boundary).
@@ -25,7 +47,7 @@ As a Quality Gate input, once the build is complete and before deploy readiness 
 
 ## Process
 
-1. Grep and read broadly first — both the **shared component's own definition** and its **real usage sites** across the app. The definition alone can be misleading: a `size="lg"` button variant might be declared as one height in the component file while every actual call site overrides it to a different height by hand, meaning the "real" default in practice is the overridden value, not the declared one. This same principle (catalog real usage, not just declarations) is also the core method behind consistency/Atomic Design audits — see `docs/design-guide.md`.
+1. Grep and read broadly first — both the **shared component's own definition** and its **real usage sites** across the app. The definition alone can be misleading: a `size="lg"` button variant might be declared as one height in the component file while every actual call site overrides it to a different height by hand, meaning the "real" default in practice is the overridden value, not the declared one. This same principle — catalog real usage, not declarations — is also the core method behind consistency audits; see the `atomic-design` skill.
 2. Present a plan before changing anything: a table with criticality, performance impact, and the concrete rationale (file:line) behind each item, phased by risk (dependency/config changes and query parallelization are low-risk; anything touching the auth boundary is higher-risk and gets its own phase with extra verification).
 3. Implement in phases, running `tsc --noEmit`, `npm run lint`, and `npm run build` after each phase — not just once at the end.
 4. For any change that touches the auth boundary specifically, add an explicit security check before calling it done — for example, a forged-header request against a running dev server confirming the trusted header can't be spoofed by a client. Code review alone isn't enough evidence for a security-sensitive performance change.

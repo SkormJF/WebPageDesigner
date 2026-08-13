@@ -1,368 +1,162 @@
-> **[Lee esto en espanol (README.es.md)](README.es.md)**
+> **[Léelo en español (README.es.md)](README.es.md)**
 
-# Claude Web Builder
+# Web Builder — Project Factory
 
-Build a professional landing page in minutes. No coding experience needed.
+This repository does not build products. It **specifies** them, then generates the repository that builds
+them.
 
-Clone this repo, open it with Claude Code, answer a few questions about your business, and Claude builds, previews, and deploys your page.
+You describe what you want. It runs discovery, gets the visual direction approved on a real interactive
+page, writes five complete specifications, has them reviewed by an independent agent, asks for your
+approval, and then generates a **new, independent repository** — with its own git history, its own harness,
+its own agents and its own skills.
+
+You open that repository in a fresh Claude Code session, say `inicia`, and implementation starts there.
+
+```
+WEB BUILDER          discovery · visual direction · specifications · generation · validation
+GENERATED PROJECT    implementation · review · integration · QA · deploy · maintenance
+```
+
+The boundary is the point. A factory that also builds the product ends up with neither job done properly.
 
 ---
 
-## What You Get
+## Requirements
 
-When you're done, you'll have:
-- A **custom landing page** built to your specifications (not a generic template)
-- **Professional design** that doesn't look AI-generated (we specifically avoid that)
-- **Mobile-responsive** layout that works on phones, tablets, and desktops
-- **SEO-optimized** meta tags so search engines can find you
-- **A live URL** you can share with anyone (deployed to Vercel for free)
+| What | Why |
+|---|---|
+| **Claude Code** | Runs the Builder |
+| **Node.js 20+** | The scripts and both stack templates |
+| **Git** | Every generated project starts as a repository |
 
-The page is built with Next.js, Tailwind CSS, and shadcn/ui — modern tools used by professional developers.
-
----
-
-## Quick Start (Step by Step)
-
-### Step 1: Install Claude Code
-
-Claude Code is a command-line tool from Anthropic. You need it to run this project.
-
-**Install it:**
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-If you don't have `npm`, install Node.js first (see Step 2).
-
-After installing, you may need to log in:
-```bash
-claude login
-```
-
-### Step 2: Install Node.js
-
-Node.js is a tool that runs JavaScript on your computer. The landing page needs it.
-
-**Check if you already have it:**
-```bash
-node --version
-```
-
-If you see `v18.0.0` or higher, you're good. If not:
-
-- **Mac:** Go to [nodejs.org](https://nodejs.org), download the **LTS** version, open the file, and follow the installer.
-- **Windows:** Same — [nodejs.org](https://nodejs.org), download LTS, run the installer.
-- **Linux:** `sudo apt install nodejs npm` (Ubuntu/Debian) or check [nodejs.org](https://nodejs.org/en/download) for your distro.
-
-### Step 3: Clone this project
-
-"Cloning" means downloading a copy of this project to your computer.
-
-**Open your terminal** (Mac: search for "Terminal" in Spotlight. Windows: search for "Command Prompt" or "PowerShell").
-
-Then run:
-```bash
-git clone https://github.com/Hainrixz/claude-webkit.git
-cd claude-webkit
-```
-
-You now have the project on your computer inside a folder called `claude-webkit`.
-
-### Step 4: Start Claude
-
-Inside the project folder, run:
-```bash
-claude
-```
-
-Claude will read the project instructions and greet you. It knows it's supposed to help you build a landing page.
-
-### Step 5: Answer the questions
-
-Claude will ask you about your business in 4 short rounds:
-
-1. **The basics** — Your business name, what you do, who your audience is
-2. **The look** — Colors, style, vibe (or say "you decide" and Claude picks for you)
-3. **The content** — What you want visitors to do, key features, tagline
-4. **Technical stuff** — Logo, images, whether you want to deploy
-
-**Don't know the answer?** Just say "you decide" or "I'm not sure" and Claude will make a good choice for you.
-
-**Speak Spanish?** Just respond in Spanish and Claude will switch to Spanish for the entire process.
-
-### Step 6: Watch Claude build
-
-After you approve the plan, Claude:
-1. Sets up the project (takes about 30 seconds)
-2. Builds each section of your page
-3. Gives you status updates as it works
-
-You don't need to do anything during this step — just watch.
-
-### Step 7: Preview your page
-
-Claude will either:
-- Show you screenshots (if the Playwright skill is installed)
-- Tell you to open `http://localhost:3000` in your browser
-
-Open that link and you'll see your landing page running on your computer.
-
-Claude will ask for your feedback: "How does the hero section feel?" Tell it what you like and what to change. It'll iterate until you're happy.
-
-### Step 8: Deploy (optional)
-
-When you're happy with the page, Claude will ask if you want to deploy it.
-
-If you say yes:
-- Claude runs the deploy script (bundled — **no Vercel account needed**)
-- You get a **live URL** like `https://your-site-abc123.vercel.app`
-- You can share this URL with anyone — it works on any device
-- You also get a **claim URL** if you want to keep the site permanently (free Vercel account)
-
-### Step 9: You're done!
-
-You now have:
-- A live landing page at your Vercel URL
-- The source code in the `site/` folder on your computer
-- Full ownership — you can edit anything, anytime
+Generated projects land in `C:\SkormJF\Projects\PagesProjects\<slug>`, configured in
+[`builder.config.json`](builder.config.json).
 
 ---
 
-## Prerequisites
+## Running it
 
-| What | Why | How to Get It |
-|------|-----|--------------|
-| **Claude Code** | Runs this project | `npm install -g @anthropic-ai/claude-code` |
-| **Node.js 18+** | Builds the landing page | [nodejs.org](https://nodejs.org) — download LTS |
-| **Git** | Downloads this project | Usually pre-installed. [git-scm.com](https://git-scm.com) if not |
-| **Vercel account** (optional) | Only needed to claim/keep deployments permanently | Free at [vercel.com](https://vercel.com) |
+Open this repository in Claude Code and describe what you want built. That is the whole interface.
 
----
-
-## Bundled Skills
-
-This project comes with **22 professional skills pre-installed** in `.claude/skills/`. They load automatically when Claude opens the project — you don't need to install anything extra.
-
-| Skill | What It Does |
-|-------|-------------|
-| `frontend-design` | Design methodology that makes designs look professional, not AI-generated |
-| `shadcn-ui` | Component library guide for polished UI with accessibility built in |
-| `humanizalo` | Removes AI writing patterns so page copy sounds human |
-| `vercel-react-best-practices` | 62 performance rules for faster page load times |
-| `vercel-deploy` | **Deploy to Vercel instantly — no account needed.** Auto-detects framework and gives you a live URL |
-| `building-components` | Guide for building modern, accessible UI components |
-| `web-design-guidelines` | Review your page against Vercel's Web Interface Guidelines |
-| `playwright-cli` | Browser automation so Claude can screenshot and check the design |
-| `chrome-bridge-automation` | Fallback browser — connects to your Chrome to check the design visually |
-| `seo-audit` | SEO analysis for meta tags, headings, and search visibility |
-| `ui-ux-pro-max` | Design intelligence database — 161 color palettes, 73 font pairings, 50+ styles |
-| `web-reader` | Analyzes reference websites the user likes |
-| `deep-research` | Systematic web research for better industry-specific copy |
-| `emil-design-eng` | Animation & micro-interaction polish — Emil Kowalski's craft philosophy |
-| `design-taste-frontend` | Counters default AI design bias with metric-based typography and layout rules |
-| `full-output-enforcement` | Prevents Claude from truncating or leaving placeholder code |
-| `imagegen-frontend-web` | Generates a reference image per section to align on visual direction |
-| `redesign-existing-projects` | Structured audit + upgrade path for improving an existing site |
-
----
-
-<details>
-<summary><strong>FAQ (Frequently Asked Questions)</strong></summary>
-
-### Do I need to know how to code?
-**No.** Claude handles all the coding. You just answer questions about your business and give feedback on the design.
-
-### Is this free?
-**Mostly.** You need a Claude Code subscription (from Anthropic). Node.js, Git, and deployment are all free. You don't even need a Vercel account — the bundled deploy script handles everything.
-
-### Can I edit the page after Claude builds it?
-**Yes.** The source code lives in the `site/` folder. It's standard Next.js + React code. You (or any developer) can edit it anytime.
-
-### What if I don't like the design?
-**Tell Claude.** Say something specific like "the colors feel too cold" or "make the headline bigger." Claude iterates until you're happy. You can also start over by re-running the project.
-
-### Can I use my own domain (like mybusiness.com)?
-**Yes.** After deploying to Vercel, go to your Vercel dashboard, click the project, go to "Domains", and add your custom domain. You'll need to update your DNS settings (Vercel gives you instructions).
-
-### Can I build more than one page?
-**Yes.** Each time you run the project, Claude builds a new page inside the `site/` folder. You can rename the folder and start again for a different project.
-
-### Does the page work on phones?
-**Yes.** Every page is built mobile-first. It's designed for 375px (phone), 768px (tablet), 1024px (laptop), and 1440px (desktop).
-
-### What language can the page be in?
-**Any language.** Just tell Claude what language you want the page content in. The interface supports English and Spanish natively, but the page content can be in any language.
-
-</details>
-
----
-
-<details>
-<summary><strong>Troubleshooting</strong></summary>
-
-### "command not found: claude"
-Claude Code isn't installed. Run: `npm install -g @anthropic-ai/claude-code`
-
-### "command not found: node"
-Node.js isn't installed. Download it from [nodejs.org](https://nodejs.org).
-
-### "command not found: git"
-Git isn't installed. Download it from [git-scm.com](https://git-scm.com).
-
-### The page doesn't load at localhost:3000
-- Check if the dev server is running (you should see output in the terminal)
-- Try a different port: `npm run dev -- --port 3001`
-- Make sure nothing else is using port 3000
-
-### Vercel deployment fails
-- Run `npx vercel login` to authenticate
-- Make sure `npm run build` works locally first (fixes build errors before deploying)
-- Check your internet connection
-
-### Claude seems stuck or confused
-- Try saying "let's start the questionnaire from the beginning"
-- Or close Claude and run `claude` again in the project folder
-
-</details>
-
----
-
-## How It Works
-
-The `CLAUDE.md` file contains instructions that turn Claude Code into a guided web-building assistant. When Claude opens this project, it reads those instructions and walks you through 6 phases — from questions to a live URL.
-
-### Flow Map
-
-```mermaid
-flowchart TD
-    Start([You run 'claude']) --> P1
-
-    subgraph P1["Phase 1: Discovery"]
-        Q1[Round 1: Business basics] --> Q2[Round 2: Visual direction]
-        Q2 --> Check1{Design direction OK?}
-        Check1 -- No --> Q2
-        Check1 -- Yes --> Q3[Round 3: Content]
-        Q3 --> Q4[Round 4: Technical details]
-    end
-
-    P1 --> P2
-
-    subgraph P2["Phase 2: Design System"]
-        Colors[Pick colors + fonts] --> Archetype[Choose page archetype]
-        Archetype --> Present[Present design system]
-        Present --> Check2{Approved?}
-        Check2 -- No, change it --> Colors
-    end
-
-    Check2 -- Yes --> P3
-
-    subgraph P3["Phase 3: Scaffold"]
-        Node[Check Node.js] --> Create[Create Next.js project]
-        Create --> Shadcn[Install shadcn/ui components]
-        Shadcn --> Deps[Install dependencies]
-    end
-
-    P3 --> P4
-
-    subgraph P4["Phase 4: Build"]
-        Layout[Write layout.tsx] --> Page[Write page.tsx]
-        Page --> Components[Build all sections]
-        Components --> Humanize[Run copy through humanizalo]
-    end
-
-    P4 --> P5
-
-    subgraph P5["Phase 5: Preview & QA"]
-        Dev[Start dev server] --> Screenshots[Take screenshots]
-        Screenshots --> SEO[Run SEO audit]
-        SEO --> Checklist[Run quality checklist]
-        Checklist --> Check3{Happy with it?}
-        Check3 -- No, tweak it --> P4
-    end
-
-    Check3 -- Yes --> Check4{Ready to deploy?}
-    Check4 -- No --> Done1([Keep code locally])
-
-    Check4 -- Yes --> P6
-
-    subgraph P6["Phase 6: Deploy"]
-        Build[npm run build] --> Deploy[Deploy to Vercel]
-        Deploy --> URL[Get live URL]
-    end
-
-    P6 --> Check5{Want changes?}
-    Check5 -- Yes --> P4
-    Check5 -- No --> Done2([You're done! Share your URL])
-
-    style P1 fill:#f0f4ff,stroke:#4a6fa5
-    style P2 fill:#f0f4ff,stroke:#4a6fa5
-    style P3 fill:#f5f0ff,stroke:#6a5fa5
-    style P4 fill:#f5f0ff,stroke:#6a5fa5
-    style P5 fill:#fff0f0,stroke:#a55f5f
-    style P6 fill:#f0fff0,stroke:#5fa55f
-```
-
-**Key decision points (where Claude asks you):**
-- After Round 2 — "Does this design direction work?"
-- After Phase 5 — "How does this look?" (give feedback to iterate)
-- Before Phase 6 — "Ready to deploy?"
-
-**Everything else is automatic.** Phases 3-4 run without asking — Claude just builds and shows you the result.
-
-## Tech Stack
-
-- Next.js 15+ (App Router)
-- Tailwind CSS 4
-- shadcn/ui
-- TypeScript
-- Framer Motion
-
-## Project Structure
+What happens, in order:
 
 ```
-claude-webkit/
-├── CLAUDE.md                        # Instructions for Claude (the brain)
+IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_TO_CREATE
+     → CREATING_PROJECT → VALIDATING_PROJECT → HANDOFF_COMPLETE → RESET → IDLE
+```
+
+**Discovery** is a conversation in four rounds — what the product is, what it says, how it behaves (only
+when it has real functionality), and how it looks. The last round ends with an interactive artifact you open
+in a browser and approve **element by element**: palette, typography, buttons, layout, backgrounds, tone.
+Not a picture of a design — a real page, so hover, focus and disabled states are decisions you actually make
+rather than ones somebody improvises later.
+
+**Planning** turns that into five specifications, each owning exactly one thing:
+
+| File | Owns |
+|---|---|
+| `PROJECT.md` | Identity and scope |
+| `requirements.md` | What the product must do |
+| `design.md` | How, technically |
+| `design-system.md` | The approved visual contract |
+| `tasks.md` | The work, decomposed and traceable |
+
+**The gate** is three conditions, and all three must pass:
+
+```
+Mechanical Spec Gate  +  Spec Reviewer  +  your explicit approval  =  READY_TO_CREATE
+```
+
+The mechanical half checks structure — files, IDs, references, placeholders. The
+[Spec Reviewer](.claude/agents/spec-reviewer.md) is a separate agent that checks whether the specs are
+*right*: complete, consistent, traceable, feasible, and faithful to what you actually approved. It reports
+and never fixes.
+
+**Generation** composes the new repository, installs its dependencies, makes one baseline commit, validates
+the result, and tells you the path.
+
+---
+
+## Stack profiles
+
+| Profile | Stack | Status |
+|---|---|---|
+| `next-standard-v1` *(default)* | Next.js 16 · React 19 · Tailwind 4 · TypeScript 5 · ESLint | supported |
+| `react-vite-standard-v1` | React 19 · Vite 8 · react-router 8 · Tailwind 4 · TypeScript 6 · oxlint | supported |
+
+A profile counts as supported only once its template really installs, lints, typechecks, builds and passes
+its Playwright and axe specs. Both did, on this machine, on the date recorded in each profile. The exact
+versions live in each template's `package.json` and lockfile — those are the authority, not this table.
+
+---
+
+## What a generated project gets
+
+```
+project/
+├── CLAUDE.md              its own harness contract
+├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
-│   ├── settings.local.json          # Tool permissions
-│   └── skills/                      # 22 bundled skills (auto-loaded)
-│       ├── frontend-design/         # Design methodology + 7 reference docs
-│       ├── shadcn-ui/               # Component library guide
-│       ├── humanizalo/              # AI writing pattern removal
-│       ├── vercel-react-best-practices/  # 62 performance rules
-│       ├── vercel-deploy/           # Sandbox deploy (no account needed)
-│       ├── building-components/     # Accessible UI component patterns
-│       ├── web-design-guidelines/   # Vercel Web Interface Guidelines
-│       ├── playwright-cli/          # Browser automation + 7 references
-│       ├── chrome-bridge-automation/ # Chrome visual QA fallback
-│       ├── seo-audit/              # SEO analysis + references
-│       ├── ui-ux-pro-max/          # Design intelligence database (161 palettes, 57 fonts)
-│       ├── web-reader/             # Web content extraction for reference sites
-│       ├── deep-research/          # Systematic web research
-│       ├── emil-design-eng/        # Animation & micro-interaction polish
-│       ├── design-taste-frontend/  # Anti-AI-bias design rules
-│       ├── full-output-enforcement/ # Anti-truncation, complete file output
-│       ├── imagegen-frontend-web/  # Per-section design reference images
-│       └── redesign-existing-projects/ # Audit + upgrade workflow for existing sites
-├── docs/
-│   ├── system-prompt.md             # Agent personality (Spanish — the builder always talks to users in Spanish)
-│   ├── questionnaire.md             # Guided questions (Spanish)
-│   ├── design-guide.md              # Design principles & rules
-│   ├── landing-page-patterns.md     # 8 page archetypes
-│   ├── performance-checklist.md     # Core Web Vitals optimization
-│   ├── accessibility-checklist.md   # WCAG AA compliance
-│   ├── deployment-guide.md          # Vercel deployment
-│   ├── skill-reference.md           # Skills & invocation examples
-│   └── examples/                    # Example project briefs
-├── LICENSE                          # All Rights Reserved
-└── README.md                        # You are here
+│   ├── agents/            planner · builder · reviewer
+│   └── skills/            18-20, deterministic per profile
+├── .workflow/             state.json + current/
+├── .mcp.json              Vercel + Supabase
+├── src/  public/
+└── package.json  package-lock.json
 ```
 
-When Claude builds your page, it creates a `site/` directory with the full Next.js project.
+Its own lifecycle runs from `READY_TO_BUILD` to `DONE`, one task at a time, each implemented by a Builder
+agent and gated by an independent Reviewer before anything is committed. `HEAD` is always the last approved
+state.
+
+---
+
+## The three scripts
+
+```bash
+npm run create-project -- --slug <slug> [--profile <id>]
+npm run validate-project -- --slug <slug>
+npm run reset-builder -- --yes
+```
+
+Exactly three, and they are mechanical only. Nothing here reasons about a product — discovery, planning,
+design and review are conversations, and a script that pretended to do them would only be hiding the
+judgement it skipped.
+
+`create-project` refuses more than it does: wrong phase, mismatched slug, missing spec, failed gate, absent
+skill, and above all an occupied target — it never overwrites, never merges, and never invents `<slug>-2`.
+
+`validate-project` proves and repairs nothing. A validator that fixed what it found could not tell you what
+was broken.
+
+`reset-builder` deletes exactly one directory and takes no path argument.
+
+---
+
+## Repository layout
+
+```
+.claude/
+  agents/spec-reviewer.md     the Builder's only subagent
+  skills/                     20 skills, the distribution source
+config/
+  skill-manifest.json         which skills each project inherits
+  stack-profiles/             the two profiles
+templates/
+  common/                     how every generated project works
+  stacks/                     validated, runnable stack baselines
+scripts/                      create · validate · reset
+.builder/current/             the active project (gitignored)
+```
+
+[`CLAUDE.md`](CLAUDE.md) is the operating contract. [`REBUILD-PLAN.md`](REBUILD-PLAN.md) and
+[`MIGRATION-MAP.md`](MIGRATION-MAP.md) record the architecture this was rebuilt to and how each legacy piece
+was placed.
+
+---
 
 ## License
 
-All Rights Reserved — see [LICENSE](LICENSE). Private project, not licensed for redistribution.
-
----
+All rights reserved — see [LICENSE](LICENSE). Private project, not licensed for redistribution.
 
 Created by [@Soyenriquerocha](https://github.com/Soyenriquerocha) / [Tododeia](https://tododeia.com)
