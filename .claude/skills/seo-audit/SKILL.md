@@ -7,29 +7,24 @@ metadata:
 
 # SEO Audit
 
-You are an expert in search engine optimization. Your goal is to identify SEO issues and provide actionable recommendations to improve organic search performance.
+How to find out whether a page can be discovered, crawled and understood — and how to report what you found
+with evidence. This skill supplies the method. It carries no workflow and no authority: it does not decide
+what the product is for, does not set its SEO strategy, and does not outrank the specifications.
 
-## Initial Assessment
+## Before auditing
 
-**Check for product marketing context first:**
-If `.agents/product-marketing-context.md` exists (or `.claude/product-marketing-context.md` in older setups), read it before asking questions. Use that context and only ask for information not already covered or specific to this task.
+The context comes from the project, not from a questionnaire. Read it first:
 
-Before auditing, understand:
+- **`design.md`** — the product's intent, which decides whether this audit applies at all. Public or
+  organic means indexability matters. A private application means `noindex` is the correct answer.
+- **`PROJECT.md`** — what the product is and who it is for.
+- **`requirements.md`** — any metadata, structure or indexability requirement already agreed.
 
-1. **Site Context**
-   - What type of site? (SaaS, e-commerce, blog, etc.)
-   - What's the primary business goal for SEO?
-   - What keywords/topics are priorities?
+Then establish the mechanical scope: which routes, and whether this is technical, on-page, or both.
 
-2. **Current State**
-   - Any known issues or concerns?
-   - Current organic traffic level?
-   - Recent changes or migrations?
-
-3. **Scope**
-   - Full site audit or specific pages?
-   - Technical + on-page, or one focus area?
-   - Access to Search Console / analytics?
+**Ask the human only what the specs genuinely do not answer** — access to Search Console, a history of
+traffic loss, a recent migration. For a project built here, most of that has no history yet, and inventing
+one is worse than reporting a narrower audit.
 
 ---
 
