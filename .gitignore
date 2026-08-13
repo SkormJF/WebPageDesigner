@@ -1,6 +1,11 @@
-# Built landing page
-site/
-build/
+# Transient Builder project work — the only non-tracked path in this repo.
+# A Builder project lives here while it is being discovered, planned and reviewed,
+# and is deleted by reset-builder after handoff. Generated projects live outside
+# this repository entirely (see builder.config.json -> projects_root).
+.builder/current/
+
+# Staging area used by create-project before a repo is moved to its final target
+.staging/
 
 # Dependencies
 node_modules/
@@ -21,17 +26,13 @@ Thumbs.db
 *.swp
 *.swo
 
-# Claude Code local settings (tool-permission allowlist the harness keeps
-# per machine/session -- not project code, nothing to share via git)
+# Claude Code local settings (per-machine tool-permission allowlist the harness
+# keeps -- not project code, nothing to share via git)
 .claude/settings.local.json
 .claude/settings.json
 
 # Vercel
 .vercel/
-
-# Next.js (inside site/)
-.next/
-out/
 
 # Debug
 npm-debug.log*
@@ -42,7 +43,7 @@ yarn-error.log*
 __pycache__/
 *.pyc
 
-# Playwright
+# Playwright / screenshots
 playwright-cli-screenshots/
 *.png
 !docs/**/*.png
