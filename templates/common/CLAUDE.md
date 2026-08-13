@@ -106,9 +106,12 @@ Orchestrator selects TASK
 `HEAD` is the last approved committed state. Unapproved work stays in the working diff. That invariant is
 what makes it safe to abandon a task mid-flight.
 
-Durable status (`PENDING` / `ACTIVE` / `DONE`) lives in `tasks.md`. The operational stage of the task
-currently in flight (`IMPLEMENTING` / `READY_FOR_REVIEW` / `CHANGES_REQUESTED` / `APPROVED`) lives in
-`.workflow/state.json`.
+Durable status (`PENDING` / `ACTIVE` / `DONE`) lives in `tasks.md`. The task currently in flight lives in
+`.workflow/state.json` as `current_task` (its ID) and `task_stage` (`IMPLEMENTING` / `READY_FOR_REVIEW` /
+`CHANGES_REQUESTED` / `APPROVED`).
+
+`state.json` fields hold enum values and IDs, never annotated prose. `phase` in particular is what every
+recovery path branches on — free text inside it turns a comparison into a guess.
 
 **One task at a time.** Not because parallelism is forbidden in principle, but because a review that spans
 three half-finished tasks cannot tell you which one broke something.
@@ -270,6 +273,24 @@ authorized; their values live where the human put them.
 
 **A deployment reporting READY is not a verified application.** Those are different claims.
 
+### Record remote operations before you start them
+
+Anything that changes state on a system you do not control — a deploy, a project rename, an alias
+assignment, an environment-variable write — is written down *first*:
+
+```
+persist external_operation = { kind, target, started_at }   ← before the call
+→ run the operation
+→ observe the actual result
+→ persist the outcome, then clear external_operation back to null
+```
+
+The whole point is the gap between the second and third steps. If the session ends there, the next one finds
+a record saying an operation was in flight and knows to go and look, instead of assuming nothing happened
+and doing it again.
+
+**Metadata only, never a secret** — a variable's name, not its value.
+
 ### Post-deploy
 
 Verify production behaviour for real: unauthenticated access to routes that should be public, the expected
@@ -301,11 +322,25 @@ and when asked, retrieve narrow relevant excerpts rather than bulk context.
 
 ## Recovery
 
-Interrupted deploy: **inspect observed remote state before retrying.** A retry that assumes the previous
-attempt failed is how one deploy becomes two.
-
-Interrupted task: `HEAD` is the last approved state, the working diff is unapproved work. Read
+**Interrupted task:** `HEAD` is the last approved state, the working diff is unapproved work. Read
 `.workflow/current/` to see what was in flight.
+
+**Interrupted external operation:** `state.json` holds `external_operation`. If it is not `null`, an
+operation against a remote system was started and its outcome was never recorded.
+
+```
+external_operation is set
+  → observe the real remote state through the MCP
+  → decide whether it already happened
+  → then act
+```
+
+**Never retry automatically.** A retry that assumes the previous attempt failed is how one deploy becomes
+two, how a project ends up with a duplicate set of environment variables, and how a half-configured remote
+gets a second half-configuration on top. The recorded metadata exists so you know *what to look for*, not so
+you can skip looking.
+
+Clear `external_operation` back to `null` once the outcome is known and recorded.
 
 ---
 

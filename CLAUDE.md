@@ -154,9 +154,15 @@ Grows as the project advances. Not everything exists from the start.
   "phase": "DISCOVERY",
   "project_name": "Example",
   "slug": "example",
+  "discovery_round": 2,
   "pending_action": null
 }
 ```
+
+**`phase` holds a value from the state machine and nothing else.** Never `"DISCOVERY — round 2 done"` or
+any other annotated string: the phase is what every recovery path branches on, and free text inside it turns
+a comparison into a guess. Progress *within* Discovery lives in `discovery_round`, an integer, present only
+while the phase is `DISCOVERY`.
 
 **Do not put requirements, architecture, visual decisions or review history in state.** Those have owners.
 State answers "where are we and what was I about to do", nothing else. Derive the target path from
@@ -182,9 +188,8 @@ Conversational, not a form. Infer what you can already infer and ask only what i
 contradictory. The user is the final authority throughout.
 
 Write `discovery.md` as you go — from the moment the project has a name — and update it at the end of every
-round. Keep `state.json`'s phase note accurate ("DISCOVERY — round 2 done, round 3 next"). Discovery is the
-longest conversational stretch in the system; a session that ends here with nothing written loses everything
-and starts over.
+round, bumping `discovery_round` with it. Discovery is the longest conversational stretch in the system; a
+session that ends here with nothing written loses everything and starts over.
 
 ### Round 1 — Product and context
 

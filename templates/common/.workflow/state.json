@@ -2,7 +2,8 @@
   "schema_version": 1,
   "phase": "READY_TO_BUILD",
   "project": "[PROJECT_NAME]",
-  "active_task": null,
+  "current_task": null,
   "task_stage": null,
-  "pending_action": null
+  "pending_action": null,
+  "external_operation": null
 }

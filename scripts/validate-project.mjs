@@ -149,6 +149,22 @@ if (hasState) {
     typeof state.project === "string" && !state.project.includes("[PROJECT_NAME]"),
     `project = ${state.project}`,
   );
+
+  /* A fresh repository has nothing in flight. A non-null field here would mean
+     the template shipped a half-finished operation as someone's starting point. */
+  const idleFields = ["current_task", "task_stage", "pending_action", "external_operation"];
+  const notIdle = idleFields.filter((f) => state[f] !== null);
+  check(
+    "Operational fields start null",
+    notIdle.length === 0,
+    notIdle.map((f) => `${f} = ${JSON.stringify(state[f])}`).join(", "),
+  );
+
+  check(
+    "external_operation is present in the schema",
+    "external_operation" in state,
+    "Without it there is no record that a remote operation was in flight, and recovery cannot tell an interrupted deploy from one that never started.",
+  );
 }
 
 check(".workflow/current/implementation.md present", exists(".workflow/current/implementation.md"));
