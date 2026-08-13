@@ -307,7 +307,26 @@ verify the Supabase MCP is authorized
 → rewrite this repository's .mcp.json entry to
      https://mcp.supabase.com/mcp?project_ref=<PROJECT_REF>
 → commit that change with the foundation work
+→ persist pending_action, tell the human to restart, and STOP
 ```
+
+**Editing `.mcp.json` does not rescope the session you are in.** The server was connected when this session
+started, and it stays connected on the old, unscoped URL until Claude Code reads the file again. Continuing
+to issue Supabase calls after the write means running them through exactly the broad connection the scoping
+was meant to remove — while the file on disk says otherwise, which is worse than not having scoped at all.
+
+So the write is the *start* of the operation, not the end of it:
+
+```json
+{ "pending_action": { "type": "RESTART_FOR_SUPABASE_MCP_SCOPE" } }
+```
+
+Persist that, tell the human to close and reopen the session, and **stop**. No further Supabase operation
+runs in this session. `project_ref` goes in `pending_action`'s record only if you need it there; it is an
+identifier, not a secret, and no key, token or connection string is persisted anywhere.
+
+On the next `inicia`, the ordinary recovery path picks it up — see **Recovery**. This uses the existing
+`pending_action` mechanism. It is not a new phase and does not change the lifecycle.
 
 The point is blast radius. An unscoped entry reaches every Supabase project the authorized account can see;
 this repository has business with exactly one of them. After scoping, a mistake here cannot touch a
@@ -392,6 +411,27 @@ gets a second half-configuration on top. The recorded metadata exists so you kno
 you can skip looking.
 
 Clear `external_operation` back to `null` once the outcome is known and recorded.
+
+**Blocked on a restart:** `state.json` holds `pending_action`. If it is not `null`, the previous session
+stopped deliberately and named what has to be true before work continues.
+
+`RESTART_FOR_SUPABASE_MCP_SCOPE` — `.mcp.json` was rescoped to a `project_ref` and the session had to be
+restarted for it to take effect:
+
+```
+pending_action.type = RESTART_FOR_SUPABASE_MCP_SCOPE
+  → read .mcp.json and confirm the Supabase entry carries ?project_ref=<ref>
+  → exercise a real Supabase call and confirm it answers within that project
+      PASS → pending_action = null, continue FOUNDATION
+      FAIL → stay blocked, tell the human exactly what is missing
+```
+
+**Do not run any Supabase operation before that check passes.** A session that resumes and starts working
+on the assumption that the restart happened is doing the precise thing the block exists to prevent, and it
+will look like it worked.
+
+Clearing `pending_action` is what records that the condition was actually met. It is not a formality, and
+it is never cleared on the way in.
 
 ---
 

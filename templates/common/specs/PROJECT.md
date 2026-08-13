@@ -9,9 +9,13 @@
 
 - **Name:** [TBD]
 - **Slug:** [TBD]
-- **Stack profile:** [TBD]
 - **Language:** [TBD — the language the product's own UI and content are written in]
 - **Created:** [TBD — YYYY-MM-DD]
+
+<!-- SLOT: The stack profile is NOT here. design.md owns it, under "## Stack profile", and
+     create-project reads it from there. Restating it in this file would give one decision two
+     owners, and the moment they disagree there is no way to tell which one was approved. -->
+
 
 ## What this is
 

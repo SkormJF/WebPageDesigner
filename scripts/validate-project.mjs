@@ -40,6 +40,7 @@ import {
   parseArgs,
   describeExecFailure,
   resolveProjectTarget,
+  readApprovedProfile,
 } from "./lib/common.mjs";
 
 const args = parseArgs(process.argv.slice(2));
@@ -231,8 +232,26 @@ if (hasMcp) {
 
 ui.step("Skills");
 
-const profileId = args.profile ?? readProfileFromDesign() ?? config.default_stack_profile;
-const profile = loadProfile(profileId);
+/* The project's own design.md owns its stack profile, exactly as it does at
+   creation. --profile asserts that value and cannot replace it, and
+   default_stack_profile is a Planning-time proposal that has no business
+   deciding what an already-generated project is. */
+const approvedProfile = readApprovedProfile(target);
+if (!approvedProfile) {
+  abort(
+    "The generated project's design.md does not state a stack profile.",
+    'Expected "- **Profile:** <id>" under "## Stack profile". Without it there is nothing to validate against.',
+  );
+}
+if (args.profile && args.profile !== true && args.profile !== approvedProfile) {
+  ui.fail(`VALIDATION_FAIL — code: PROFILE_MISMATCH`);
+  ui.detail(
+    `--profile "${args.profile}" does not match the profile in the project's design.md ("${approvedProfile}").`,
+  );
+  process.exit(1);
+}
+
+const profile = loadProfile(approvedProfile);
 const expected = expectedSkills(profile.id);
 const skillsDir = path.join(target, ".claude", "skills");
 const actual = fs.existsSync(skillsDir)
@@ -451,9 +470,3 @@ function killTree(child) {
   }
 }
 
-function readProfileFromDesign() {
-  const file = path.join(target, "design.md");
-  if (!fs.existsSync(file)) return null;
-  const match = fs.readFileSync(file, "utf8").match(/\*\*Profile:\*\*\s*`?([a-z0-9-]+)`?/i);
-  return match ? match[1] : null;
-}

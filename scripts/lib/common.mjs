@@ -151,6 +151,30 @@ export function resolveProjectTarget(slug, config) {
  */
 export function expectedSkills(profileId) {
   const manifest = readJson(paths.skillManifest);
+
+  /* Two owners, one decision each. The manifest classifies a skill; the profile
+     decides which PROFILE-INHERITED skills it takes. The manifest used to also
+     carry a `profiles` array naming the recipients, which meant two places could
+     disagree about the same fact -- and the one the code read was not the one the
+     manifest's own documentation described. */
+  const profile = loadProfile(profileId);
+  const profileSkills = profile.profile_skills ?? [];
+
+  for (const name of profileSkills) {
+    const entry = manifest.skills[name];
+    if (!entry) {
+      abort(
+        `Stack profile "${profileId}" lists profile_skills entry "${name}", which the manifest does not classify.`,
+      );
+    }
+    if (entry.distribution !== "profile-inherited") {
+      abort(
+        `Stack profile "${profileId}" lists "${name}" in profile_skills, but the manifest classifies it "${entry.distribution}".`,
+        "A profile may only add skills classified profile-inherited.",
+      );
+    }
+  }
+
   const expected = [];
 
   for (const [name, entry] of Object.entries(manifest.skills)) {
@@ -159,7 +183,7 @@ export function expectedSkills(profileId) {
         expected.push(name);
         break;
       case "profile-inherited":
-        if ((entry.profiles ?? []).includes(profileId)) expected.push(name);
+        if (profileSkills.includes(name)) expected.push(name);
         break;
       /* Optional/emergency skills are NOT inherited. The set is exactly
          inherited-standard + the selected profile's additions.

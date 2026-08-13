@@ -1,10 +1,9 @@
 {
   "schema_version": 1,
-
   "_doc": {
     "purpose": "Single source of truth for which skills are physically copied into a generated project. create-project copies from it; validate-project computes the same expected set and fails on a missing required skill or an unexpected extra one.",
     "not_this": "It does not control when a skill loads into context. On disk is not in context.",
-    "inherited_set": "generated project skills = INHERITED-STANDARD + PROFILE-INHERITED. Nothing else.",
+    "inherited_set": "generated project skills = INHERITED-STANDARD + the selected profile's profile_skills. Nothing else. This file classifies a skill; the stack profile decides which profile-inherited skills it takes -- one owner per decision.",
     "distribution": {
       "builder-only": "Stays in the Builder. Never copied.",
       "inherited-standard": "Copied into every generated project, regardless of profile.",
@@ -13,7 +12,6 @@
     },
     "ceiling": "Project skills are dropped silently past roughly 28. A generated project receives the 17 standard skills plus the selected profile's additions -- 19 for both current profiles. Adding to the standard set is not free."
   },
-
   "skills": {
     "artifact-design": {
       "distribution": "inherited-standard",
@@ -83,18 +81,14 @@
       "distribution": "inherited-standard",
       "purpose": "Deploy through the Vercel MCP. No silent CLI fallback for remote operations."
     },
-
     "shadcn-ui": {
       "distribution": "profile-inherited",
-      "profiles": ["next-standard-v1", "react-vite-standard-v1"],
       "purpose": "Component library patterns for React + Tailwind."
     },
     "vercel-react-best-practices": {
       "distribution": "profile-inherited",
-      "profiles": ["next-standard-v1", "react-vite-standard-v1"],
       "purpose": "React and Next performance rules, as progressive disclosure -- the index loads, a rule loads when relevant."
     },
-
     "chrome-bridge-automation": {
       "distribution": "optional",
       "purpose": "Vision-driven automation through the human's own Chrome. Exceptional path only -- Playwright is first choice.",

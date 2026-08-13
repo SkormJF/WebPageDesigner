@@ -36,6 +36,7 @@ import {
   copyDir,
   substituteTokens,
   rmrf,
+  listFiles,
   parseArgs,
   isValidSlug,
   describeExecFailure,
@@ -248,16 +249,101 @@ ui.pass("baseline tracks no dependencies and no env files");
 
 ui.step("Moving to the projects root");
 fs.mkdirSync(config.projects_root, { recursive: true });
+
+/* The target must appear complete or not at all. Nothing here ever writes into
+   the target path directly: the only operation that produces it is a rename of a
+   fully-built directory, so an interrupted handoff leaves no half-project behind.
+   Fail closed at every step -- an occupied target is never merged, never
+   overwritten, never renamed around. */
+const failClosed = (code, message, detail) => {
+  rmrf(staging);
+  abort(`CREATE_FAILED  code: ${code}`, [message, detail].filter(Boolean).join("\n"));
+};
+
+const assertTargetFree = (when) => {
+  if (fs.existsSync(target)) {
+    failClosed(
+      "TARGET_EXISTS",
+      `${target} exists (${when}). Nothing was written to it.`,
+      "Someone else's work may live there. Choose a different slug, or move that directory yourself.",
+    );
+  }
+};
+
+const stagedFileCount = listFiles(staging).length;
+
+assertTargetFree("before the move");
+
+let renamed = false;
 try {
   fs.renameSync(staging, target);
-} catch {
-  /* Rename fails across volumes. Copy, verify, then remove the source. */
-  copyDir(staging, target);
-  if (!fs.existsSync(path.join(target, "package.json"))) {
-    abort(`Copy to ${target} did not complete. Staging left at ${staging} for inspection.`);
+  renamed = true;
+} catch (error) {
+  /* EXDEV is the one error that means "same operation, different filesystem".
+     Everything else -- EACCES, EPERM, EBUSY, ENOSPC -- is a real failure, and
+     copying on top of it would turn a clean stop into a partial write. */
+  if (error.code !== "EXDEV") {
+    failClosed(
+      "MOVE_FAILED",
+      `Could not move staging to ${target}: ${error.code ?? "unknown error"}.`,
+      `${error.message}\nNo copy was attempted. Nothing was written to the target.`,
+    );
   }
-  rmrf(staging);
+
+  /* Cross-filesystem: stage a second time *inside the destination filesystem*,
+     verify that copy completely, and only then rename it into place. The final
+     step is still a rename, so the target still appears atomically. */
+  const transit = path.join(config.projects_root, `.transit-${slug}-${process.pid}`);
+  rmrf(transit);
+
+  try {
+    assertTargetFree("before the cross-filesystem copy");
+    copyDir(staging, transit);
+
+    const copiedFileCount = listFiles(transit).length;
+    if (copiedFileCount !== stagedFileCount) {
+      rmrf(transit);
+      failClosed(
+        "COPY_INCOMPLETE",
+        `Cross-filesystem copy is short: ${copiedFileCount} of ${stagedFileCount} files.`,
+        "The target was never created.",
+      );
+    }
+    if (!fs.existsSync(path.join(transit, "package.json")) || !fs.existsSync(path.join(transit, ".git"))) {
+      rmrf(transit);
+      failClosed("COPY_INCOMPLETE", "Copy is missing package.json or .git.", "The target was never created.");
+    }
+
+    /* Re-check immediately before the rename: the copy took time, and something
+       else may have claimed the path while it ran. */
+    if (fs.existsSync(target)) {
+      rmrf(transit);
+      failClosed(
+        "TARGET_EXISTS",
+        `${target} appeared while the copy was running. Nothing was written to it.`,
+        "The transit directory was removed.",
+      );
+    }
+
+    fs.renameSync(transit, target);
+    renamed = true;
+  } catch (transitError) {
+    /* failClosed exits the process, so anything arriving here is a genuine
+       throw from copyDir or the final rename. */
+    rmrf(transit);
+    failClosed(
+      "MOVE_FAILED",
+      `Cross-filesystem handoff failed: ${transitError.code ?? "unknown error"}.`,
+      `${transitError.message}\nThe target was not created.`,
+    );
+  }
 }
+
+if (!renamed || !fs.existsSync(path.join(target, "package.json"))) {
+  abort(`CREATE_FAILED  code: MOVE_FAILED`, `${target} is not a complete project. Inspect before retrying.`);
+}
+
+rmrf(staging);
 ui.pass(`Created ${target}`);
 
 console.log(`
