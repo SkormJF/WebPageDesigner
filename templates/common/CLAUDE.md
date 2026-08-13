@@ -73,7 +73,7 @@ a record of what was attempted, not only of what completed.
 
 | Stage | What happens |
 |---|---|
-| `FOUNDATION` | Verified dependencies, design tokens, stack baseline, backend connection where required, testing foundation, first shared primitives — all inside approved specs. Foundation is not licence to design ahead. |
+| `FOUNDATION` | Verified dependencies, design tokens, stack baseline, backend connection where required, testing foundation, first shared primitives — all inside approved specs. Where `design.md` declares Supabase, this is also where the MCP entry gets scoped to the project's own `project_ref` (see Deploy → MCP). Foundation is not licence to design ahead. |
 | `BUILD_TASKS` | The task loop, one task at a time. |
 | `INTEGRATION` | Cross-feature behaviour, routes, shared state, backend boundaries, product coherence. Verification, not a second design pass. |
 | `LOCAL_PREVIEW` | The app runs locally and is reachable. |
@@ -287,6 +287,40 @@ Before any operation that needs one:
 
 Never invent or persist a secret value. Known environment variable **names** may be configured when
 authorized; their values live where the human put them.
+
+### Scope the Supabase MCP to this project's own database
+
+The entry ships unscoped, pointing at `https://mcp.supabase.com/mcp` with no `project_ref`. That is
+deliberate: at generation time no Supabase project exists yet, and an unscoped entry is what lets the human
+authorize the session and create or choose one when it is actually needed.
+
+**If `design.md` declares no Supabase backend, none of this happens.** The entry stays as it is, unused. A
+project that never touches Supabase still keeps it — that is the standard toolkit, not a per-project
+decision.
+
+**If `design.md` does declare Supabase**, narrow it during `FOUNDATION`, before any schema work:
+
+```
+verify the Supabase MCP is authorized
+→ create or select the Supabase project for THIS product
+→ read its project_ref
+→ rewrite this repository's .mcp.json entry to
+     https://mcp.supabase.com/mcp?project_ref=<PROJECT_REF>
+→ commit that change with the foundation work
+```
+
+The point is blast radius. An unscoped entry reaches every Supabase project the authorized account can see;
+this repository has business with exactly one of them. After scoping, a mistake here cannot touch a
+different product's database.
+
+**`project_ref` is an identifier, not a secret.** It belongs in `.mcp.json` and may be named in the Vault
+document. Keys, tokens and connection strings are secrets and none of them go in either.
+
+Scope this repository only. Never edit another project's `.mcp.json`.
+
+Production still runs under least privilege: a destructive or sensitive operation against a production
+database needs the same explicit human approval as a production deploy, and scoping does not substitute for
+it.
 
 **A deployment reporting READY is not a verified application.** Those are different claims.
 

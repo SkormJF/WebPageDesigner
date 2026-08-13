@@ -88,7 +88,7 @@ Create visual rhythm through varied spacing—not the same padding everywhere.
 **DON'T**: Use rounded elements with thick colored border on one side—a lazy accent that almost never looks intentional
 **DON'T**: Use sparklines as decoration—tiny charts that look sophisticated but convey nothing meaningful
 **DON'T**: Use rounded rectangles with generic drop shadows—safe, forgettable, could be any AI output
-**DON'T**: Use modals unless there's truly no better alternative—modals are lazy
+**WATCH**: Reaching for a modal by reflex. A modal interrupts, takes focus, and stacks badly — for a simple edit, an inline field or a slide-over is usually better. But interruption is exactly right when the decision cannot be deferred: a destructive confirmation, a flow that must not be abandoned half-done, a step that needs the rest of the page out of the way. The approved design system may also settle this. Decide from the flow and the consequence, not from a preference about modals
 
 **DON'T**: Fill an empty section with a remote placeholder image service (`picsum.photos` and friends). A
 deployed page that hotlinks a third-party image host carries an uptime and privacy dependency the site owner
@@ -111,7 +111,17 @@ Focus on high-impact moments: one well-orchestrated page load with staggered rev
 ### Interaction
 → *Consult [interaction reference](reference/interaction-design.md) for forms, focus, and loading patterns.*
 
-Make interactions feel fast. Use optimistic UI—update immediately, sync later.
+Make interactions feel fast.
+
+**Optimistic UI is a judgement about consequence, not a default.** Updating immediately and reconciling
+later is right when the action is low-risk, reversible, and has an obvious correction path — a toggle, a
+reorder, a like, a draft edit. It is wrong when the user needs to know the server actually agreed: payments
+and anything financial, destructive or irreversible actions, quota and availability checks, and anything
+whose failure the user must not learn about three screens later. There, wait for confirmation and say what
+is happening.
+
+When you do go optimistic, the rollback is part of the feature: what the user sees when it fails, and how
+they find out.
 
 **DO**: Use progressive disclosure—start simple, reveal sophistication through interaction (basic options first, advanced behind expandable sections; hover states that reveal secondary actions)
 **DO**: Design empty states that teach the interface, not just say "nothing here"

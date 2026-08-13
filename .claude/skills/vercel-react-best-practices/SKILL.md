@@ -11,6 +11,30 @@ metadata:
 
 Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 62 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
 
+## Check the stack before applying a rule
+
+This skill ships to every project here, and the projects do not all run Next. Before applying any rule,
+establish which stack you are on — `design.md` names the profile, and `package.json` is what is actually
+installed.
+
+```
+Next project      → React rules apply, Next-specific rules apply
+React/Vite (SPA)  → React and browser rules apply, Next-specific rules do not
+```
+
+**Next-specific** means anything that depends on a Next-only API or execution model: Server Components and
+the server/client boundary, Server Actions, RSC payload and serialization, `next/dynamic`, `next/image`,
+`next/font`, Next routing and server APIs (`next/navigation`, `next/headers`, middleware), `next.config`
+options, and caching helpers tied to the Next request lifecycle. In the categories above, most of `server-`
+and several `rendering-` rules are in this group.
+
+The rest — waterfalls, bundle size, client data fetching, re-renders, and the `js-` category — is plain
+React and browser work and applies everywhere.
+
+**Never install Next, or any other dependency, because a rule mentions it.** A rule that does not apply is
+skipped, not made to apply. If a rule looks valuable but the project lacks its foundation, that is a finding
+for the human, not a dependency to add inside a performance pass.
+
 ## When to Apply
 
 Reference these guidelines when:

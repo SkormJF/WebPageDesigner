@@ -40,19 +40,21 @@ The Quality Gate has passed and the human has approved a production deploy. Sepa
 ### Pick the subdomain before creating the project, not after
 
 Vercel appends a random suffix when the clean `<name>.vercel.app` is already taken, and it does so quietly.
-Check candidates first:
+So the name is worth settling **before** the first production deploy — a rename afterwards does not
+retroactively claim the clean alias.
 
-```bash
-curl -sS -D - "https://<candidate>.vercel.app/" -o /dev/null
-```
+**Check availability through the Vercel MCP**, using the capability that actually answers the question you
+are asking: whether a *project name* is free, whether an *alias* is assigned, whether a *domain* is
+available. Those are three different questions with three different answers.
 
-Read `X-Vercel-Error`:
+**A request to `<candidate>.vercel.app` cannot answer any of them.** `DEPLOYMENT_NOT_FOUND` means exactly
+one thing: no deployment is currently served at that hostname. It does not mean the name is unclaimed —
+a project can exist with that name and no production deployment, the alias can belong to another team, or
+the name can be reserved. Treating that error as "free" is an inference the response does not support, and
+the failure surfaces later as a suffixed URL nobody chose.
 
-- `DEPLOYMENT_NOT_FOUND` → nobody has claimed it. Free.
-- anything else — a `200`, `DEPLOYMENT_DISABLED`, any other error → taken.
-
-Propose two or three, check each, and create or rename the project to the **first available one before the
-first production deploy**. That is what lets the clean alias be claimed automatically.
+If the MCP capability you need is not authorized, stop and ask the human to complete it. Do not fall back
+to guessing from HTTP responses.
 
 Renaming an existing project does **not** retroactively claim the clean alias. After a rename, assign it
 explicitly, or the carefully-checked name is not the one anyone gets.
@@ -80,14 +82,26 @@ Build-time-inlined variables (anything the client bundle reads) are baked in at 
 be the site's own production URL, expect a throwaway first deploy to learn the assigned domain, correct the
 variable, and deploy again — otherwise the build carries a placeholder forever.
 
-### Turn off the default access gate
+### Read the project's Deployment Protection, do not assume it
 
-New Vercel projects enable **Vercel Authentication** by default, which puts every URL — including the
-public landing page — behind Vercel's own login. Read the project's deployment protection and disable it
-unless the human specifically wants a gated deployment.
+Vercel's Deployment Protection can put every URL — including a public landing page — behind Vercel's own
+login. Whether it is on depends on the team, the plan and the project's settings, and those change.
 
-This is a default, not a misconfiguration, and it is why the first deploy of a public site answers `302`
-rather than `200`.
+**Read the actual state through the MCP.** Then reconcile it with what the specs say the product is:
+
+```
+requirements.md says the site (or route) is public
+  → protection must not stand between a visitor and it
+  → change the setting, then prove it after deploying
+
+the product is deliberately private or gated
+  → protection staying on is correct
+  → do not "fix" it
+```
+
+Do not assume a platform default in either direction. Assuming it is off leads to shipping a public site
+nobody outside the team can open; assuming it is on leads to disabling protection on a product that was
+supposed to have it.
 
 ---
 
@@ -112,8 +126,9 @@ the proof that route protection is actually running in production — not merely
 curl -sS -D - "https://<domain>/" -o /dev/null | grep -i location
 ```
 
-A `Location` pointing at Vercel's own SSO endpoint means the access gate above is still on. That is a
-setting, not a bug in the application, and diagnosing it as a build failure wastes an hour.
+A `Location` pointing at Vercel's own SSO endpoint means Deployment Protection is on for that route. That is
+a setting, not a bug in the application, and diagnosing it as a build failure wastes an hour. Whether it
+should be on is answered by `requirements.md`, not by what the platform happened to default to.
 
 Check the routes that matter to this product, not a generic list: the public entry point, one protected
 route, and the critical flow's first step. If an integration must be reachable, confirm it is.
