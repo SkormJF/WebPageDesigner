@@ -229,11 +229,23 @@ Committed in coherent blocks (§39 Phase 4), never as one large mixed rewrite.
 6. **Skill-count ceiling.** Project skills are reported to drop silently past ~28. Builder 20, generated
    project 20 — under it, but not by much. See §0.
 7. **The generated half of the Factory Test is not yet run.** §43 has two halves. The Builder half passed:
-   both profiles generated, validated at 34 checks each, and the Builder reset to `IDLE`. The second half —
-   opening a generated repository in a fresh Claude Code session, saying `inicia`, and running its lifecycle
-   through to `DONE` — needs a session this one cannot start. Two real targets are left in place for it:
-   `PagesProjects\factory-test` (Next) and `PagesProjects\factory-test-vite` (Vite). Until that runs, §45's
-   own wording applies: **structurally complete, not operationally proven.**
+   both profiles generated, validated at 38 checks each including a real smoke start, and the Builder reset
+   to `IDLE`. The second half — opening a generated repository in a fresh Claude Code session, saying
+   `inicia`, and running its lifecycle through to `DONE` — needs a session this one cannot start, and is
+   deliberately deferred pending a second independent audit. Two real targets are left in place for it:
+   `PagesProjects\verif-next` and `PagesProjects\verif-vite`. Until that runs, §45's own wording applies:
+   **structurally complete, not operationally proven.**
+
+8. **There is no command to add an optional skill to an existing project.** Now that optional skills are
+   correctly excluded from inheritance, bringing `chrome-bridge-automation` into a project is a manual copy
+   from the Builder's `.claude/skills/`. That is acceptable — it is rare, and it should require deliberate
+   action — but it is undocumented rather than tooled, and worth naming so it is not mistaken for an
+   oversight.
+
+9. **`ui-ux-pro-max/scripts/design_system.py` retains unused code.** The `MASTER.md` generator is no longer
+   reachable through anything this project does, and the module says so at the top. It stays because the
+   corpus tooling is shared and `search.py` imports from the same package; deleting working code was not the
+   instruction.
 
 ---
 
@@ -276,6 +288,36 @@ Responsibilities, split so that no step claims more than it can prove:
 | `validate-project` | Checks the file exists, parses, declares both servers, and holds no secrets. | **Never attempts to authenticate.** Auth is a human, per-machine act; a validator that tried it would fail for reasons unrelated to whether the repo was generated correctly. |
 | Generated-project Orchestrator | Before any operation needing Supabase or Vercel, verifies that MCP is available *and authorized for the specific capability* — a server answering is not a grant. If it is not, stops and asks the human to complete authorization. | **No silent CLI fallback** for remote Vercel operations (§34). An exception needs explicit human approval. |
 | Human | Approves/starts the MCP sessions when Claude Code prompts, on first opening the generated repo. | — |
+
+### 8.0 Post-audit corrections
+
+An independent audit of the migrated repository found a second layer of defects, mostly semantic: several
+skills were labelled `STRONG TRIM` / `STRONG REWRITE` in §3 and had arrived at close to legacy size and
+behaviour. Seventeen findings, all corrected. The classifications in §3 stand — what changed is that they
+were actually executed.
+
+| # | Finding | Correction |
+|---|---|---|
+| 1 | `ui-ux-pro-max` kept its legacy body, including a `--design-system --persist` workflow writing `design-system/MASTER.md` | 667 → 99 lines. Competing design-system generator retired from the contract; corpus and scripts untouched; `templates/` (platform generators) removed |
+| 2 | Optional skills were inherited by every project | Inheritance is exactly `INHERITED-STANDARD + PROFILE-INHERITED`. 19 per project; `chrome-bridge-automation` no longer ships by default |
+| 3 | Role locks in inherited skills | Removed from `web-reader`, `navigation-shell`, `emil-design-eng` |
+| 4 | `deep-research` kept its four-phase mandatory methodology | Rewritten as an on-demand capability with depth proportional to importance × uncertainty × freshness |
+| 5 | `emil-design-eng` carried a mandatory review format and checklist | 684 → 404 lines + a 248-line recipe reference; reviewer competition removed |
+| 6 | `shadcn-ui` was a 1218-line catalog | 83-line front door + five references |
+| 7 | `building-components` covered npm/registry/marketplace distribution | Removed; scope separated from `atomic-design` |
+| 8 | `redesign-existing-projects` applied contract changes on its own initiative | Scope boundary stated first; typography and palette removed from its priority list |
+| 9 | `performance-audit` claimed to implement | Diagnoses only |
+| 10 | `validate-project` stopped at build | Real smoke start, profile-driven, both profiles |
+| 11 | No `external_operation` in generated state | Added, with a write-before-act protocol and no-automatic-retry recovery |
+| 12 | `phase` was allowed annotated prose | Enum only; `discovery_round` added for Discovery progress |
+| 13 | `playwright-cli` was a command inventory | 279 → 105 lines, organized around evidence priority |
+| 14 | `seo-audit` referenced six non-existent skills and duplicated `humanizalo` | Removed, along with content-strategy and consulting sections. 413 → 315 lines |
+| 15 | `humanizalo`'s vocabulary reference kept absolute prohibitions | Reframed as contextual signals |
+| 16 | Specs carried growing history logs | `tasks.md` progress log removed; `PROJECT.md` decisions are current truth |
+| 17 | 32px/44px stated as law | Orienting defaults; the approved contract and accessibility decide |
+
+Verified afterwards: §19A/B/C 47/47, both profiles generated and validated at 38/38 including smoke start,
+and §41's structural gates 49/49.
 
 ### 8.2 `humanizalo` — principles, not a word blacklist
 
