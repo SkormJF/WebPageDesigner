@@ -1,6 +1,6 @@
 ---
 name: navigation-shell
-description: Build the navigation chrome — sticky/scroll headers, mobile menus, dashboard sidebars, and the app shell they live in. Use whenever writing a header, nav, mobile menu or sidebar, and when reviewing one. Covers the accessibility criteria these components fail by default (WCAG 2.2 SC 2.4.11, 2.5.7, 1.4.13), the CSS traps that silently break sticky positioning, and the three gaps shadcn's own sidebar leaves for you to fill.
+description: Build the navigation chrome — sticky/scroll headers, mobile menus, dashboard sidebars, and the app shell they live in. Use whenever writing a header, nav, mobile menu or sidebar, and when reviewing one. Covers the accessibility criteria these components fail by default (WCAG 2.2 SC 2.4.11, 2.5.7, 1.4.13) and the CSS traps that silently break sticky positioning.
 ---
 
 # Navigation Shell
@@ -11,6 +11,12 @@ This skill supplies the patterns. It carries no workflow and no authority: it do
 built, change phase, or override the approved design system.
 
 Everything below is a rule with a reason. Where a rule cites a WCAG success criterion, that criterion is Level AA unless stated otherwise — meaning it's part of the accessibility baseline `CLAUDE.md`'s Quality Gate already commits every project to.
+
+**This core assumes React and CSS, and nothing else.** No router, no component library, no motion library.
+Projects here run on different stack profiles and install different dependencies — so before importing
+anything named below, confirm it is in the project's own `package.json`. Router-, shadcn- and
+motion-library-specific material lives in `references/stack-specific.md` and applies only where those
+dependencies actually exist.
 
 ---
 
@@ -55,7 +61,7 @@ Both produce "sticky isn't working" with no error, and both are common in this c
 
 ### 3. `backdrop-blur` disappears under an animated opacity wrapper
 
-Any ancestor with `opacity < 1`, `filter`, `mask`, `clip-path`, or `mix-blend-mode` becomes a *backdrop root*: the child's `backdrop-filter` then only blurs content between that ancestor and itself — i.e. nothing. A Framer Motion fade-in wrapping the header does exactly this, and the blur just quietly never appears.
+Any ancestor with `opacity < 1`, `filter`, `mask`, `clip-path`, or `mix-blend-mode` becomes a *backdrop root*: the child's `backdrop-filter` then only blurs content between that ancestor and itself — i.e. nothing. An animated fade-in wrapping the header does exactly this, whatever library drives it, and the blur just quietly never appears.
 
 Animate `transform` instead of `opacity` on that wrapper, or move the blur outside the animated subtree. Also give it a solid fallback — `backdrop-filter` is a progressive enhancement, and a translucent bar without blur is unreadable:
 
@@ -68,35 +74,31 @@ Animate `transform` instead of `opacity` on that wrapper, or move the blur outsi
 Styling communicates "you are here" to sighted users only. Without `aria-current`, a screen-reader user tabbing the nav gets no signal at all.
 
 ```tsx
-"use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-export function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isActive = pathname === href;
+export function NavLink({ href, currentPath, children }: NavLinkProps) {
+  const isActive = currentPath === href;
   return (
-    <Link
+    <a
       href={href}
       aria-current={isActive ? "page" : undefined}
       className="text-muted-foreground transition-colors aria-[current=page]:text-foreground aria-[current=page]:font-medium"
     >
       {children}
-    </Link>
+    </a>
   );
 }
 ```
 
 Two details: use `undefined` when inactive, never `aria-current={false}` — any non-enumerated string value is treated as `true`. And note the attribute doubles as the styling hook (`aria-[current=page]:`), so you don't need a parallel `isActive` class.
 
+**Where the current path comes from is the router's business**, and the routers differ across profiles — see `references/stack-specific.md`. The ARIA above does not change with any of them.
+
 ### 5. Mobile menu: a disclosure, not a focus trap
 
 If the menu stays in flow and the page remains visible, it's a **disclosure** — the APG pattern is a `<button aria-expanded aria-controls>` inside a labelled `<nav>`, Escape closes it and returns focus to the button, and there is **no focus trap**. Trapping focus in a non-modal dropdown strands keyboard users.
 
-Only trap focus when the menu is a true modal overlay — and in that case use shadcn's `Sheet`, which is `Dialog`-based and handles trapping, labelling, and restore-focus correctly on its own.
+Only trap focus when the menu is a true modal overlay. In that case do not hand-roll the trap — use a dialog primitive that already handles trapping, labelling and restore-focus, or the platform `<dialog>` element. Getting focus containment right by hand is harder than it looks and it fails silently.
 
 ```tsx
-"use client";
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -142,72 +144,31 @@ Use `hidden={!open}` rather than `{open && …}` so `aria-controls` always point
 
 The classic failure is an 8px gap between trigger and panel: the panel closes as the mouse crosses the gap. The simplest way to satisfy all three is to **open on click/focus rather than hover**. Prefer that unless the design specifically demands hover.
 
-### 7. Scroll-hiding headers: drive them with Framer Motion
+### 7. Scroll-hiding headers translate, they do not resize
 
-If the header hides on scroll-down and returns on scroll-up, use `useScroll` + `useMotionValueEvent` (Framer Motion is already a dependency) to drive a `translateY` on a sticky element.
+If the header hides on scroll-down and returns on scroll-up, drive a `translateY` on a sticky element. Animating `height` or `top` instead forces layout on every scroll frame, and it is the usual reason a scroll-hiding header stutters.
 
-Do not use a raw `window.addEventListener("scroll")`. Do not reach for CSS scroll-driven animations (`animation-timeline`) yet — support is still partial across major browsers, so it can't carry a load-bearing behaviour. And per the project's transform-only rule, animate `translateY`, never `height` or `top`.
+Track scroll direction through whatever the project already uses for scroll state — a motion library's scroll primitives if one is installed, otherwise a passive listener with the reads batched into a frame. What matters is that you are not doing layout work per event.
+
+Do not reach for CSS scroll-driven animations (`animation-timeline`) for this yet: support is still partial across major browsers, so it cannot carry a load-bearing behaviour on its own.
 
 ---
 
 ## Sidebar
 
-### 8. shadcn's `sidebar` leaves exactly three gaps
+### 8. The persisted collapse state has to be read before first paint
 
-The component is comprehensive — 20+ parts, `collapsible="offcanvas" | "icon" | "none"`, a `sidebar_state` cookie, Cmd/Ctrl+B toggle, correct `Sheet`-based mobile behaviour, real `<ul>`/`<li>` markup. Three things it does **not** do, which you must add every time:
+A sidebar that remembers being collapsed must apply that on the server or before hydration. Write it to a cookie rather than `localStorage`, because only the cookie is available to the server on the initial request.
 
-1. **No `<nav>` landmark.** The root is a `<div>`. Wrap your menus in `<nav aria-label="…">` yourself or the app's primary navigation has no landmark at all.
-2. **No `aria-current`.** `SidebarMenuButton`'s `isActive` prop only emits `data-active` for styling. Wire the ARIA yourself.
-3. **Not resizable.** `SidebarRail` is a click-to-toggle strip, not a drag handle.
+Skip this and the user who collapsed the sidebar sees it render expanded on every full page load, then snap shut after hydration — a visible jump on every navigation that misses the client cache. It is the single most common defect in a persisted shell, and it is invisible in a client-side-only dev loop.
 
-```tsx
-<Sidebar collapsible="icon">
-  <SidebarContent className="overflow-y-auto overscroll-contain">
-    <nav aria-label="Panel">
-      <SidebarMenu>
-        {items.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-                <Link href={item.href} aria-current={active ? "page" : undefined}>
-                  <item.icon aria-hidden />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          );
-        })}
-      </SidebarMenu>
-    </nav>
-  </SidebarContent>
-</Sidebar>
-```
+If the project uses a component library whose sidebar writes such a cookie, check whether anything reads it. Several write and never read.
 
-The `tooltip` prop is mandatory in `collapsible="icon"` mode — collapsed buttons render icon-only and lose their accessible name without it.
+### 9. A collapsed icon-only sidebar still needs accessible names
 
-### 9. Read the sidebar cookie in the server layout
+When a sidebar collapses to icons, every button loses its visible label. Without an accessible name — a tooltip wired to the control, `aria-label`, or visually-hidden text — the collapsed state is unusable with a screen reader while looking perfectly fine.
 
-shadcn writes `sidebar_state` but never reads it. Skip this and a user who collapsed the sidebar sees it render expanded on every full page load, then snap shut after hydration — a visible jump on every navigation that misses the client cache.
-
-```tsx
-// app/(panel)/layout.tsx — Server Component
-import { cookies } from "next/headers";
-
-export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();          // async in Next 15+/16
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
-
-  return (
-    <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar />
-      <SidebarInset>{children}</SidebarInset>
-    </SidebarProvider>
-  );
-}
-```
-
-This is the single highest-value non-obvious fact about the component.
+Wrap the menus in `<nav aria-label="…">` too. A sidebar built from generic `<div>`s has no landmark, so the application's primary navigation is unreachable by landmark navigation.
 
 ### 10. Exactly one `aria-current` per page
 
@@ -225,7 +186,15 @@ Use `contain`, not `none` — `none` also disables the platform's bounce and pul
 
 **SC 2.5.7 Dragging Movements (AA)**: any functionality operated by dragging must also be achievable with a single pointer without dragging. Keyboard support does **not** satisfy this — the alternative has to work through clicks or taps.
 
-If you ship a resize handle, pair it with a collapse/expand button or preset-width buttons. shadcn's `SidebarRail` plus the Cmd/Ctrl+B toggle already provides a compliant click alternative, so combining them satisfies the criterion.
+If you ship a resize handle, pair it with a collapse/expand button or preset-width buttons. A click-to-toggle rail alongside a keyboard shortcut satisfies the criterion; the keyboard shortcut alone does not.
+
+---
+
+## Stack-specific notes
+
+`references/stack-specific.md` covers the router APIs for each profile, and the shadcn sidebar's known gaps — including the cookie it writes but never reads.
+
+**Read the project's `package.json` first.** Nothing in that file is guaranteed to be installed: the profiles here ship different routers, and neither ships shadcn or a motion library by default.
 
 ---
 
@@ -239,5 +208,6 @@ Walk these with the keyboard only — most of them are invisible to a visual che
 - [ ] The mobile menu opens, Escape closes it, and focus returns to the trigger (rule 5).
 - [ ] Any hover panel survives the pointer crossing from trigger into it, and Escape dismisses it (rule 6).
 - [ ] The header still sticks with the page scrolled and no ancestor broke it (rule 2).
-- [ ] Collapse the sidebar, hard-reload: it stays collapsed, with no flash (rule 9).
+- [ ] Collapse the sidebar, hard-reload: it stays collapsed, with no flash (rule 8).
+- [ ] Collapse it to icons: every control still has an accessible name (rule 9).
 - [ ] Scroll the sidebar to its end: the page behind does not start scrolling (rule 11).
