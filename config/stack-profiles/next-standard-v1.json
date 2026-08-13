@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "id": "next-standard-v1",
+  "label": "Next.js App Router + Tailwind + TypeScript",
+  "template": "templates/stacks/next-standard-v1",
+  "status": "supported",
+
+  "use_when": [
+    "Server rendering, static generation or route-level data loading is wanted",
+    "The product is public-facing and indexability matters",
+    "Server actions or route handlers are the natural place for backend logic"
+  ],
+
+  "profile_skills": [
+    "shadcn-ui",
+    "vercel-react-best-practices"
+  ],
+
+  "scripts": {
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "start": "npm run start",
+    "lint": "npm run lint",
+    "typecheck": "npm run typecheck",
+    "e2e": "npm run test:e2e"
+  },
+
+  "architecture": {
+    "source_root": "src",
+    "layout": [
+      "src/app/",
+      "src/features/<feature>/{components,hooks,actions,services,schemas,types.ts}",
+      "src/components/{ui,shared}/",
+      "src/hooks/",
+      "src/lib/",
+      "src/services/",
+      "src/types/"
+    ],
+    "note": "Conceptual layout. Create a directory when something needs it, in the right place -- do not precreate the tree."
+  },
+
+  "validated": {
+    "date": "2026-08-13",
+    "platform": "win32",
+    "node": "v24.14.1",
+    "npm": "11.11.0",
+    "checks": {
+      "install": "pass",
+      "lint": "pass",
+      "typecheck": "pass",
+      "build": "pass",
+      "e2e_playwright": "pass (3 specs)",
+      "axe": "pass (0 violations on the baseline route)"
+    },
+    "pinned": {
+      "next": "16.3.0",
+      "react": "19.2.8",
+      "react-dom": "19.2.8",
+      "eslint-config-next": "16.3.0"
+    },
+    "note": "Exact resolved versions live in the template's package.json and package-lock.json, which are the authority. This block records what was actually run, not what is expected to work."
+  },
+
+  "notes": [
+    "Next 16 renamed middleware.ts to proxy.ts and the exported function middleware to proxy. Same mechanism, breaking change. Using the pre-16 filename compiles cleanly and the file is then never invoked -- there is no error to notice. Check node_modules/next/dist/docs before writing one.",
+    "The stock scaffold hardcodes `font-family: Arial, Helvetica, sans-serif` on body in globals.css, which beats the theme regardless of how correctly the font tokens are wired. Both fonts download, neither is used, and the build reports no error. This template ships the fix (`font-family: var(--font-sans)`); do not reintroduce a literal family there.",
+    "Every font token in @theme must name a variable that some next/font call actually declares. A token pointing at an undefined name resolves to nothing and the page silently falls back to the browser default -- matching names are fine, unmatched ones are the failure.",
+    "Layout props are typed explicitly rather than via the generated LayoutProps global, so `tsc --noEmit` passes on a fresh clone before any build has generated .next/types.",
+    "lucide-react ships no brand icons -- Instagram, Facebook, Twitter, Github, LinkedIn and YouTube were all removed. Importing one is a hard build failure. Use an inline SVG with the brand path, sized with the same classes as the surrounding icons.",
+    "next dev rewrites AGENTS.md on every run. It is gitignored rather than deleted: this project is Claude-only, CLAUDE.md is its harness contract, and a second agent-instruction file at the root would compete with it."
+  ]
+}

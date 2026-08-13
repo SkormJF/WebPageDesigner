@@ -1,0 +1,10 @@
+
+# --- react-vite-standard-v1 ---
+
+# Vite build output
+dist/
+dist-ssr/
+*.local
+
+# TypeScript project-reference build info
+*.tsbuildinfo

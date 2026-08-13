@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "id": "react-vite-standard-v1",
+  "label": "React + Vite + Tailwind + TypeScript (SPA)",
+  "template": "templates/stacks/react-vite-standard-v1",
+  "status": "supported",
+
+  "use_when": [
+    "The product is a client-side application behind a login, where indexability does not matter",
+    "There is no server-rendering requirement and no server-side data loading",
+    "A lighter build and a plain static host are preferable to a framework runtime"
+  ],
+
+  "profile_skills": [
+    "shadcn-ui",
+    "vercel-react-best-practices"
+  ],
+
+  "scripts": {
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "start": "npm run preview",
+    "lint": "npm run lint",
+    "typecheck": "npm run typecheck",
+    "e2e": "npm run test:e2e"
+  },
+
+  "architecture": {
+    "source_root": "src",
+    "layout": [
+      "src/app/{router,providers}.tsx",
+      "src/pages/",
+      "src/features/<feature>/{components,hooks,services,schemas,types.ts}",
+      "src/components/{ui,shared}/",
+      "src/hooks/",
+      "src/lib/",
+      "src/services/",
+      "src/types/"
+    ],
+    "note": "Same mental model as the Next profile, with an explicit router and providers entry point instead of file-system routing. Create a directory when something needs it -- do not precreate the tree."
+  },
+
+  "validated": {
+    "date": "2026-08-13",
+    "platform": "win32",
+    "node": "v24.14.1",
+    "npm": "11.11.0",
+    "checks": {
+      "install": "pass",
+      "lint": "pass (oxlint)",
+      "typecheck": "pass (tsc -b, three project references)",
+      "build": "pass",
+      "e2e_playwright": "pass (3 specs)",
+      "axe": "pass (0 violations on the baseline route)"
+    },
+    "pinned": {
+      "react": "^19.2.8",
+      "react-router": "^8.3.0",
+      "vite": "^8.2.0",
+      "typescript": "~6.0.2",
+      "oxlint": "^1.75.0"
+    },
+    "note": "Exact resolved versions live in the template's package.json and package-lock.json, which are the authority. This block records what was actually run, not what is expected to work."
+  },
+
+  "notes": [
+    "This profile lints with oxlint, not ESLint, and pins TypeScript 6 -- both are what the current Vite scaffold ships. The Next profile is on ESLint and TypeScript 5. That divergence is intentional and is why the profiles are separate: neither one is a house style imposed on the other.",
+    "vite preview binds to `localhost`, which resolves to IPv6 ::1 on many machines. The server then answers on localhost but refuses 127.0.0.1, and a test runner waiting on the IPv4 address times out reporting that the server never started. playwright.config.ts pins `--host 127.0.0.1` for exactly this reason -- do not remove it.",
+    "@axe-core/playwright is CommonJS with an ESM wrapper. Under `module: nodenext` a default import resolves to the module namespace and is not constructable. Use the named `AxeBuilder` export; it works under both resolutions and needs no compiler-option workaround.",
+    "tsconfig is a project-reference build (`tsc -b`) with three configs: app (src, DOM), node (vite.config.ts) and e2e (specs and playwright.config.ts, DOM plus node types). Files outside src are not typechecked unless a config includes them -- adding a directory at the root means adding it to one of these.",
+    "Tailwind 4 is wired through the @tailwindcss/vite plugin, not a PostCSS config. There is no tailwind.config.js: theme tokens live in src/index.css inside @theme."
+  ]
+}
