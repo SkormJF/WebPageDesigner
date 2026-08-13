@@ -16,7 +16,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 import {
   paths,
   SPEC_FILES,
@@ -28,6 +28,7 @@ import {
   expectedSkills,
   listFiles,
   parseArgs,
+  describeExecFailure,
 } from "./lib/common.mjs";
 
 const args = parseArgs(process.argv.slice(2));
@@ -268,24 +269,19 @@ if (args.quick) {
   ui.info("skipped (--quick)");
 } else {
   ui.step("Technical scaffold");
-  const run = (label, cmd, cmdArgs) => {
+  const run = (label, command) => {
     try {
-      execFileSync(cmd, cmdArgs, {
-        cwd: target,
-        stdio: "pipe",
-        shell: process.platform === "win32",
-      });
+      execSync(command, { cwd: target, stdio: "pipe" });
       return check(label, true);
     } catch (error) {
-      const out = `${error.stdout ?? ""}${error.stderr ?? ""}`.trim();
-      return check(label, false, out.split(/\r?\n/).slice(-6).join(" | "));
+      return check(label, false, describeExecFailure(error).split(/\r?\n/).slice(-6).join(" | "));
     }
   };
 
-  run("npm ci", "npm", ["ci"]);
-  run("lint", "npm", ["run", "lint"]);
-  run("typecheck", "npm", ["run", "typecheck"]);
-  run("build", "npm", ["run", "build"]);
+  run("npm ci", "npm ci");
+  run("lint", "npm run lint");
+  run("typecheck", "npm run typecheck");
+  run("build", "npm run build");
 }
 
 /* ---------- verdict ---------- */

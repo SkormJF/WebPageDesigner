@@ -17,7 +17,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 import {
   BUILDER_ROOT,
   paths,
@@ -34,6 +34,7 @@ import {
   rmrf,
   parseArgs,
   isValidSlug,
+  describeExecFailure,
 } from "./lib/common.mjs";
 import { runSpecGate, reportSpecGate } from "./lib/spec-gate.mjs";
 
@@ -180,12 +181,12 @@ ui.pass(`Identity applied: name "${slug}", project "${projectName}"`);
 
 ui.step("Installing dependencies");
 try {
-  execFileSync("npm", ["ci"], { cwd: staging, stdio: "pipe", shell: process.platform === "win32" });
+  execSync("npm ci", { cwd: staging, stdio: "pipe" });
   ui.pass("npm ci");
 } catch (error) {
-  const output = `${error.stdout ?? ""}${error.stderr ?? ""}`.trim();
+  const cause = describeExecFailure(error);
   rmrf(staging);
-  abort("npm ci failed. Nothing was written to the projects root.", output.slice(-1500));
+  abort("npm ci failed. Nothing was written to the projects root.", cause);
 }
 
 if (!fs.existsSync(path.join(staging, "node_modules"))) {
@@ -204,9 +205,9 @@ try {
   git("commit", "-q", "-m", "chore: initialize project");
   ui.pass("initialized, one baseline commit: chore: initialize project");
 } catch (error) {
-  const output = `${error.stdout ?? ""}${error.stderr ?? ""}`.trim();
+  const cause = describeExecFailure(error);
   rmrf(staging);
-  abort("git baseline failed. Nothing was written to the projects root.", output.slice(-1500));
+  abort("git baseline failed. Nothing was written to the projects root.", cause);
 }
 
 const tracked = execFileSync("git", ["ls-files"], { cwd: staging, encoding: "utf8" });

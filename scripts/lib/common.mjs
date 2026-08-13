@@ -160,6 +160,39 @@ export function rmrf(target) {
   fs.rmSync(target, { recursive: true, force: true });
 }
 
+/* ---------- child processes ---------- */
+
+/**
+ * Why every npm call in these scripts uses `execSync` with a command *string*
+ * rather than `execFileSync` with an args array.
+ *
+ * On Windows npm is a `.cmd` shim, and Node cannot spawn a `.cmd` without a
+ * shell -- `execFileSync("npm.cmd", [...])` fails with ENOENT. The obvious
+ * workaround, `{ shell: true }` alongside an args array, trips Node's DEP0190:
+ * with a shell, the array is concatenated into a command line instead of being
+ * escaped, which is a genuine injection hazard the moment an argument is not a
+ * literal.
+ *
+ * `execSync` takes one string and no array, so neither problem applies. That is
+ * safe *here specifically* because every command in these scripts is a compile-
+ * time constant and nothing user-supplied is ever interpolated into one. If that
+ * stops being true, this has to change with it.
+ */
+
+/**
+ * A readable cause for a failed child process, whatever it failed with.
+ *
+ * A spawn failure (ENOENT and friends) carries no stdout and no stderr at all,
+ * so formatting only those produces an error report that says nothing about why
+ * anything went wrong -- which is how a broken script looks like a broken
+ * project.
+ */
+export function describeExecFailure(error) {
+  const output = `${error.stdout ?? ""}${error.stderr ?? ""}`.trim();
+  if (output) return output.slice(-1500);
+  return `${error.code ?? "no exit output"}: ${error.message}`;
+}
+
 /* ---------- args ---------- */
 
 /** Minimal `--key value` / `--flag` parser. No dependencies, no surprises. */
