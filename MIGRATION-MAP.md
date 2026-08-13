@@ -209,15 +209,17 @@ Committed in coherent blocks (§39 Phase 4), never as one large mixed rewrite.
    exists to outrank it. Full evidence in §0. This was checked rather than assumed precisely because the
    opposite is reported in a closed GitHub issue.
 
-**Conditions that can block the migration**
+**Conditions that could have blocked the migration — all cleared**
 
-2. **`react-vite-standard-v1` must validate.** It is a required initial profile (§10). If its template will
-   not install/lint/typecheck/build/smoke-start, the migration is **blocked and reported incomplete** — the
-   profile is not dropped to make the run finish. See §4.
-3. **`docs/` is removed only after per-document confirmation.** Each row in §2 must be checked against the
-   destination file that now holds its knowledge. Unmigrated content keeps the directory. See §2.
-4. **`vercel-react-best-practices/AGENTS.md` is deleted only after a uniqueness check** — nothing may exist
-   solely in the compiled aggregate. See §3.1.
+2. **`react-vite-standard-v1` validated.** ✅ Install, lint (oxlint), typecheck (`tsc -b`, three project
+   references), build, and 3 Playwright specs including an axe pass. It also generated and validated as a
+   real project at 34 checks / 0 failures. No blockage; the profile ships as supported.
+3. **`docs/` removed only after per-document confirmation.** ✅ A verification script probed all nine
+   documents for the knowledge that had to survive them — 38 probes across `CLAUDE.md`, five skills and the
+   manifest — and every one passed before the directory was deleted.
+4. **`AGENTS.md` deleted only after a uniqueness check.** ✅ Its eight sections mirror `_sections.md` and its
+   rule bodies are the compiled expansion of the 62 files beside it. Its one unique asset, the external
+   reference list, was moved into `SKILL.md` first.
 
 **Verification debts carried into the rebuild**
 
@@ -225,7 +227,28 @@ Committed in coherent blocks (§39 Phase 4), never as one large mixed rewrite.
    This blocks nothing in the Builder (it never deploys), but the generated project's deploy path must verify
    the *specific capability* before use and block rather than fall back. See §1.
 6. **Skill-count ceiling.** Project skills are reported to drop silently past ~28. Builder 20, generated
-   project 18–19 — under it, but not by much. See §0.
+   project 20 — under it, but not by much. See §0.
+7. **The generated half of the Factory Test is not yet run.** §43 has two halves. The Builder half passed:
+   both profiles generated, validated at 34 checks each, and the Builder reset to `IDLE`. The second half —
+   opening a generated repository in a fresh Claude Code session, saying `inicia`, and running its lifecycle
+   through to `DONE` — needs a session this one cannot start. Two real targets are left in place for it:
+   `PagesProjects\factory-test` (Next) and `PagesProjects\factory-test-vite` (Vite). Until that runs, §45's
+   own wording applies: **structurally complete, not operationally proven.**
+
+---
+
+## 9. Intentional additions not named in the plan
+
+Recorded so the §42 audit reads them as decisions rather than drift.
+
+| Addition | Why |
+|---|---|
+| `scripts/lib/spec-gate.mjs` | §8 requires a mechanical Spec Gate; §17 allows exactly three top-level scripts plus helpers. It is a helper, run by `create-project` as a hard precondition and invocable directly during `SPEC_REVIEW`. It is deliberately **not** aliased in `package.json`, so `scripts/` keeps exactly three entry points. |
+| `scripts/lib/common.mjs` | Shared helpers. `expectedSkills()` in particular is used by both `create-project` and `validate-project`, so the two cannot disagree about what a correct skill set is. |
+| `templates/common/gitignore` (no dot) | A real `.gitignore` inside `templates/` would apply to the Builder repository itself. `create-project` restores the name during composition. |
+| `templates/stacks/*/gitignore.append` | Lets the common template own the shared ignore rules while each stack contributes its own, without either overwriting the other. |
+| `config/stack-profiles/*.json` `validated` block | §10 demands versions verified against primary sources. The block records what was actually run, on what platform, on what date — evidence rather than an assertion. |
+| `.staging/` (gitignored) | §18 requires composing in a safe staging directory before exposing the final target. |
 
 **Not open, just recorded**
 
