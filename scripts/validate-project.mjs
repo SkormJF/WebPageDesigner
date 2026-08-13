@@ -16,7 +16,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execSync, execFileSync } from "node:child_process";
+import { execSync, execFileSync, spawn } from "node:child_process";
+import http from "node:http";
 import {
   paths,
   SPEC_FILES,
@@ -313,7 +314,49 @@ if (args.quick) {
   run("npm ci", "npm ci");
   run("lint", "npm run lint");
   run("typecheck", "npm run typecheck");
-  run("build", "npm run build");
+  const built = run("build", "npm run build");
+
+  /* ---------- smoke start ---------- */
+
+  /* A build that succeeds proves the code compiles. It does not prove the
+     scaffold serves anything -- a project can build cleanly and 404 every
+     route, which is exactly the failure mode this catches. Scaffold only:
+     nothing here says the product is correct. */
+  if (!profile.smoke) {
+    check("Smoke start", false, `Profile ${profile.id} declares no smoke configuration.`);
+  } else if (!built) {
+    check("Smoke start", false, "Skipped -- the build failed, so there is nothing to serve.");
+  } else {
+    const port = Number(args.port ?? 43117);
+    const command = profile.smoke.command.replaceAll("{port}", String(port));
+    const url = profile.smoke.url.replaceAll("{port}", String(port));
+    const expected = profile.smoke.expect_status ?? 200;
+
+    const server = spawn(command, {
+      cwd: target,
+      shell: true,
+      stdio: "ignore",
+      windowsHide: true,
+      /* Own process group off Windows, so the whole tree can be signalled at
+         once. On Windows taskkill /T does the same job. */
+      detached: process.platform !== "win32",
+    });
+
+    let outcome;
+    try {
+      const status = await waitForStatus(url, 90_000, server);
+      outcome =
+        status === expected
+          ? { ok: true }
+          : { ok: false, detail: `${url} answered ${status}, expected ${expected}` };
+    } catch (error) {
+      outcome = { ok: false, detail: `${url}: ${error.message}` };
+    } finally {
+      killTree(server);
+    }
+
+    check(`Smoke start (${url} -> ${expected})`, outcome.ok, outcome.detail);
+  }
 }
 
 /* ---------- verdict ---------- */
@@ -332,6 +375,66 @@ console.log("\n  Nothing was repaired. Fix the cause and re-run.\n");
 process.exit(1);
 
 /* ---------- helpers ---------- */
+
+/**
+ * Poll `url` until it answers, or the budget runs out.
+ *
+ * Deliberately treats a refused connection as "not up yet" rather than a
+ * failure -- a server takes a moment to bind, and the first few attempts are
+ * expected to fail. It gives up early only if the process itself exits, since
+ * polling a dead server for 90 seconds tells you nothing you did not know one
+ * second in.
+ */
+function waitForStatus(url, budgetMs, child) {
+  const deadline = Date.now() + budgetMs;
+  let exited = false;
+  child.once("exit", () => {
+    exited = true;
+  });
+
+  return new Promise((resolve, reject) => {
+    const attempt = () => {
+      if (exited) {
+        reject(new Error("the server process exited before answering"));
+        return;
+      }
+      if (Date.now() > deadline) {
+        reject(new Error(`no response within ${budgetMs / 1000}s`));
+        return;
+      }
+
+      const request = http.get(url, (response) => {
+        response.resume();
+        resolve(response.statusCode);
+      });
+      request.setTimeout(3000, () => request.destroy());
+      request.on("error", () => setTimeout(attempt, 500));
+    };
+
+    attempt();
+  });
+}
+
+/**
+ * Kill the server and everything it spawned.
+ *
+ * `npm run start` is a shim that spawns the real server as a child, so killing
+ * the shim alone leaves the server holding the port -- and the next run then
+ * fails for a reason that has nothing to do with the project. Windows needs
+ * taskkill for the tree; elsewhere the process group does it.
+ */
+function killTree(child) {
+  if (!child || child.exitCode !== null) return;
+  try {
+    if (process.platform === "win32") {
+      execFileSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+    } else {
+      process.kill(-child.pid, "SIGTERM");
+    }
+  } catch {
+    /* Already gone. Nothing to clean up. */
+  }
+}
 
 function readProfileFromDesign() {
   const file = path.join(target, "design.md");

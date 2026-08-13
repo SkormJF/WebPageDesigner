@@ -25,6 +25,13 @@
     "e2e": "npm run test:e2e"
   },
 
+  "smoke": {
+    "command": "npm run preview -- --port {port} --strictPort --host 127.0.0.1",
+    "url": "http://127.0.0.1:{port}/",
+    "expect_status": 200,
+    "note": "`--host 127.0.0.1` is load-bearing. vite preview otherwise binds to `localhost`, which resolves to IPv6 ::1 on many machines -- localhost answers 200 while 127.0.0.1 refuses the connection, so the probe times out against a server that is running fine. This validates the scaffold serves, nothing about the product."
+  },
+
   "architecture": {
     "source_root": "src",
     "layout": [

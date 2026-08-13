@@ -25,6 +25,13 @@
     "e2e": "npm run test:e2e"
   },
 
+  "smoke": {
+    "command": "npm run start -- --port {port} --hostname 127.0.0.1",
+    "url": "http://127.0.0.1:{port}/",
+    "expect_status": 200,
+    "note": "The hostname is pinned rather than left to default. A server that binds to `localhost` can end up on IPv6 ::1 only, answering on localhost and refusing 127.0.0.1 -- the probe then times out and reports a working server as dead. This validates the scaffold serves, nothing about the product."
+  },
+
   "architecture": {
     "source_root": "src",
     "layout": [
