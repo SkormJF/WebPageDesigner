@@ -180,11 +180,16 @@
 
 ## CTA Strategy Guide
 
-### Placement Rules
-- **Above the fold:** Always one CTA visible without scrolling
-- **After social proof:** Highest conversion point — place CTA right after testimonials
-- **End of page:** Final CTA before footer (last chance)
-- **Never more than 2 scrolls apart** — user should always see a CTA nearby
+### Placement Heuristics
+
+Conversion patterns, not rules. They suit a page whose job is to convert; an editorial or brand page with a
+different job can reasonably ignore all of them, and the product's own goal in `PROJECT.md` decides.
+
+- **Above the fold:** one CTA visible without scrolling
+- **After social proof:** typically the highest-converting point — place a CTA right after testimonials
+- **End of page:** a final CTA before the footer
+- **Rarely more than about two screens apart** — on a conversion page, a reader who decides should not have
+  to hunt
 
 ### CTA Copy Guidelines
 - Be specific: "Start your free trial" not "Get started"

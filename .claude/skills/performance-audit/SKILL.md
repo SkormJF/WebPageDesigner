@@ -5,11 +5,18 @@ description: Diagnose performance in a built project — measure, interpret the 
 
 # Performance Audit
 
-The rule that matters most here: **every finding must be provable by grep or by reading the actual file, not recalled from "common Next.js issues."** A finding without a file:line citation isn't a finding yet.
+The rule that matters most here: **every finding must be provable by grep or by reading the actual file, not
+recalled from "common issues with this framework."** A finding without a file:line citation isn't a finding
+yet.
+
+This applies to any project built here. Read `design.md` for the stack profile and `package.json` for what is
+actually installed before assuming any framework-specific behaviour exists.
 
 ## When to run this
 
-As a Quality Gate input, once the build is complete and before deploy readiness is claimed — not something the user has to remember to request. Re-run it after any later pass that touches shared components, data-fetching, or dependencies in a meaningful way; skip it after a small, isolated copy or styling tweak.
+As a Quality Gate input, once the build is complete and before deploy readiness is claimed — not something
+the user has to remember to request. Re-run it after any later pass that touches shared components,
+data-fetching, or dependencies in a meaningful way; skip it after a small, isolated copy or styling tweak.
 
 ## Targets
 
@@ -22,34 +29,68 @@ design is a failed audit — the design was approved by a human and the score wa
 | INP | < 200ms | How fast the page answers an interaction |
 | CLS | < 0.1 | How much the layout moves while loading |
 
-The wins that are almost always available, in rough order of payoff:
-
-- **The hero image is the LCP element.** Prioritise it explicitly; lazy-loading it is a common own goal.
-- **Give every image explicit dimensions.** Missing width and height is the most frequent CLS cause.
-- **Load only the font weights in use**, with a swap strategy, and prefer a variable face over five files.
-- **Keep the client boundary tight.** A client directive on a component that does not need one drags its
-  whole import graph into the browser bundle.
-- **Import from source, not barrels.** A barrel re-export can cost hundreds of milliseconds of import time
-  for one symbol.
-- **Defer below-the-fold and third-party work** until after hydration.
-
 ## What to check
 
-**1. Duplicate auth/session verification.** If there's a middleware (`proxy.ts`/`middleware.ts`) that checks the session, and a separate page-level helper that also calls the equivalent of `auth.getUser()` + a profile query, check whether both run on every navigation. `React.cache()` only deduplicates calls within a single render pass — it does **not** deduplicate across the middleware→page boundary, since those are separate execution phases. If both are verified to run on every request, the fix is: middleware sets the verified result on trusted **request** headers via `Headers.set()` (never `.append()`, since `.set()` unconditionally overwrites anything a client tried to send under the same header name) after validating; the page-level helper reads those headers first and only falls back to a full re-check when they're absent. Document explicitly why the header can be trusted (who sets it, and that the real data access still goes through RLS with the actual session cookie regardless — the header only saves a redundant lookup, it isn't itself the security boundary).
+These hold on any React web stack. Each is a grep or a file read, not a guess.
 
-**2. Bundle imports.** Check `next.config.ts` for `experimental.optimizePackageImports`. Grep for any package imported as a single barrel (`import { X } from "some-package"` where that package re-exports many submodules from one index — `radix-ui`'s consolidated package is a known example) and confirm whether it's in Next's **default-optimized** list before assuming it needs to be added manually (check `node_modules/next/dist/server/config-shared.d.ts` for the current default list — `lucide-react` and several common icon/utility libraries are already covered by default and don't need re-adding).
+**1. The LCP element.** Find what it actually is — usually the hero image or the first heading. If it is an
+image, confirm it is not lazy-loaded and that it is discoverable in the initial HTML rather than behind a
+script. Lazy-loading the LCP image is the most common single-line performance defect there is.
 
-**3. Dead dependencies and dead code.** For each `dependencies` entry in `package.json`, grep `src/` for an actual import. A hook whose return value gets unconditionally overridden by a later prop spread (e.g. a shared wrapper component that calls a theming hook but every caller already passes an explicit prop that wins) is dead code shipping an unused dependency to the client bundle — look for this pattern in shared UI wrappers specifically, since it's easy to introduce when scaffolding from a template that assumed a feature (like a theme switcher) the project doesn't actually use.
+**2. Layout stability.** Every `<img>`, `<video>` and embed needs explicit dimensions or an aspect-ratio
+box. Missing width/height is the most frequent CLS cause. Check late-injected banners and font swaps too.
 
-**4. Query parallelization.** For each Server Component page, check whether independent queries are awaited sequentially instead of via `Promise.all`. Look specifically for the case where a second query's input *could* already be known from a URL param or prior state without needing the first query's result — that's a query that can be kicked off in parallel and only needs to fall back to sequential in the rarer case where the param truly is missing.
+**3. Fonts.** Only the weights actually used, one variable face in preference to five static files, a
+declared `font-display` strategy, and preloading for the face that renders above the fold. Grep the CSS and
+the font declarations for weights nothing references.
 
-**5. `package.json` hygiene.** CLI-only tooling (a scaffolding CLI like `shadcn`, not imported anywhere at runtime) listed under `dependencies` instead of `devDependencies` — check with the same grep-for-imports approach as item 3.
+**4. Bundle composition.** Look for barrel imports: `import { X } from "some-package"` where that package
+re-exports many submodules from a single index. One symbol can pull in the whole library and cost hundreds
+of milliseconds of import time. Check whether the bundler or framework already optimises the package before
+proposing a manual fix.
+
+**5. Dead dependencies and dead code.** For each entry in `dependencies`, grep `src/` for a real import.
+Watch for a hook whose return value is unconditionally overridden by a later prop spread — a shared wrapper
+that calls a theming hook every caller already overrides is dead code that still ships its dependency to the
+browser. Scaffolded templates introduce this easily, for features the project never adopted.
+
+**6. `package.json` hygiene.** CLI-only tooling listed under `dependencies` instead of `devDependencies`.
+Use the same grep-for-imports approach as item 5.
+
+**7. Sequential awaits that could be parallel.** Independent requests awaited one after another instead of
+through `Promise.all`. Look especially for a second query whose input is already known from a URL parameter
+or prior state, so it never needed the first result at all.
+
+**8. Re-render cost.** Context values or object/array literals recreated every render and passed to memoised
+children, state that lives higher than it needs to, effects that write state the render could have derived.
+These show up as INP, not as load time.
+
+**9. Client/server boundary**, where the stack has one. A component marked as client-side that did not need
+to be drags its entire import graph into the browser bundle. Where the stack has no such boundary, the
+equivalent question is what is in the initial chunk versus what could be loaded on demand.
+
+**10. Third-party and below-the-fold work.** Analytics, chat widgets, embeds — deferred until after
+hydration, or loaded on interaction.
+
+**11. Duplicated request-time work.** The same authorization check, session lookup or data fetch running
+more than once per request across different layers. Confirm both really run before proposing a fix; caching
+helpers usually deduplicate within one render pass and not across execution phases.
+
+## Stack-specific checks
+
+`references/next.md` covers the Next-specific version of several of the above — `optimizePackageImports`,
+the middleware-to-page duplication, Server Component data flow, and its image and font primitives.
+
+Load it only when `design.md` says the project is on a Next profile. On a Vite/SPA project the same
+questions are answered by looking at the bundle output, the router's code-splitting, and the entry chunk.
 
 ## This skill diagnoses. It does not implement.
 
 Measure, interpret, locate the cause, and propose the correction with enough precision that someone else can
 apply it. The Builder implements, under a task, and the Reviewer gates the result. That separation is what
 keeps a performance pass from quietly becoming an unreviewed refactor.
+
+It also does not change the architecture, redesign anything, or touch `design-system.md`.
 
 ## Process
 

@@ -67,7 +67,7 @@
 - **How often:** [TBD]
 - **Who updates it, and how:** [TBD]
 
-## Decisions log
+## Decisions in force
 
 <!-- SLOT: Decisions currently IN FORCE, one line each: the decision and its one-line reason.
 

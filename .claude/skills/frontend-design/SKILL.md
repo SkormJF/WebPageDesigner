@@ -126,6 +126,11 @@ Make interactions feel fast. Use optimistic UI—update immediately, sync later.
 **DO**: Adapt the interface for different contexts—don't just shrink it
 **DON'T**: Hide critical functionality on mobile—adapt the interface, don't amputate it
 
+### Landing pages
+→ *Consult [landing archetypes](reference/landing-archetypes.md) for eight proven page structures and CTA placement heuristics.*
+
+Archetypes are starting structures, not templates to fill. Pick one because the product's story fits its shape.
+
 ### UX Writing
 → *Consult [ux-writing reference](reference/ux-writing.md) for labels, errors, and empty states.*
 

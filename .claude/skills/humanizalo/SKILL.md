@@ -98,6 +98,16 @@ sentence is almost always deletable.
 
 ---
 
+## References
+
+Loaded on demand. Neither is needed to write well — they are for when a draft reads wrong and you want to
+name why.
+
+| File | For |
+|---|---|
+| `references/vocabulary.md` | Words and formatting habits that appear disproportionately in generated text |
+| `references/structures.md` | Sentence and paragraph shapes that give it away — binary contrasts, negative listing, false agency, synonym cycling, rhythm |
+
 ## Words
 
 `references/vocabulary.md` lists words that appear disproportionately in generated text, with plainer

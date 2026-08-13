@@ -33,7 +33,7 @@ import { paths, SPEC_FILES, ui, parseArgs } from "./common.mjs";
  * thing to drift.
  */
 const REQUIRED_SECTIONS = {
-  "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions log"],
+  "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions in force"],
   "requirements.md": ["## Functional requirements", "## Non-functional requirements"],
   "design.md": ["## Stack profile", "## Architecture", "## Routes", "## Security"],
   "design-system.md": ["## Approval", "## Color", "## Typography", "## Interaction states"],

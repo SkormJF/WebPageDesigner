@@ -12,7 +12,7 @@ The dividing line is **interactive vs. presentational**:
 | Question | Answer |
 |---|---|
 | Use `ease`? | Only for small, reversible state changes where the curve is barely perceptible — hover, color, opacity. For anything that travels a distance, use a directional curve. Neither file is wrong; they were talking about different motions. |
-| Use `ease-in`? | **Never for something entering** — it lags at the start and reads as broken. Fine for something **leaving**, where the slow start goes unwatched and the exit accelerates away. |
+| Use `ease-in`? | **Almost never for something entering** — it lags at the start, exactly where the user is looking, so it reads as broken. Fine for something **leaving**, where the slow start goes unwatched and the exit accelerates away. |
 | Bounce / spring? | A spring that **settles** without visible overshoot is good craft — that is what `emil-design-eng` means. A visible bouncy rebound is the dated effect this file warns about. Critically damped: yes. Elastic: no. |
 | Duration ceiling? | **Interactive: under 300ms.** Presentational: the 500–800ms in the table below is fine. A 600ms dropdown is broken; a 600ms hero reveal is not. |
 

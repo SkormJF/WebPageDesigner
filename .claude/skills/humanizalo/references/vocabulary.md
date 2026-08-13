@@ -17,6 +17,28 @@ stays. See `SKILL.md` — this skill defers to all of them.
 
 ---
 
+## Formatting signals
+
+Not vocabulary, but the same kind of evidence: these are things generated text does far more often than a
+person writing by hand. Each is a prompt to look, and each has legitimate uses.
+
+- **Em dashes.** The most reliable single tell — generated prose reaches for them constantly, and most
+  people writing quickly do not. Where one appears, check whether a comma, a full stop or parentheses would
+  carry the sentence better. They frequently would. But an em dash is ordinary Spanish and English
+  punctuation with real jobs, and it is also how dialogue is punctuated in Spanish. This is not a ban, and
+  a rule that removed every one would damage correct writing.
+- **Bold on every key term**, and lists shaped as "**Term:** explanation" repeating down the page. If
+  everything is emphasised, nothing is. Prose paragraphs or plain bullets usually read better.
+- **Decorative emoji** in headings and bullets. Rare in most business copy; fine in a deliberately casual
+  voice, if that is the brand.
+- **Title Case In Headings.** Sentence case is the norm in Spanish and reads less templated in English too
+  — unless the brand's own style guide says otherwise, and then it wins.
+
+As everywhere in this skill: a specification, the brand voice, legal wording or an approved SEO term
+outranks all four.
+
+---
+
 ## Words that often signal a sentence worth rereading
 
 When one of these shows up, check whether the sentence has a claim, a specific, and a position. Usually the
@@ -72,7 +94,7 @@ plainer alternative is better; sometimes the sentence needs restructuring instea
 
 ---
 
-## Copula avoidance (P10)
+## Copula avoidance
 
 AI avoids simple "is" and "has" constructions. It uses fancier substitutes that sound stiff.
 
@@ -92,7 +114,7 @@ AI avoids simple "is" and "has" constructions. It uses fancier substitutes that 
 
 ---
 
-## Adverbs that often carry no weight (P11)
+## Adverbs that often carry no weight
 
 Stacked adverbs are a common way a sentence gets longer without getting more specific. When several of these
 appear close together, the sentence is usually reaching for emphasis it has not earned — and the fix is
@@ -114,7 +136,7 @@ doing a job — and where a spec, a legal requirement or the brand's own voice p
 
 ---
 
-## Business jargon (P12)
+## Business jargon
 
 | Avoid | Use instead |
 |-------|-------------|
@@ -145,7 +167,7 @@ doing a job — and where a spec, a legal requirement or the brand's own voice p
 
 ---
 
-## Filler phrases (P39)
+## Filler phrases
 
 | Filler | Replacement |
 |--------|-------------|
@@ -172,7 +194,7 @@ doing a job — and where a spec, a legal requirement or the brand's own voice p
 
 ---
 
-## Throat-clearing openers (P35)
+## Throat-clearing openers
 
 These phrases delay the point. Cut them and start with the actual content.
 
@@ -195,7 +217,7 @@ These phrases delay the point. Cut them and start with the actual content.
 
 ---
 
-## Emphasis crutches (P36)
+## Emphasis crutches
 
 These try to make a point land harder. They have the opposite effect.
 
@@ -210,7 +232,7 @@ These try to make a point land harder. They have the opposite effect.
 
 ---
 
-## Performative emphasis (P38)
+## Performative emphasis
 
 Telling the reader something is important or genuine instead of showing it.
 
@@ -226,7 +248,7 @@ Telling the reader something is important or genuine instead of showing it.
 
 ---
 
-## Lazy extremes (P13)
+## Lazy extremes
 
 Sweeping generalizations that are almost never literally true:
 
@@ -241,7 +263,7 @@ Sweeping generalizations that are almost never literally true:
 
 ---
 
-## Hyphenated word pairs (P14)
+## Hyphenated word pairs
 
 AI uses these with perfect consistency. Humans are sloppier. Watch for clusters of:
 

@@ -1,10 +1,12 @@
 # Structural anti-patterns
 
-Complete reference for patterns P15-P26.
+Shapes that give generated prose away. Each is a signal to look at the passage, not a rule that fires on a
+match -- and every one of them is subordinate to the specifications, the product's meaning, the brand voice,
+technical and legal accuracy, and approved SEO, exactly as `SKILL.md` says.
 
 ---
 
-## Binary contrasts (P15)
+## Binary contrasts
 
 Telegraphed reversals that create false drama. The reader sees the twist coming from the first word.
 
@@ -27,7 +29,7 @@ Telegraphed reversals that create false drama. The reader sees the twist coming 
 
 ---
 
-## Negative listing (P16)
+## Negative listing
 
 A rhetorical striptease that builds to a reveal the reader didn't ask for.
 
@@ -40,7 +42,7 @@ A rhetorical striptease that builds to a reveal the reader didn't ask for.
 
 ---
 
-## Dramatic fragmentation (P17)
+## Dramatic fragmentation
 
 Sentence fragments manufactured for profundity. They try to make ordinary observations feel weighty.
 
@@ -55,7 +57,7 @@ Sentence fragments manufactured for profundity. They try to make ordinary observ
 
 ---
 
-## Rhetorical setups (P18)
+## Rhetorical setups
 
 Announcing an insight rather than delivering it.
 
@@ -72,7 +74,7 @@ Announcing an insight rather than delivering it.
 
 ---
 
-## False agency (P19)
+## False agency
 
 This is one of the strongest AI tells. AI gives human actions to inanimate objects because it avoids naming specific actors.
 
@@ -98,7 +100,7 @@ This is one of the strongest AI tells. AI gives human actions to inanimate objec
 
 ---
 
-## Narrator-from-distance (P20)
+## Narrator-from-distance
 
 Writing that floats above the scene like a documentary voiceover instead of putting the reader in the room.
 
@@ -116,7 +118,7 @@ Writing that floats above the scene like a documentary voiceover instead of putt
 
 ---
 
-## Passive voice (P21)
+## Passive voice
 
 Passive voice hides the actor and drains energy from sentences.
 
@@ -133,7 +135,7 @@ Passive voice hides the actor and drains energy from sentences.
 
 ---
 
-## Negative parallelisms (P22)
+## Negative parallelisms
 
 A specific structural pattern where ideas are presented through what they are NOT before what they are.
 
@@ -148,7 +150,7 @@ A specific structural pattern where ideas are presented through what they are NO
 
 ---
 
-## Rule of three overuse (P23)
+## Rule of three overuse
 
 AI forces ideas into triads because three feels rhetorically complete. Humans don't naturally group everything into threes.
 
@@ -164,7 +166,7 @@ AI forces ideas into triads because three feels rhetorically complete. Humans do
 
 ---
 
-## Synonym cycling / elegant variation (P24)
+## Synonym cycling / elegant variation
 
 AI avoids repeating words because of repetition-penalty mechanisms. It calls the same thing by different names in consecutive sentences, which sounds unnatural.
 
@@ -177,7 +179,7 @@ AI avoids repeating words because of repetition-penalty mechanisms. It calls the
 
 ---
 
-## False ranges (P25)
+## False ranges
 
 AI constructs "from X to Y" phrases where the endpoints aren't on meaningful or parallel scales.
 
@@ -191,7 +193,7 @@ AI constructs "from X to Y" phrases where the endpoints aren't on meaningful or 
 
 ---
 
-## Rhythm and sentence patterns (P26)
+## Rhythm and sentence patterns
 
 ### Sentence starters to avoid
 
