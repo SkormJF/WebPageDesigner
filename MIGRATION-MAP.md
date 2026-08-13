@@ -319,6 +319,24 @@ were actually executed.
 Verified afterwards: §19A/B/C 47/47, both profiles generated and validated at 38/38 including smoke start,
 and §41's structural gates 49/49.
 
+### 8.0.1 Final cleanup pass
+
+A third pass, Builder-only: no project generated, nothing under `projects_root` touched. It closed the gap
+between what the post-audit pass *documented* and what the repository could still *do*.
+
+| Area | What was still wrong | Correction |
+|---|---|---|
+| Agents | No agent could load a skill — none held the `Skill` tool, so nineteen inherited skills were unreachable | `Skill` granted to Planner, Builder and Reviewer. Nothing preloaded via `skills:`; loading is on demand |
+| Agents | Tools were broad and `effort` was inherited | Scoped per role. Builder alone reaches Supabase, via `mcp__supabase`; an explicit `tools` list excludes MCP otherwise, so no agent can deploy. `effort` set explicitly, never `max` |
+| `ui-ux-pro-max` | §8.0 retired the MASTER.md generator *from the contract*; the code and its flags were still there | `design_system.py` deleted with `--design-system`, `--persist`, `--page`, `--output-dir`, `--project-name`, `--format`. Also `_sync_all.py`, and three CSVs unreachable from `CSV_CONFIG` — one of them the generator's rule table, two prose dumps carrying their own `<design-system>` blocks |
+| `redesign-existing-projects` | §8.0 added the scope boundary but left the legacy catalogue below it, so the file forbade at line 206 what it ordered at line 48 | Imperative catalogue replaced by the broken / drifted / different distinction. Displaced knowledge routed to `emil-design-eng`, `frontend-design`, `atomic-design`, `accessibility-audit`, `humanizalo` |
+| `seo-audit` | Still opened with "You are an expert in search engine optimization" and read `.agents/product-marketing-context.md`, a path from another ecosystem | Role assignment and dead path removed; context now comes from `design.md`, `PROJECT.md`, `requirements.md` |
+| `humanizalo` | The skill was correct but nothing said when it fires | Generated contract and Builder agent now require it on any task touching user-visible copy, and only those, subordinate to specs, meaning, brand voice, technical and legal accuracy, and approved SEO |
+
+Verified afterwards: 110/110 on the cleanup suite, 47/47 on the post-audit suite, 27/27 on §41's Builder
+half. The generated half of §41 did not run — `projects_root` is empty by the user's own cleanup, and this
+pass was forbidden to create projects.
+
 ### 8.2 `humanizalo` — principles, not a word blacklist
 
 The legacy skill carries a list of banned Spanish words (`innovador`, `de vanguardia`, `potenciar`,

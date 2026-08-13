@@ -105,9 +105,16 @@ project/
 └── package.json  package-lock.json
 ```
 
+The skill set is deterministic: the 17 marked `inherited-standard` plus whatever the chosen profile adds —
+19 for both profiles today. The Builder's own catalogue is 20, and the difference is `chrome-bridge-automation`,
+classified `optional`. It is **never** copied automatically. Shipping it by default would turn "requires an
+explicit decision" into a sentence in a document, with the skill already sitting in the repository.
+
 Its own lifecycle runs from `READY_TO_BUILD` to `DONE`, one task at a time, each implemented by a Builder
 agent and gated by an independent Reviewer before anything is committed. `HEAD` is always the last approved
 state.
+
+Agents load skills through the `Skill` tool when a task needs one. Nothing is preloaded.
 
 ---
 

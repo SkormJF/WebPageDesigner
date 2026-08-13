@@ -107,9 +107,17 @@ proyecto/
 └── package.json  package-lock.json
 ```
 
+El conjunto de skills es determinista: las 17 marcadas `inherited-standard` más lo que agregue el perfil
+elegido — 19 en ambos perfiles hoy. El catálogo del Builder es de 20, y la diferencia es
+`chrome-bridge-automation`, clasificada `optional`. **Nunca** se copia automáticamente: mandarla por defecto
+convertiría "requiere una decisión explícita" en una frase de un documento, con la skill ya instalada en el
+repositorio.
+
 Su propio ciclo de vida corre de `READY_TO_BUILD` a `DONE`, de a una tarea por vez: cada una la implementa
 un agente Builder y la aprueba un Reviewer independiente antes de que se comitee nada. `HEAD` es siempre el
 último estado aprobado.
+
+Los agentes cargan skills con la herramienta `Skill` cuando la tarea lo pide. Nada se precarga.
 
 ---
 
