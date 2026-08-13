@@ -1,6 +1,6 @@
 ---
 name: performance-audit
-description: Systematic performance audit of a built project, run as a Quality Gate input. Catalogs grep-verified inconsistencies with file:line citations rather than generic advice — duplicate auth checks between middleware and pages, un-optimized bundle imports, dead dependencies, sequential queries that could run in parallel. Produces a prioritized plan (criticality / impact / rationale) and implements it in verified phases. Also invoke on explicit request ("audit performance", "is this slow", "optimize this").
+description: Diagnose performance in a built project — measure, interpret the evidence, locate causes with file:line citations, and propose concrete corrections in priority order. It diagnoses; it does not implement. Use as a Quality Gate input, or on explicit request ("audit performance", "is this slow", "why is this heavy").
 ---
 
 # Performance Audit
@@ -45,9 +45,32 @@ The wins that are almost always available, in rough order of payoff:
 
 **5. `package.json` hygiene.** CLI-only tooling (a scaffolding CLI like `shadcn`, not imported anywhere at runtime) listed under `dependencies` instead of `devDependencies` — check with the same grep-for-imports approach as item 3.
 
+## This skill diagnoses. It does not implement.
+
+Measure, interpret, locate the cause, and propose the correction with enough precision that someone else can
+apply it. The Builder implements, under a task, and the Reviewer gates the result. That separation is what
+keeps a performance pass from quietly becoming an unreviewed refactor.
+
 ## Process
 
-1. Grep and read broadly first — both the **shared component's own definition** and its **real usage sites** across the app. The definition alone can be misleading: a `size="lg"` button variant might be declared as one height in the component file while every actual call site overrides it to a different height by hand, meaning the "real" default in practice is the overridden value, not the declared one. This same principle — catalog real usage, not declarations — is also the core method behind consistency audits; see the `atomic-design` skill.
-2. Present a plan before changing anything: a table with criticality, performance impact, and the concrete rationale (file:line) behind each item, phased by risk (dependency/config changes and query parallelization are low-risk; anything touching the auth boundary is higher-risk and gets its own phase with extra verification).
-3. Implement in phases, running `tsc --noEmit`, `npm run lint`, and `npm run build` after each phase — not just once at the end.
-4. For any change that touches the auth boundary specifically, add an explicit security check before calling it done — for example, a forged-header request against a running dev server confirming the trusted header can't be spoofed by a client. Code review alone isn't enough evidence for a security-sensitive performance change.
+1. **Grep and read broadly first** — both the **shared component's own definition** and its **real usage
+   sites**. The definition alone misleads: a `size="lg"` variant may be declared as one height while every
+   call site overrides it by hand, so the real default is the override. Cataloguing real usage rather than
+   declarations is the method; the `atomic-design` skill applies the same one to consistency.
+2. **Report findings with evidence.** Each one: the file:line, what it costs, and why. A finding without a
+   citation is not a finding yet.
+3. **Propose corrections in priority order**, grouped by risk. Dependency and config changes and query
+   parallelization are low-risk. Anything touching the auth boundary is not, and should be proposed as its
+   own separately-verified piece of work rather than folded in with the cheap wins.
+4. **Say what would prove each fix worked**, in terms that can fail — a measurement, a bundle delta, a
+   request count. For anything touching the auth boundary that means an explicit security check, such as a
+   forged-header request confirming a trusted header cannot be spoofed. Code review is not evidence for a
+   security-sensitive change.
+
+## What not to do
+
+- **Do not run Lighthouse on every task.** It is evidence to gather when performance is the question, not a
+  ritual attached to unrelated work.
+- **Do not chase a perfect score.** The number is a proxy. A design the human approved is not.
+- **Do not trade away the approved design** to win a metric. If the two genuinely conflict, that is a
+  finding for the human, not a decision to make inside an audit.

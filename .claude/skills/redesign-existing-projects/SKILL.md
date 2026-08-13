@@ -1,17 +1,43 @@
 ---
 name: redesign-existing-projects
-description: Upgrades existing websites and apps to premium quality. Audits current design, identifies generic AI patterns, and applies high-end design standards without breaking functionality. Works with any CSS framework or vanilla CSS.
+description: Audit an existing interface and improve it within the approved contract — identify weak points and generic patterns, then apply targeted upgrades to the surface actually in scope. Use when a task calls for improving something that already exists, never as licence to modernize the rest of the product.
 ---
 
-# Redesign Skill
+# Redesign
 
-## How This Works
+## Scope, before anything else
 
-When applied to an existing project, follow this sequence:
+This skill improves **the surface in front of you**, inside the task you were given and the contract that
+was approved. It is not a mandate to modernize a product.
 
-1. **Scan** — Read the codebase. Identify the framework, styling method (Tailwind, vanilla CSS, styled-components, etc.), and current design patterns.
-2. **Diagnose** — Run through the audit below. List every generic pattern, weak point, and missing state you find.
-3. **Fix** — Apply targeted upgrades working with the existing stack. Do not rewrite from scratch. Improve what's there.
+```
+local redesign, inside the current task
+  → allowed, within the approved contract
+
+material or global redesign
+  → STOP
+  → Orchestrator → Planner
+  → Artifact, if the visual contract itself changes
+  → human approval
+```
+
+**`design-system.md` outranks every suggestion in this file.** Where the approved contract states a
+typeface, a palette, a radius or a motion register, that is the answer — and this skill's job becomes
+executing it well, not proposing something better.
+
+Three rules govern everything below:
+
+- **Preserve functional invariants.** A redesign that changes what something does is not a redesign.
+- **Reuse before replace.** Extend the existing component before introducing a new one.
+- **No opportunistic redesign.** Touching a page to fix its spacing is not permission to restyle its
+  neighbours, swap its font, or replace a working component that merely looks dated to you.
+
+## How this works
+
+1. **Scan** — read the code. Identify the framework, the styling method, and the patterns already in use.
+2. **Diagnose** — work through the audit below and list what you find, with locations.
+3. **Check scope** — anything material or beyond the current task stops here and goes to the Orchestrator.
+4. **Improve what is there** — targeted changes working with the existing stack. Never a rewrite.
 
 ## Design Audit
 
@@ -158,23 +184,43 @@ When upgrading a project, pull from these high-impact techniques to replace gene
 - **Grain and noise overlays.** A fixed, pointer-events-none overlay with subtle noise to break digital flatness.
 - **Colored, tinted shadows.** Shadows that carry the hue of the background rather than using generic black.
 
-## Fix Priority
+## Fix priority
 
-Apply changes in this order for maximum visual impact with minimum risk:
+Where several genuine findings compete for one task's attention, this is a reasonable order — highest
+payoff and lowest risk first. It is a triage aid, not a checklist to execute.
 
-1. **Font swap** — biggest instant improvement, lowest risk
-2. **Color palette cleanup** — remove clashing or oversaturated colors
-3. **Hover and active states** — makes the interface feel alive
-4. **Layout and spacing** — proper grid, max-width, consistent padding
-5. **Replace generic components** — swap cliche patterns for modern alternatives
-6. **Add loading, empty, and error states** — makes it feel finished
-7. **Polish typography scale and spacing** — the premium final touch
+1. **Missing interaction states** — hover, focus, disabled, loading, empty, error. Almost always the
+   largest real improvement, and the one most often absent.
+2. **Spacing and rhythm** — inconsistent padding and a missing scale read as unfinished.
+3. **Layout** — measure, alignment, grid, where the eye goes first.
+4. **Contrast and colour application** — within the approved palette.
+5. **Typography scale** — sizes and weights, within the approved faces.
+6. **Component consistency** — the same block behaving the same way everywhere.
+
+**Typography and palette themselves are not on this list**, and that is deliberate. Swapping a typeface or
+recolouring an interface changes the approved visual contract. If the contract is wrong, that goes to the
+human through the Planner — it is not a redesign task's decision, however obvious the improvement looks.
+
+## What this skill never does on its own initiative
+
+Each of these was a default in an older version of this guidance, and each one changes a product without
+anybody deciding to:
+
+- **Swap the typeface** because the current one looks dated.
+- **Desaturate or re-tint the palette** across the interface.
+- **Reduce everything to a single accent colour.**
+- **Add grain, noise or texture overlays** that nobody asked for.
+- **Break a centred layout** into asymmetry as a matter of taste.
+- **Modernize adjacent surfaces** that the task did not mention.
+- **Replace a working component** because a more fashionable pattern exists.
+
+Any of these may be exactly right — as a proposal, with a reason, to the human who owns the contract.
 
 ## Rules
 
-- Work with the existing tech stack. Do not migrate frameworks or styling libraries.
-- Do not break existing functionality. Test after every change.
-- Before importing any new library, check the project's dependency file first.
-- If the project uses Tailwind, check the version (v3 vs v4) before modifying config.
-- If the project has no framework, use vanilla CSS.
-- Keep changes reviewable and focused. Small, targeted improvements over big rewrites.
+- Work with the existing stack. Do not migrate frameworks or styling libraries.
+- Do not break existing functionality. Verify after every change.
+- Check the project's dependencies before importing anything new.
+- Check a styling library's actual version before touching its configuration.
+- Keep changes reviewable and focused. A reviewer who cannot tell which change caused which effect cannot
+  approve either.

@@ -7,7 +7,8 @@ description: Build the navigation chrome — sticky/scroll headers, mobile menus
 
 Navigation is the highest-frequency artefact in any project here — every product has a header, every application has a sidebar — and it is where accessibility failures cluster, because the defaults look correct while being broken.
 
-You remain the web builder (see the Role lock rule in `CLAUDE.md`). This skill supplies the patterns; it does not change what you're doing.
+This skill supplies the patterns. It carries no workflow and no authority: it does not decide what gets
+built, change phase, or override the approved design system.
 
 Everything below is a rule with a reason. Where a rule cites a WCAG success criterion, that criterion is Level AA unless stated otherwise — meaning it's part of the bar `CLAUDE.md`'s quality checklist already commits every project to.
 
