@@ -1,37 +1,74 @@
 ---
 name: building-components
-description: Guide for building modern, accessible, and composable UI components. Use when building new components, implementing accessibility, creating composable APIs, setting up design tokens, publishing to npm/registry, or writing component documentation.
+description: Technical craft for building a UI component — API shape, props, composition, controlled vs uncontrolled state, polymorphism, accessibility behaviour, tokens and styling. Use while writing or revising a shared component.
 ---
 
 # Building Components
 
-## When to use this skill
+How to build a component well, once it has been decided that this component should exist.
 
-Use when the user is:
+That decision is not made here. **`atomic-design` owns** whether something is one component or three,
+whether a case is a variant or a new component, when to extract a repeat, and when an abstraction is not
+earning its keep. This skill starts after that and covers the implementation.
 
-- Building new UI components (primitives, components, blocks, templates)
-- Implementing accessibility features (ARIA, keyboard navigation, focus management)
-- Creating composable component APIs (slots, render props, controlled/uncontrolled state)
-- Setting up design tokens and theming systems
-- Publishing components to npm or a registry
-- Writing component documentation
-- Implementing polymorphism or as-child patterns
-- Working with data attributes for styling/state
+| Question | Owner |
+|---|---|
+| Should this be a component at all? A variant? An extraction? | `atomic-design` |
+| What does it look like — colour, size, radius, states | `design-system.md` |
+| How is its API shaped, how does it compose, how is it accessible | here |
+| Where does it live in the tree | `design.md` |
+
+---
+
+## What to get right
+
+**API shape.** Props that describe intent, not implementation. A component with a boolean for each part it
+can hide wants composition instead — see `references/composition.mdx`.
+
+**Controlled and uncontrolled state.** Decide deliberately which the component supports, and support the
+uncontrolled path properly rather than as an afterthought. `references/state.mdx`.
+
+**Polymorphism, only where it pays.** Rendering as a different element is genuinely useful for links that
+look like buttons; it is also where type complexity accumulates fastest.
+`references/as-child.mdx`, `references/polymorphism.mdx`.
+
+**Accessibility as behaviour, not attributes.** Roles and labels are the easy half. Focus management,
+keyboard interaction, and what a screen reader is told when state changes are the half that gets skipped.
+`references/accessibility.mdx`.
+
+**Styling through tokens.** Never a literal colour, radius or spacing value in a component.
+`references/design-tokens.mdx`, `references/styling.mdx`.
+
+**Data attributes for state**, so styling can respond to state without prop-threading.
+`references/data-attributes.mdx`.
+
+**Types that describe the real API**, including what happens when a consumer passes something unexpected.
+`references/types.mdx`.
+
+---
+
+## Out of scope
+
+This project builds products, not published component libraries. Packaging a component for npm, publishing
+to a registry, or distributing through a marketplace is not part of any task here — and a component designed
+for external distribution carries generality it does not need, which is the over-abstraction `atomic-design`
+warns about.
+
+If a project ever genuinely needs to publish, that is a scope decision for the human, not a default.
+
+---
 
 ## References
 
-- [definitions.mdx](./references/definitions.mdx) - Artifact taxonomy (primitives, components, blocks, templates)
-- [principles.mdx](./references/principles.mdx) - Core principles for component design
-- [accessibility.mdx](./references/accessibility.mdx) - ARIA, keyboard navigation, WCAG compliance
-- [composition.mdx](./references/composition.mdx) - Composable component patterns
-- [as-child.mdx](./references/as-child.mdx) - The as-child pattern for element polymorphism
-- [polymorphism.mdx](./references/polymorphism.mdx) - Polymorphic component patterns
-- [types.mdx](./references/types.mdx) - TypeScript typing patterns for components
-- [state.mdx](./references/state.mdx) - Controlled vs uncontrolled state management
-- [data-attributes.mdx](./references/data-attributes.mdx) - Using data attributes for styling and state
-- [design-tokens.mdx](./references/design-tokens.mdx) - Design token systems and theming
-- [styling.mdx](./references/styling.mdx) - Component styling approaches
-- [registry.mdx](./references/registry.mdx) - shadcn-style registry distribution
-- [npm.mdx](./references/npm.mdx) - Publishing components to npm
-- [marketplaces.mdx](./references/marketplaces.mdx) - Component marketplace distribution
-- [docs.mdx](./references/docs.mdx) - Writing component documentation
+| File | For |
+|---|---|
+| `references/principles.mdx` | Core principles for component design |
+| `references/composition.mdx` | Composable APIs, slots, sub-components |
+| `references/state.mdx` | Controlled vs uncontrolled |
+| `references/as-child.mdx` | The as-child pattern |
+| `references/polymorphism.mdx` | Polymorphic components and their type cost |
+| `references/accessibility.mdx` | ARIA, keyboard, focus management |
+| `references/types.mdx` | TypeScript patterns |
+| `references/data-attributes.mdx` | State-driven styling |
+| `references/design-tokens.mdx` | Token systems |
+| `references/styling.mdx` | Styling approaches |
