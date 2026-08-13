@@ -1,15 +1,24 @@
 {
-  "name": "calude-webbuilder",
-  "version": "1.0.0",
-  "description": "Build professional landing pages with Claude Code. Clone, run claude, answer questions, get a deployed website.",
+  "name": "web-builder",
+  "version": "2.0.0",
+  "description": "Project factory: discovers a product, gets its visual direction approved, writes and reviews complete specifications, generates an independent repository, validates it, and hands it off.",
   "author": "SkormJF",
   "license": "UNLICENSED",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "create-project": "node scripts/create-project.mjs",
+    "validate-project": "node scripts/validate-project.mjs",
+    "reset-builder": "node scripts/reset-builder.mjs"
+  },
+  "_scripts_note": "Exactly three, matching the three mechanical scripts. The mechanical Spec Gate is deliberately not aliased here -- it is a helper inside scripts/lib/, invoked directly as `node scripts/lib/spec-gate.mjs`, and create-project runs it as a hard precondition. Giving it an npm alias would make it read as a fourth top-level script.",
   "keywords": [
     "claude-code",
-    "web-builder",
-    "landing-page",
-    "nextjs",
-    "ai-assisted"
+    "project-factory",
+    "specifications",
+    "scaffolding"
   ]
 }

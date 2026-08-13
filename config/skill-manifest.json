@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+
+  "_doc": {
+    "purpose": "Single source of truth for which skills are physically copied into a generated project. create-project copies from it; validate-project computes the same expected set and fails on a missing required skill or an unexpected extra one.",
+    "not_this": "It does not control when a skill loads into context. On disk is not in context.",
+    "distribution": {
+      "builder-only": "Stays in the Builder. Never copied.",
+      "inherited-standard": "Copied into every generated project, regardless of profile.",
+      "profile-inherited": "Copied when the selected profile lists it in profile_skills.",
+      "optional": "Copied, but used only with explicit human approval."
+    },
+    "ceiling": "Project skills are dropped silently past roughly 28. A generated project receives 18 (17 standard + 1 optional) plus the selected profile's additions. Adding to the standard set is not free."
+  },
+
+  "skills": {
+    "artifact-design": {
+      "distribution": "inherited-standard",
+      "purpose": "Materialize an approved visual direction as a real, inspectable page."
+    },
+    "atomic-design": {
+      "distribution": "inherited-standard",
+      "purpose": "Component identity, reuse-first, variants, duplication vs over-abstraction. Conceptual only -- it does not impose atoms/molecules/organisms directories."
+    },
+    "frontend-design": {
+      "distribution": "inherited-standard",
+      "purpose": "Design methodology: typography, colour, spacing, layout, motion, and the judgement about what reads as generic."
+    },
+    "ui-ux-pro-max": {
+      "distribution": "inherited-standard",
+      "purpose": "Design intelligence corpus with a CLI front door -- palettes, font pairings, styles, UX guidelines."
+    },
+    "humanizalo": {
+      "distribution": "inherited-standard",
+      "purpose": "Product prose that reads as written by a person. Subordinate to specs, brand voice, technical and legal accuracy, and approved SEO."
+    },
+    "deep-research": {
+      "distribution": "inherited-standard",
+      "purpose": "Multi-angle research when a single search would give a shallow or one-sided answer."
+    },
+    "web-reader": {
+      "distribution": "inherited-standard",
+      "purpose": "Read a reference URL into concrete values -- palette, type, layout rhythm, component patterns. Used at Discovery, and again whenever the human points at a site during later changes."
+    },
+    "building-components": {
+      "distribution": "inherited-standard",
+      "purpose": "Composition, accessibility patterns, prop shape and token systems for shared components."
+    },
+    "emil-design-eng": {
+      "distribution": "inherited-standard",
+      "purpose": "Micro-interaction and motion craft -- what makes an interface feel considered rather than decorated."
+    },
+    "navigation-shell": {
+      "distribution": "inherited-standard",
+      "purpose": "Headers, sticky behaviour, mobile menus and dashboard sidebars, and the accessibility criteria they fail by default."
+    },
+    "redesign-existing-projects": {
+      "distribution": "inherited-standard",
+      "purpose": "Structured audit and targeted upgrade of something that already exists, instead of rewriting blindly."
+    },
+    "web-design-guidelines": {
+      "distribution": "inherited-standard",
+      "purpose": "Review a built interface against web interface guidelines."
+    },
+    "playwright-cli": {
+      "distribution": "inherited-standard",
+      "purpose": "Interactive browser inspection, evidence and debugging. Distinct from Playwright Test, which stays primary for reproducible E2E."
+    },
+    "performance-audit": {
+      "distribution": "inherited-standard",
+      "purpose": "Grep-verified performance findings with file:line citations, as a Quality Gate input."
+    },
+    "seo-audit": {
+      "distribution": "inherited-standard",
+      "purpose": "SEO checks, applied according to the product intent recorded in design.md -- a private app legitimately gets minimal metadata."
+    },
+    "accessibility-audit": {
+      "distribution": "inherited-standard",
+      "purpose": "axe plus keyboard, focus, forms, dialogs, dynamic state and reflow. An axe pass is not an accessibility pass."
+    },
+    "vercel-deploy": {
+      "distribution": "inherited-standard",
+      "purpose": "Deploy through the Vercel MCP. No silent CLI fallback for remote operations."
+    },
+
+    "shadcn-ui": {
+      "distribution": "profile-inherited",
+      "profiles": ["next-standard-v1", "react-vite-standard-v1"],
+      "purpose": "Component library patterns for React + Tailwind."
+    },
+    "vercel-react-best-practices": {
+      "distribution": "profile-inherited",
+      "profiles": ["next-standard-v1", "react-vite-standard-v1"],
+      "purpose": "React and Next performance rules, as progressive disclosure -- the index loads, a rule loads when relevant."
+    },
+
+    "chrome-bridge-automation": {
+      "distribution": "optional",
+      "purpose": "Vision-driven automation through the human's own Chrome. Exceptional path only -- Playwright is first choice, and using this needs explicit human approval."
+    }
+  }
+}

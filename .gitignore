@@ -47,3 +47,6 @@ __pycache__/
 playwright-cli-screenshots/
 *.png
 !docs/**/*.png
+
+# Script scratch output
+*.log
