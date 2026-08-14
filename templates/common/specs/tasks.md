@@ -29,7 +29,9 @@
 
 <!-- SLOT: What must exist before feature tasks start: verified dependencies, design tokens, stack baseline,
      backend connection where required, testing foundation, first shared primitives. Inside approved specs
-     — foundation is not a licence to design ahead. -->
+     — foundation is not a licence to design ahead.
+     One of these is concrete and easy to leave at its template default: the document `lang` must carry
+     PROJECT.md's `Language tag`. The smoke spec compares the two, so give it a task with that acceptance. -->
 
 | ID | Task | Requirements | Depends on | Acceptance | Status |
 |---|---|---|---|---|---|

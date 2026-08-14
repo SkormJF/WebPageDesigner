@@ -862,3 +862,226 @@ describe("Reviewer contract", () => {
     assert.match(reviewer, /not a technical sandbox/);
   });
 });
+
+/* ------------------------------------------------------------------ */
+
+/** Every Markdown instruction the Builder writes or ships, walked once. */
+const instructionDocs = () => {
+  const found = [];
+  const walk = (rel) => {
+    for (const entry of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+      const child = `${rel}/${entry.name}`;
+      if (entry.isDirectory()) walk(child);
+      else if (entry.name.endsWith(".md")) found.push(child);
+    }
+  };
+  walk("templates");
+  walk(".claude");
+  return ["CLAUDE.md", ...found];
+};
+
+describe("Supabase SSR session contract", () => {
+  /* The defect: `foco`'s design.md shipped "Cookies are httpOnly and set
+     through `@supabase/ssr`" and "sessions in httpOnly cookies via
+     `@supabase/ssr`". Neither holds for the supported browser client, which
+     reads the session from `document.cookie` -- so the spec promised something
+     no implementation could deliver and no reviewer could verify. It came from
+     the Builder leaving the contract unstated, not from a rule that said it,
+     which is why the fix is a stated contract and this test is the guard.
+
+     Each pattern below is a form that claim took, or would take again. */
+  const IMPOSITIONS = [
+    /cookies?\s+(?:are|is|must be|should be|will be)\s+http-?only/i,
+    /http-?only\s+(?:session\s+)?cookies?\s+(?:via|through|with|set by|from)\s+`?@supabase\/ssr/i,
+    /sessions?\s+in\s+http-?only\s+cookies?/i,
+    /supabase\s+ssr\s+cookies?\s*=\s*http-?only/i,
+    /http-?only\s*(?:=|:)\s*(?:true|required|mandatory)/i,
+    /(?:must|should|always)\s+(?:be\s+)?set\s+http-?only/i,
+  ];
+
+  /* Scoped to documents that talk about Supabase. `playwright-cli` documents
+     Playwright's own cookie API and legitimately writes `httpOnly: true` in a
+     code sample; that is a browser-automation fact, not a session rule for
+     this stack, and a path exclusion would be a blunter instrument than
+     asking whether the document is about Supabase at all. */
+  const supabaseDocs = instructionDocs().filter((rel) => /supabase/i.test(read(rel)));
+
+  test("some instruction actually discusses Supabase", () => {
+    assert.ok(supabaseDocs.length > 0, "the scan would be vacuous with nothing to scan");
+  });
+
+  for (const rel of supabaseDocs) {
+    test(`${rel} does not impose HttpOnly as the @supabase/ssr rule`, () => {
+      const text = flat(rel);
+      for (const imposition of IMPOSITIONS) {
+        assert.ok(
+          !imposition.test(text),
+          `${rel} states an HttpOnly rule @supabase/ssr does not keep: ${imposition}`,
+        );
+      }
+    });
+  }
+
+  test("the design.md template states the supported contract instead", () => {
+    const design = flat("templates/common/specs/design.md");
+    for (const line of [
+      "Session tokens managed through @supabase/ssr cookies.",
+      "Do not store auth tokens in localStorage.",
+      "Follow the supported Supabase SSR browser/server cookie pattern.",
+      "Do not promise HttpOnly unless a specific supported flow requires it.",
+    ]) {
+      assert.ok(design.includes(line), `the Security guidance must carry: ${line}`);
+    }
+    assert.match(design, /reads the session from `document\.cookie`/);
+  });
+
+  /* The claim also reached the Integrations table, where a second version of
+     the same datum could diverge from the first. */
+  test("the session mechanism has one owner in the template", () => {
+    assert.match(
+      flat("templates/common/specs/design.md"),
+      /Auth method names the credential this project presents, not the session mechanism/,
+    );
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("inherited skills carry no Builder operational dependency", () => {
+  /* A skill copied into a generated project is read there, in a repository
+     that has no `.builder/`, none of the three Builder scripts and no Builder
+     run to be "the rest of" -- so an instruction naming any of them is not
+     merely irrelevant, it is unfollowable. `artifact-design` shipped three.
+
+     Builder-only skills are exempt by definition; these are the ones that
+     travel. */
+  const inherited = [...new Set(PROFILES.flatMap((id) => expectedSkills(id)))].sort();
+
+  const OPERATIONAL = [
+    { label: "the Builder's private state directory", re: /\.builder\b/ },
+    { label: "a Builder script that is never shipped", re: /\b(?:reset-builder|create-project|validate-project|spec-gate)\b/ },
+    { label: "the Builder run as a scope", re: /Builder run/i },
+  ];
+
+  const skillFiles = (skill) => {
+    const found = [];
+    const walk = (rel) => {
+      for (const entry of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+        const child = `${rel}/${entry.name}`;
+        if (entry.isDirectory()) walk(child);
+        else if (entry.name.endsWith(".md")) found.push(child);
+      }
+    };
+    walk(`.claude/skills/${skill}`);
+    return found;
+  };
+
+  test("the inherited set is non-empty and matches the manifest", () => {
+    assert.equal(inherited.length, 19, "both current profiles inherit the same 19 skills");
+  });
+
+  for (const skill of inherited) {
+    test(`${skill} is readable in a generated project`, () => {
+      for (const rel of skillFiles(skill)) {
+        const text = read(rel);
+        for (const { label, re } of OPERATIONAL) {
+          const hit = text.match(re);
+          assert.ok(
+            !hit,
+            `${rel} names ${label} ("${hit?.[0]}") -- a generated project has no such thing`,
+          );
+        }
+      }
+    });
+  }
+
+  /* Provenance is not a contract. A generated project keeps its visual
+     contract because `design-system.md` holds the values, not because anyone
+     can still open the artifact that produced them. */
+  test("design-system.md alone carries the visual contract", () => {
+    const skill = flat(".claude/skills/artifact-design/SKILL.md");
+    assert.match(skill, /`design-system\.md` has to stand on its own/);
+    assert.match(skill, /without opening the artifact, without its URL/);
+    assert.match(skill, /provenance is not a contract/i);
+    assert.match(skill, /record the approved values there, never a pointer to where they can be seen/);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("the generated language check compares a value", () => {
+  /* `expect(lang).toBeTruthy()` passed on the stack template's own
+     `lang="en"`, so a Spanish product shipped an English document and the
+     smoke suite reported PASS. Presence is not the property worth asserting;
+     equality with the approved tag is. */
+  const SMOKE = PROFILES.map((id) => `templates/stacks/${id}/e2e/smoke.spec.ts`);
+
+  /* The regex is lifted out of the spec rather than restated, so what is
+     exercised below is the parser that will actually run. */
+  const langPattern = (source) => {
+    const literal = source.match(/spec\.match\((\/.+\/m)\)/);
+    assert.ok(literal, "the smoke spec must read the tag out of PROJECT.md with a regex literal");
+    return new RegExp(literal[1].slice(1, -2), "m");
+  };
+
+  for (const rel of SMOKE) {
+    const source = read(rel);
+
+    test(`${rel} asserts the approved tag, not truthiness`, () => {
+      assert.doesNotMatch(
+        source,
+        /getAttribute\(\s*['"]lang['"]\s*\)[\s\S]{0,200}?toBeTruthy/,
+        "a truthy check cannot fail on the wrong language, which is the only failure that matters",
+      );
+      assert.match(source, /approvedLanguageTag\(\s*testInfo\.config\.rootDir\s*\)/);
+      assert.match(source, /\.toBe\(expected\)/);
+    });
+
+    test(`${rel} reads the tag from PROJECT.md rather than restating it`, () => {
+      assert.match(source, /readFileSync\(\s*path\.join\(\s*rootDir\s*,\s*['"]PROJECT\.md['"]\s*\)/);
+      assert.match(source, /Language tag/);
+    });
+
+    test(`${rel} fails loudly when the tag was never decided`, () => {
+      const re = langPattern(source);
+      assert.equal(
+        re.exec(read("templates/common/specs/PROJECT.md")),
+        null,
+        "an unfilled [TBD] must not parse as a language tag",
+      );
+      assert.match(source, /throw new Error\(/);
+    });
+
+    test(`${rel} parses a real tag, plain or backticked`, () => {
+      const re = langPattern(source);
+      for (const [line, expected] of [
+        ["- **Language tag:** es", "es"],
+        ["- **Language tag:** `es-MX`", "es-MX"],
+        ["- **Language tag:** en", "en"],
+      ]) {
+        assert.equal(re.exec(line)?.[1], expected, `failed to parse: ${line}`);
+      }
+    });
+  }
+
+  test("PROJECT.md owns the tag, and says why it is load-bearing", () => {
+    const project = read("templates/common/specs/PROJECT.md");
+    assert.match(project, /^-\s\*\*Language tag:\*\*/m);
+    assert.match(flat("templates/common/specs/PROJECT.md"), /asserts `<html lang>` equals it/);
+  });
+
+  test("the foundation task that sets it is named where tasks are written", () => {
+    assert.match(flat("templates/common/specs/tasks.md"), /the document `lang` must carry PROJECT\.md's `Language tag`/);
+  });
+
+  test("both stack templates point their lang attribute at that decision", () => {
+    for (const [rel, id] of [
+      ["templates/stacks/next-standard-v1/src/app/layout.tsx", "next"],
+      ["templates/stacks/react-vite-standard-v1/index.html", "vite"],
+    ]) {
+      const text = flat(rel);
+      assert.match(text, /`lang` must equal PROJECT\.md's `Language tag`/, `${id}: the source of truth is named`);
+      assert.match(text, /the template's placeholder/, `${id}: en is declared a placeholder, not a decision`);
+    }
+  });
+});

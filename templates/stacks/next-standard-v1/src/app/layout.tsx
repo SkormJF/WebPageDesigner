@@ -24,8 +24,9 @@ export const metadata: Metadata = {
   description: "Replace from PROJECT.md and design.md.",
 };
 
-/* `lang` must match the product language declared in PROJECT.md -- not the
-   language of the conversation that produced it. */
+/* `lang` must equal PROJECT.md's `Language tag` -- not the language of the
+   conversation that produced it. The `en` below is the template's placeholder;
+   FOUNDATION replaces it, and e2e/smoke.spec.ts fails until it matches. */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} h-full antialiased`}>

@@ -108,9 +108,9 @@ UNVERIFIED
 Where an important visual decision genuinely depends on contrast — a body colour on its surface, the primary
 button's label — **measure those pairs and keep the result**. Measure the pair, not the page.
 
-**Do not run a full accessibility audit during Discovery.** The complete audit belongs to the generated
-project's Quality Gate, where there is a built interface to audit; running it here spends a context window
-on a page that exists to be approved and then deleted.
+**Do not run a full accessibility audit during Discovery.** The complete audit belongs to the project's
+Quality Gate, where there is a built interface to audit; running it here spends a context window on a page
+that exists to be approved and then deleted.
 
 ---
 
@@ -188,9 +188,15 @@ responsive behaviour, motion, and any intentional exception. It carries **no** d
 notes, no review commentary, no inventory of every CSS literal and no narrative of how the direction was
 reached. Git holds the history; the spec holds the current truth.
 
-The page itself may stay in `.builder/current/artifact/` for the rest of the Builder run. It disappears
-with everything else when `reset-builder` runs, so **do not spend a turn deleting it** — and deleting a file
-frees no context anyway; only `/clear` does that. It is **never copied into the generated project**.
+**`design-system.md` has to stand on its own.** Whoever reads it later must be able to build and review
+against it without opening the artifact, without its URL and without knowing it ever existed — so record
+the approved values there, never a pointer to where they can be seen. An artifact URL is provenance, and
+provenance is not a contract: the page can be unpublished, republished or lost, and none of that may change
+what was approved.
+
+The page itself is scratch. It belongs to whatever workspace produced it, not to the repository the product
+is built in, and it is cleaned up with the rest of that workspace — so **do not spend a turn deleting it**,
+and deleting a file frees no context anyway; only `/clear` does that.
 
 ---
 

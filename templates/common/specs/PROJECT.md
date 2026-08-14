@@ -10,6 +10,8 @@
 - **Name:** [TBD]
 - **Slug:** [TBD]
 - **Language:** [TBD — the language the product's own UI and content are written in]
+- **Language tag:** [TBD — that language as one BCP-47 tag: `es`, `es-MX`, `en`. The smoke spec reads this
+  line and asserts `<html lang>` equals it, so it is a decision, not a note.]
 - **Created:** [TBD — YYYY-MM-DD]
 
 ## What this is

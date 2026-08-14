@@ -114,6 +114,9 @@ These hold for this project. Violations are review findings, not style opinions:
 
 ## Integrations
 
+<!-- SLOT: Auth method names the credential this project presents, not the session mechanism — that has
+     one owner, `## Security`, and a second divergent version is how a wrong rule spreads. -->
+
 | Service | Used for | Auth method | Failure behaviour |
 |---|---|---|---|
 | [TBD] | [TBD] | [TBD] | [TBD] |
@@ -129,7 +132,18 @@ These hold for this project. Violations are review findings, not style opinions:
 ## Security
 
 <!-- SLOT: The decisions, not a checklist recital: where secrets live and must never reach, what runs
-     server-only, what the server revalidates, how sessions are checked on every request. -->
+     server-only, what the server revalidates, how sessions are checked on every request.
+
+     Session handling states the mechanism the chosen library actually supports, not the one that
+     sounds strongest. With Supabase, write exactly this and no more:
+
+       - Session tokens managed through @supabase/ssr cookies.
+       - Do not store auth tokens in localStorage.
+       - Follow the supported Supabase SSR browser/server cookie pattern.
+       - Do not promise HttpOnly unless a specific supported flow requires it.
+
+     The `@supabase/ssr` browser client reads the session from `document.cookie`, so a blanket
+     HttpOnly rule is a promise the library does not keep and a reviewer cannot verify. -->
 
 [TBD]
 
