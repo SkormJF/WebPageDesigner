@@ -9,7 +9,6 @@
 ## Approval
 
 - **Approved on:** [TBD — YYYY-MM-DD]
-- **Approved from:** [TBD — Artifact URL]
 - **Decisions approved:** palette · typography · buttons · layout · backgrounds · tone [· auth/panel shell]
 
 ## Concept

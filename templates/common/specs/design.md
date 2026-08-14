@@ -134,16 +134,22 @@ These hold for this project. Violations are review findings, not style opinions:
 <!-- SLOT: The decisions, not a checklist recital: where secrets live and must never reach, what runs
      server-only, what the server revalidates, how sessions are checked on every request.
 
-     Session handling states the mechanism the chosen library actually supports, not the one that
-     sounds strongest. With Supabase, write exactly this and no more:
+     Session handling states the mechanism the approved architecture actually supports, not the one that
+     sounds strongest. Choosing Supabase does not by itself choose a session mechanism — `## Architecture`
+     does:
 
-       - Session tokens managed through @supabase/ssr cookies.
-       - Do not store auth tokens in localStorage.
-       - Follow the supported Supabase SSR browser/server cookie pattern.
-       - Do not promise HttpOnly unless a specific supported flow requires it.
+       IF the approved architecture uses @supabase/ssr
+         - Session tokens are managed through the supported @supabase/ssr cookie pattern.
+         - Do not store auth tokens in localStorage.
+         - Do not impose HttpOnly as a blanket rule.
+         - Document the browser/server session flow that architecture requires.
+       ELSE
+         - Do not inject an @supabase/ssr cookie contract.
+         - Use the auth/session model the approved architecture defines.
 
-     The `@supabase/ssr` browser client reads the session from `document.cookie`, so a blanket
-     HttpOnly rule is a promise the library does not keep and a reviewer cannot verify. -->
+     A Vite SPA on Supabase, Supabase used only as a database, and Supabase Auth without an SSR
+     architecture all fall in the ELSE branch. Write the architectural responsibility — where the session
+     lives, who may read it, what revalidates it on each request — not another library's internals. -->
 
 [TBD]
 

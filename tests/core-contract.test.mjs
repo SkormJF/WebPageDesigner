@@ -881,15 +881,22 @@ const instructionDocs = () => {
 };
 
 describe("Supabase SSR session contract", () => {
-  /* The defect: `foco`'s design.md shipped "Cookies are httpOnly and set
-     through `@supabase/ssr`" and "sessions in httpOnly cookies via
-     `@supabase/ssr`". Neither holds for the supported browser client, which
-     reads the session from `document.cookie` -- so the spec promised something
-     no implementation could deliver and no reviewer could verify. It came from
-     the Builder leaving the contract unstated, not from a rule that said it,
-     which is why the fix is a stated contract and this test is the guard.
+  /* Two defects, one produced by the fix for the other.
 
-     Each pattern below is a form that claim took, or would take again. */
+     First, `foco`'s design.md shipped "Cookies are httpOnly and set through
+     `@supabase/ssr`" and "sessions in httpOnly cookies via `@supabase/ssr`" --
+     a promise the supported browser client does not keep and no reviewer could
+     verify. The fix stated a contract; the contract then overshot, handing the
+     @supabase/ssr cookie pattern to *any* project that touched Supabase. That
+     is wrong for a Vite SPA, for Supabase used only as a database, and for
+     Supabase Auth without an SSR architecture. The vendor does not decide the
+     session mechanism -- the approved architecture does.
+
+     So these tests guard the behaviour on both sides: no blanket HttpOnly, and
+     no @supabase/ssr contract without the condition that earns it. They read
+     the load-bearing terms, not one exact sentence.
+
+     Each pattern below is a form the HttpOnly claim took, or would take again. */
   const IMPOSITIONS = [
     /cookies?\s+(?:are|is|must be|should be|will be)\s+http-?only/i,
     /http-?only\s+(?:session\s+)?cookies?\s+(?:via|through|with|set by|from)\s+`?@supabase\/ssr/i,
@@ -922,17 +929,75 @@ describe("Supabase SSR session contract", () => {
     });
   }
 
-  test("the design.md template states the supported contract instead", () => {
-    const design = flat("templates/common/specs/design.md");
-    for (const line of [
-      "Session tokens managed through @supabase/ssr cookies.",
-      "Do not store auth tokens in localStorage.",
-      "Follow the supported Supabase SSR browser/server cookie pattern.",
-      "Do not promise HttpOnly unless a specific supported flow requires it.",
+  /* The generalisation was a mention with nothing governing it. Wherever an
+     instruction names the library, the condition has to be within reach. */
+  for (const rel of supabaseDocs) {
+    test(`${rel} never states the @supabase/ssr contract unconditionally`, () => {
+      const text = flat(rel);
+      for (const hit of text.matchAll(/@supabase\/ssr/g)) {
+        const near = text.slice(Math.max(0, hit.index - 400), hit.index + 200);
+        assert.match(
+          near,
+          /\bIF\b|\bELSE\b|\bif the\b|only (?:when|if)|approved architecture/i,
+          `${rel} names @supabase/ssr with no condition governing it: "${near}"`,
+        );
+      }
+    });
+  }
+
+  const design = () => flat("templates/common/specs/design.md");
+
+  test("Supabase alone does not choose the session mechanism", () => {
+    assert.match(design(), /Choosing Supabase does not by itself choose a session mechanism/i);
+    assert.match(design(), /`?## Architecture`?\s*does/i);
+  });
+
+  test("the IF branch carries the four behaviours the SSR architecture owes", () => {
+    const text = design();
+    assert.match(text, /\bIF\b[^.]{0,60}approved architecture[^.]{0,30}@supabase\/ssr/i);
+    assert.match(text, /supported @supabase\/ssr cookie pattern/i);
+    assert.match(text, /(?:do not|never)\s+store auth tokens in localStorage/i);
+    assert.match(text, /(?:do not|never)\s+impose HttpOnly as a blanket rule/i);
+    assert.match(text, /browser\/server session flow/i);
+  });
+
+  test("the ELSE branch hands the decision back to the architecture", () => {
+    const text = design();
+    assert.match(text, /\bELSE\b/);
+    assert.match(text, /(?:do not|never)\s+inject an @supabase\/ssr cookie contract/i);
+    assert.match(text, /auth\/session model the approved architecture defines/i);
+  });
+
+  /* The three shapes that were being handed the contract by default. */
+  test("the excluded architectures are named, not left to inference", () => {
+    const text = design();
+    for (const [label, pattern] of [
+      ["a Vite SPA on Supabase", /vite[^.]{0,20}\bspa\b/i],
+      ["Supabase as a database only", /(?:only as a database|database only)/i],
+      ["Supabase Auth without SSR", /supabase auth without[^.]{0,20}\bssr\b/i],
     ]) {
-      assert.ok(design.includes(line), `the Security guidance must carry: ${line}`);
+      assert.match(text, pattern, `the ELSE branch must name ${label}`);
     }
-    assert.match(design, /reads the session from `document\.cookie`/);
+  });
+
+  /* `document.cookie` is one library's internal, not a spec requirement, and
+     localStorage was never the alternative -- both were read that way. */
+  const LIBRARY_INTERNALS = [
+    /(?:must|should|has to|have to|is required to|requires?)\s+(?:[^.]{0,60}\s)?document\.cookie/i,
+    /(?<!\b(?:not|never|avoid|avoids|avoiding)\s)(?:store|keep|persist|save)\s+(?:the\s+)?(?:auth|authentication|session|access)\s+tokens?\s+in\s+localstorage/i,
+  ];
+
+  for (const rel of supabaseDocs) {
+    test(`${rel} requires no library internal`, () => {
+      const text = flat(rel);
+      for (const internal of LIBRARY_INTERNALS) {
+        assert.ok(!internal.test(text), `${rel} turns an implementation detail into a rule: ${internal}`);
+      }
+    });
+  }
+
+  test("the design.md template hardcodes no document.cookie requirement", () => {
+    assert.doesNotMatch(design(), /document\.cookie/);
   });
 
   /* The claim also reached the Integrations table, where a second version of
