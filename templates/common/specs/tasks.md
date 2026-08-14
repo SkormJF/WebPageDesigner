@@ -55,15 +55,31 @@
 |---|---|---|---|---|---|
 | TASK-1xx | [TBD] | REQ-xxx | [TBD] | [TBD] | PENDING |
 
-## Quality
+## Product-specific work
 
-<!-- SLOT: The non-functional requirements get tasks here -- accessibility, performance, security,
-     SEO where it applies. They are listed as work because a non-functional requirement with no task
-     is how accessibility and security quietly leave a project between planning and delivery. -->
+<!-- SLOT: Anything else this product needs that is not a feature in the ordinary sense -- a data
+     import, a seeded catalogue, a specific integration, a migration. Optional: delete the section
+     if there is nothing here rather than inventing rows for it. -->
 
 | ID | Task | Requirements | Depends on | Acceptance | Status |
 |---|---|---|---|---|---|
-| TASK-9xx | [TBD] | REQ-1xx | [TBD] | [TBD] | PENDING |
+| TASK-1xx | [TBD] | REQ-xxx | [TBD] | [TBD] | PENDING |
+
+---
+
+## What does NOT get a task
+
+Global audits belong to the lifecycle gate that already owns them, not to this file. The generated project
+runs `VISUAL_QA`, `E2E` and `QUALITY_GATE`, and those stages carry accessibility, responsive, copy, SEO,
+security, token and performance verification for the whole product.
+
+So there is **no `TASK-9xx` quality block** — no "accessibility audit" task, no "run Lighthouse" task, no
+"E2E" task, no "SEO audit" task. Writing them here does not add rigour; it duplicates a gate that runs
+anyway, and a duplicated gate is one that can be marked `DONE` while the real one has never run.
+
+A task carries **local** acceptance criteria instead: what must be true about *this* piece of work for it to
+pass review. "Keyboard reaches every control in this form and the error is announced" is a local criterion on
+a form task. "The product is accessible" is a gate.
 
 ---
 

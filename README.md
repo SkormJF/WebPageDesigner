@@ -75,6 +75,11 @@ and never fixes.
 **Generation** composes the new repository, installs its dependencies, makes one baseline commit, validates
 the result, and tells you the path.
 
+**Twice it will ask you to cut the context** — once the artifact is approved, and once the specs are. A
+`CONTEXT CHECKPOINT` appears, the session stops, and you run `/clear` and then `continúa`. Nothing is lost:
+everything approved is already on disk and is read back from there. These are fixed stops in the flow, not a
+suggestion that depends on how the session is going.
+
 ---
 
 ## Stack profiles

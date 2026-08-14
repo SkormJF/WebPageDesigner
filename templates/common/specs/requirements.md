@@ -33,9 +33,19 @@ Optional       Where <feature is included>, the system shall <response>
 
 ## Non-functional requirements
 
-<!-- SLOT: Performance, accessibility, security, privacy, availability, compatibility.
-     These get IDs too, and they get tasks too. A non-functional requirement with no task is the
-     single most common way accessibility and security quietly leave a project. -->
+<!-- SLOT: Performance, accessibility, security, privacy, availability, compatibility -- but only
+     where THIS product carries a specific constraint of its own: a page that must stay usable on a
+     2G connection, a legal retention period, a reading-comfort decision the human made, a browser
+     that has to be supported.
+
+     Harness work is not a requirement. Running axe, running Lighthouse, running E2E, an SEO audit, a
+     security review, Visual QA, the Quality Gate, applying humanizalo, using design tokens -- all of
+     that happens in the generated project's lifecycle whether or not a REQ mentions it. Writing them
+     here inflates the requirement set with rows nobody can fail meaningfully and buries the handful
+     of constraints that are genuinely this product's.
+
+     The test: could this project be built correctly and still miss this? If the answer is "no,
+     because a gate covers it", it is not a requirement. -->
 
 | ID | Requirement | Priority | Source |
 |---|---|---|---|

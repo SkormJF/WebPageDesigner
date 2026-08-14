@@ -27,6 +27,11 @@ const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 const readJson = (rel) => JSON.parse(read(rel));
 
+/* A rule that survives a reflow is still the same rule. Reading prose through
+   this means a test fails when a contract sentence is deleted or reversed, not
+   when a paragraph is rewrapped at a different width. */
+const flat = (rel) => read(rel).replace(/\s+/g, " ");
+
 const PROFILES = ["next-standard-v1", "react-vite-standard-v1"];
 
 /* ------------------------------------------------------------------ */
@@ -334,6 +339,242 @@ describe("Supabase MCP scoping", () => {
     const mcp = readJson("templates/common/.mcp.json");
     assert.equal(mcp.mcpServers.supabase.url, "https://mcp.supabase.com/mcp");
     assert.ok(mcp.mcpServers.vercel, "the Vercel entry ships too");
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("always-on context budget", () => {
+  /* Both harnesses are loaded on every single session, so their size is a
+     running cost rather than a style question. The intent recorded in the
+     optimization pass was 150-190 lines, ~200 maximum; what the mandatory
+     content actually compresses to is 221 (Builder) and 260 (generated), down
+     from 576 and 497. These ceilings sit just above that, so re-inflation
+     fails here instead of being discovered during a Factory Test. Lowering
+     them after a further real reduction is the point; raising them is not. */
+  const ceilings = { "CLAUDE.md": 230, "templates/common/CLAUDE.md": 270 };
+
+  for (const [rel, ceiling] of Object.entries(ceilings)) {
+    test(`${rel} stays under ${ceiling} lines`, () => {
+      const lines = read(rel).split(/\r?\n/).length;
+      assert.ok(lines <= ceiling, `${rel} is ${lines} lines, over the ${ceiling}-line ceiling`);
+    });
+
+    /* A file compressed by writing 400-character lines has moved the cost, not
+       removed it. Tables carry long rows legitimately; prose does not. */
+    test(`${rel} is not compressed into giant lines`, () => {
+      const offenders = read(rel)
+        .split(/\r?\n/)
+        .map((line, i) => [i + 1, line])
+        .filter(([, line]) => line.length > 200);
+      assert.deepEqual(offenders, []);
+    });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("Artifact is only a visual approval instrument", () => {
+  const harness = flat("CLAUDE.md");
+  const skill = flat(".claude/skills/artifact-design/SKILL.md");
+
+  test("the harness scopes it to Round 4 visual approval", () => {
+    assert.match(harness, /R4's approval instrument, and nothing else/);
+    assert.match(harness, /\*\*Never for anything else\*\*/);
+  });
+
+  test("the harness names the report-shaped uses it is not for", () => {
+    for (const forbidden of ["SPEC_PASS", "deploy approval", "check lists", "operational documents"]) {
+      assert.ok(harness.includes(forbidden), `the exclusion list must name ${forbidden}`);
+    }
+  });
+
+  test("the skill states the same exclusion", () => {
+    assert.match(skill, /## The one thing this is for/);
+    assert.match(skill, /Discovery Round 4/);
+    assert.match(skill, /An artifact is \*\*never\*\* the vehicle for a report/);
+  });
+
+  test("what is approved is a named system, not every CSS literal", () => {
+    assert.match(harness, /not every CSS literal/);
+    assert.match(skill, /Build it from a small named system, not from literals/);
+    assert.match(skill, /Never produce an inventory of every `margin`, `padding` and `gap`/);
+    assert.match(skill, /LOCAL IMPLEMENTATION DETAIL → stays local/);
+    /* A 4px grid is one product's answer, not the system's. */
+    assert.match(skill, /No universal 4px grid is imposed/);
+  });
+
+  test("no accessibility claim without a measurement", () => {
+    assert.match(skill, /Do not claim accessibility you have not measured/);
+    assert.match(skill, /UNVERIFIED/);
+    assert.match(skill, /Do not run a full accessibility audit during Discovery/);
+    assert.match(harness, /no accessibility claim is made without a real measurement/);
+  });
+
+  test("it is transient, and nobody spends a turn deleting it", () => {
+    assert.match(harness, /until `reset-builder` removes it/);
+    assert.match(harness, /never copied into the generated project/);
+    assert.match(skill, /do not spend a turn deleting it/i);
+  });
+
+  test("create-project copies specifications, never the artifact directory", () => {
+    const script = read("scripts/create-project.mjs");
+    assert.doesNotMatch(script, /artifact/i, "the artifact directory must never reach a generated project");
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("context checkpoints", () => {
+  const harness = read("CLAUDE.md");
+  const projectHarness = read("templates/common/CLAUDE.md");
+  const checkpointBlock = (text) =>
+    (text.match(/```\nCONTEXT CHECKPOINT\n[\s\S]*?```/) ?? [""])[0];
+
+  for (const [label, text, count] of [
+    ["Builder", harness, 2],
+    ["generated project", projectHarness, 4],
+  ]) {
+    const prose = text.replace(/\s+/g, " ");
+
+    test(`the ${label} prints the fixed checkpoint format`, () => {
+      const block = checkpointBlock(text);
+      assert.ok(block, `${label}: the CONTEXT CHECKPOINT block is missing`);
+      for (const line of ["✓ Estado persistido", "✓ Decisiones persistidas", "✓ Siguiente fase:", "1. /clear", "2. continúa"]) {
+        assert.ok(block.includes(line), `${label}: the checkpoint block must contain "${line}"`);
+      }
+    });
+
+    test(`the ${label} stops there rather than continuing`, () => {
+      assert.match(prose, /\*\*STOP\*\*, without continuing into the next phase/);
+      assert.match(prose, /you never run `\/clear` yourself/i);
+    });
+
+    test(`the ${label} persists everything durable before asking for /clear`, () => {
+      assert.match(prose, /do not ask for `\/clear` yet/);
+    });
+
+    test(`the ${label} declares ${count} fixed stops`, () => {
+      assert.match(prose, count === 2 ? /Two fixed stops/ : /Four fixed stops/);
+    });
+  }
+
+  test("B1 and B2 are where they belong", () => {
+    const prose = harness.replace(/\s+/g, " ");
+    assert.match(prose, /\*\*B1 — after the Artifact is approved\.\*\*[^|]*?phase `PLANNING`/);
+    assert.match(prose, /\*\*B2 — after human spec approval\.\*\*[^|]*?`READY_TO_CREATE`/);
+    /* B1 exists so Planning does not re-read the artifact's HTML. */
+    assert.match(prose, /re-read(ing)? the Artifact's HTML/);
+  });
+
+  test("P1 through P4 are where they belong", () => {
+    for (const [id, phase] of [
+      ["P1", "BUILD_TASKS"],
+      ["P2", "LOCAL_PREVIEW"],
+      ["P3", "E2E"],
+      ["P4", "READY_TO_DEPLOY"],
+    ]) {
+      assert.match(
+        projectHarness,
+        new RegExp(`${id}\\s+[^\\n]*→ persist phase ${phase}`),
+        `${id} must persist ${phase}`,
+      );
+    }
+    /* P2 leaves no task in flight across the /clear. */
+    assert.match(projectHarness, /current_task = null, task_stage = null/);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("phases are never skipped", () => {
+  for (const rel of ["CLAUDE.md", "templates/common/CLAUDE.md"]) {
+    test(`${rel} forbids skipping a transient-looking phase`, () => {
+      assert.match(flat(rel), /Never skip a declared enum phase because it appears transient/);
+    });
+  }
+
+  test("READY_TO_CREATE is a persisted phase, not a formality", () => {
+    const harness = flat("CLAUDE.md");
+    assert.match(harness, /= READY_TO_CREATE/);
+    assert.match(harness, /persist `READY_TO_CREATE` and stop at checkpoint \*\*B2\*\*/);
+    assert.match(harness, /READY_TO_CREATE → CREATING_PROJECT → create-project/);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("Spec Reviewer cannot loop", () => {
+  const harness = flat("CLAUDE.md");
+  const reviewer = flat(".claude/agents/spec-reviewer.md");
+
+  test("the harness caps automatic runs at two", () => {
+    assert.match(harness, /Maximum 2 automatic Spec Reviewer runs/);
+    assert.match(harness, /There is no third automatic pass/);
+    assert.match(harness, /STOP and bring the consolidated/);
+  });
+
+  test("MINOR alone does not fail", () => {
+    assert.match(harness, /MINOR only\s+→ does not block/);
+    assert.match(harness, /it never triggers another review chain/);
+    assert.match(reviewer, /\*\*MINOR findings alone never fail the specs\*\*/);
+  });
+
+  test("BLOCKER and MAJOR still fail", () => {
+    assert.match(harness, /BLOCKER or MAJOR → SPEC_FAIL/);
+    assert.match(reviewer, /Any BLOCKER or any MAJOR means `SPEC_FAIL`/);
+  });
+
+  test("the second run does not raise the standard", () => {
+    assert.match(reviewer, /there is no third automatic run/);
+    assert.match(reviewer, /You do \*\*not\*\* raise the standard, reinterpret the approved Artifact, widen scope/);
+    assert.match(harness, /it does not raise the standard, reinterpret the approved Artifact/);
+  });
+
+  test("everything findable is reported in the first pass", () => {
+    assert.match(reviewer, /\*\*Find everything in one pass\.\*\*/);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("specifications stay product-scoped", () => {
+  const tasks = flat("templates/common/specs/tasks.md");
+  const requirements = flat("templates/common/specs/requirements.md");
+  const harness = flat("CLAUDE.md");
+
+  test("the tasks template does not prescribe a QA task block", () => {
+    assert.doesNotMatch(
+      read("templates/common/specs/tasks.md"),
+      /^##\s+Quality\s*$/m,
+      "a Quality section invites TASK-9xx audit rows",
+    );
+    assert.match(tasks, /## What does NOT get a task/);
+    assert.match(tasks, /no `TASK-9xx` quality block/);
+    for (const gate of ["VISUAL_QA", "E2E", "QUALITY_GATE"]) {
+      assert.ok(tasks.includes(gate), `the template must name the ${gate} gate that already covers it`);
+    }
+  });
+
+  test("the harness says the same thing to whoever writes tasks.md", () => {
+    assert.match(harness, /a \*\*global audit belongs to its later gate\*\*/);
+    assert.match(harness, /no `TASK-9xx` QA block is generated/);
+  });
+
+  test("the requirements template excludes harness work", () => {
+    assert.match(requirements, /Harness work is not a requirement/);
+    assert.match(requirements, /could this project be built correctly and still miss this\?/i);
+  });
+
+  test("the harness scopes requirements to the product", () => {
+    assert.match(harness, /Requirements are \*\*product\*\* scope/);
+  });
+
+  test("design-system.md holds durable truth, not a literal inventory", () => {
+    const ds = flat("templates/common/specs/design-system.md");
+    assert.match(ds, /no inventory of every CSS literal/);
+    assert.match(ds, /No draft history/);
+    assert.match(ds, /Write `UNVERIFIED` for anything that was not measured/);
   });
 });
 

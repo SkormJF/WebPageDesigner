@@ -4,6 +4,13 @@
      the Artifact -- it is copied from what they saw, not re-derived afterwards from taste. If a
      value in this file differs from the Artifact the human approved, that is a defect, regardless
      of which value is better.
+
+     It holds the durable truth and nothing else: named tokens, roles, tiers, rhythm, component
+     contracts, states, responsive behaviour, motion, intentional exceptions. No draft history, no
+     debugging notes, no Spec Reviewer commentary, no narrative of how the direction was reached,
+     and no inventory of every CSS literal in the Artifact -- a global, reusable or identity-bearing
+     value becomes a token or a component rule here; a local implementation detail stays local.
+     Git keeps the history; this file keeps what is true now.
      Every SLOT comment must be removed before the Spec Gate will pass. -->
 
 ## Approval
@@ -30,8 +37,9 @@
 | `--color-surface` | [TBD] | [TBD] |
 | `--color-text` | [TBD] | [TBD] |
 
-**Contrast verified:** [TBD — which pairs were checked and their ratios. Body text 4.5:1, large text
-and UI components 3:1. A palette that has not been measured has not been checked.]
+**Contrast verified:** [TBD — the pairs that were actually measured and their ratios; body text 4.5:1, large
+text and UI components 3:1. Write `UNVERIFIED` for anything that was not measured. A claim of AA on a pair
+nobody measured is worse than an honest gap, and the full audit runs later at the Quality Gate.]
 
 <!-- SLOT: Every colour the product uses is a token. A literal colour value written into a component
      is the drift this file exists to prevent, and it almost always arrives through a placeholder --

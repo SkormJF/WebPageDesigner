@@ -20,6 +20,18 @@ re-derive them and it does not quietly improve on them. That makes this the one 
 visual decision is genuinely made — and the reason everything downstream, this skill included, defers to the
 contract once it exists.
 
+## The one thing this is for
+
+**Discovery Round 4: propose a visual direction, iterate on it, get it approved by a human.** It may be
+reused later when a material change alters the approved visual contract and needs re-approval. That is the
+whole list.
+
+An artifact is **never** the vehicle for a report, a summary, a `SPEC_PASS` or `SPEC_FAIL`, an approval of
+specifications, an approval of creation or deploy, a checklist, a validation result, a final report, an
+operational document, or reference material that is purely text. Each of those is a short chat message with
+a question, and building a page for it costs a turn and a context window to say something that fitted in
+four lines.
+
 ---
 
 ## What it must contain
@@ -42,6 +54,53 @@ product warrants:
 Use the intended fonts. Self-hosted or downloaded faces are valid and are better than a disclaimer — if the
 face genuinely cannot be loaded, say so **on the page, next to the specimen**, and be specific about what is
 real and what is approximated. A human who approves lettering they will not receive has approved nothing.
+
+---
+
+## Build it from a small named system, not from literals
+
+Write the artifact on top of a handful of explicit tokens and use them everywhere. Something like:
+
+```
+space-1 · space-2 · space-3 · space-4 · page-gutter · section-gap
+control-sm · control-md · radius-sm · radius-md
+```
+
+Those names are an example, not a schedule: the scale belongs to this product. **No universal 4px grid is
+imposed**, and a set that suits a dense data tool has no business being copied onto a phone-first booking
+flow.
+
+What the human is approving, then, is a **named system**: palette and colour roles · typography roles ·
+radii · control tiers · layout rhythm · page gutters · section spacing · breakpoints · navigation shell ·
+surface hierarchy · component identity · representative states · responsive behaviour · motion character ·
+the interactions that matter.
+
+That list is also the boundary:
+
+```
+GLOBAL / REUSABLE / IDENTITY-BEARING   → a token, or a component contract
+LOCAL IMPLEMENTATION DETAIL            → stays local, and does not become a global token
+```
+
+A one-off gap inside a single composition is a local detail. **Never produce an inventory of every `margin`,
+`padding` and `gap` in the HTML**, and never hand Planning a list of literals to convert into a contractual
+scale — that turns an approved direction into hundreds of clauses nobody agreed to and cannot maintain.
+
+## Do not claim accessibility you have not measured
+
+Never write "AA", "contrast passes" or "accessible" on the strength of having chosen the colours carefully.
+If it has not been measured, the honest word is:
+
+```
+UNVERIFIED
+```
+
+Where an important visual decision genuinely depends on contrast — a body colour on its surface, the primary
+button's label — **measure those pairs and keep the result**. Measure the pair, not the page.
+
+**Do not run a full accessibility audit during Discovery.** The complete audit belongs to the generated
+project's Quality Gate, where there is a built interface to audit; running it here spends a context window
+on a page that exists to be approved and then deleted.
 
 ---
 
@@ -109,6 +168,18 @@ and there is never a question of which version was approved.
 
 **Record the approved values as they ended up.** Not the proposal, the outcome.
 
+## The artifact is transient; `design-system.md` is the durable truth
+
+Once the direction is approved, the durable record is `design-system.md`: visual intent, named tokens,
+typography, colour, radii, control tiers, layout rhythm, breakpoints, component contracts, states,
+responsive behaviour, motion, and any intentional exception. It carries **no** draft history, no debugging
+notes, no review commentary, no inventory of every CSS literal and no narrative of how the direction was
+reached. Git holds the history; the spec holds the current truth.
+
+The page itself may stay in `.builder/current/artifact/` for the rest of the Builder run. It disappears
+with everything else when `reset-builder` runs, so **do not spend a turn deleting it** — and deleting a file
+frees no context anyway; only `/clear` does that. It is **never copied into the generated project**.
+
 ---
 
 ## Listen for a need underneath a preference
@@ -134,7 +205,7 @@ as it can be built and record it as their call, so a later pass does not "fix" i
 
 These are not on that list, because they are not preferences:
 
-- **Contrast below AA.**
+- **Contrast below AA** — which is the one case worth measuring on the spot, on that pair alone.
 - **Focus indicators removed.**
 - **Motion with no reduced-motion path.**
 - **Text baked into an image.**

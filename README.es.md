@@ -76,6 +76,11 @@ completas, consistentes, trazables, factibles y fieles a lo que realmente aproba
 **La generación** compone el repositorio nuevo, instala sus dependencias, hace un único commit base, valida
 el resultado y te da la ruta.
 
+**Dos veces te va a pedir que cortes el contexto** — al aprobar el artifact y al aprobar las specs. Aparece un
+`CONTEXT CHECKPOINT`, se detiene, y vos ejecutás `/clear` y después `continúa`. No se pierde nada: todo lo
+aprobado ya está escrito en disco y se recupera desde ahí. Son paradas fijas del flujo, no una sugerencia
+según cómo venga la sesión.
+
 ---
 
 ## Perfiles de stack
