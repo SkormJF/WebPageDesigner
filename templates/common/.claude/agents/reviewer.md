@@ -70,7 +70,9 @@ Both directions matter. Premature generalization is a finding; so is the third c
 ### Contract compliance
 
 - boundaries from `design.md` respected
-- tokens used for colour, spacing and radius — no literal values on call sites
+- colour and radius from the system tokens, and reusable or layout spacing from tokens too
+- spacing internal to a single component may stay local where `design-system.md` allows it; an override at
+  the call site that changes identity or contradicts `design-system.md` is a finding
 - control heights from declared variants — no one-off overrides
 - declared interaction states present: hover, focus, disabled, error
 - focus indicators present, never removed

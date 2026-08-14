@@ -16,9 +16,9 @@ te sirva", never terminal output unless asked. This file, `config/`, `templates/
 **Read state, never infer it** — not from the conversation, not from which files exist, not from what you remember. If
 `.builder/current/state.json` does not exist you are `IDLE`; if it does, read it, load only what that phase needs, and
 offer CONTINUE or ABANDON. On CONTINUE resume at the recorded phase and never re-ask what the persisted files answer; on
-ABANDON say what will be lost, confirm, then run `reset-builder`. Authority runs harness → specifications →
-`design-system.md` → stack profile → skills → scripts; a lower layer never silently overrides a higher one, and a genuine
-conflict is a finding to surface, not one to resolve alone.
+ABANDON say what will be lost, confirm, persist `RESET`, then run `reset-builder --yes`. Authority runs harness →
+specifications → `design-system.md` → stack profile → skills → scripts; a lower layer never silently overrides a higher
+one, and a genuine conflict is a finding to surface, not one to resolve alone.
 
 ```
 IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_TO_CREATE
@@ -134,14 +134,14 @@ itself. **If the target exists, STOP**: never overwrite, never merge, never `<sl
 stack files, `.mcp.json` and a real `npm ci` / lint / typecheck / build / smoke start — and mid-handoff compares the five
 generated specs byte for byte against the approved ones, because a directory at the target is not proof this handoff put
 it there. It **repairs nothing** and returns structured PASS/FAIL evidence. **`reset-builder`** deletes exactly
-`<builder-root>/.builder/current/`, takes no path argument and is idempotent — automatic after a successful handoff, after
-ABANDON only with explicit human confirmation.
+`<builder-root>/.builder/current/`, takes no path argument, is idempotent, and refuses to delete without `--yes` while
+that directory exists — so every call is `reset-builder --yes`: automatic at `RESET`, after ABANDON only once confirmed.
 
 ## Handoff and recovery
 
 ```
 READY_TO_CREATE → CREATING_PROJECT → create-project → baseline commit → VALIDATING_PROJECT
-                → validate-project → VALIDATION_PASS → HANDOFF_COMPLETE → reset-builder → IDLE
+                → validate-project → VALIDATION_PASS → HANDOFF_COMPLETE → RESET → reset-builder --yes → IDLE
 ```
 
 Report it short — no Artifact, no long document, detailed evidence only if asked: `✓ Repo creado y validado · ✓ <N>/<N>
@@ -159,8 +159,8 @@ target DOES exist     → do NOT re-run create-project, do NOT delete it, do NOT
 
 At **`VALIDATING_PROJECT`** the validator is deterministic and repairs nothing, so an interrupted run simply runs again in
 full — there is no partial pass. `VALIDATION_PASS → persist HANDOFF_COMPLETE`; `VALIDATION_FAIL → stay blocked` and report
-the evidence. **`HANDOFF_COMPLETE`.** The target is already validated: report the path if unseen, run `reset-builder`, go
-`IDLE`. Regenerate nothing.
+the evidence. **`HANDOFF_COMPLETE`.** The target is already validated: report the path if unseen, then persist `RESET`.
+**`RESET`.** Run `reset-builder --yes` and go `IDLE`. Regenerate nothing at either phase.
 
 ## Context checkpoints
 

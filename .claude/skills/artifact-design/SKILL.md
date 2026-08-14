@@ -12,11 +12,16 @@ It is a real page, not a picture of one. That distinction is the reason it exist
 show a hover, a keyboard focus ring, or a disabled control, and those are precisely the decisions that
 otherwise go unmade until a component is already written and somebody improvises them per section.
 
-**And what gets approved becomes fact.** The artifact is built from real values, so approving the button
-approves its exact colour, radius, height, padding and hover state — already written down.
+**And what gets approved becomes fact.** The artifact is built from real values, so approving the primary
+button approves its identity — its colour role, its radius, its control tier and the states it shows — as a
+named contract rather than as an impression.
 
-`design-system.md` is written **from** this artifact: it copies the approved values verbatim. It does not
-re-derive them and it does not quietly improve on them. That makes this the one place in the system where a
+What that approval covers is the **named visual system**: global and reusable tokens, and the explicit
+contracts of the components on the page. It does not promote every local literal into a global token, and
+approving the page is not approving each `padding`, `margin` and `gap` inside a one-off composition.
+
+`design-system.md` is written **from** this artifact: it records that approved system as it ended up. It does
+not re-derive it and it does not quietly improve on it. That makes this the one place in the system where a
 visual decision is genuinely made — and the reason everything downstream, this skill included, defers to the
 contract once it exists.
 
@@ -75,9 +80,14 @@ radii · control tiers · layout rhythm · page gutters · section spacing · br
 surface hierarchy · component identity · representative states · responsive behaviour · motion character ·
 the interactions that matter.
 
-That list is also the boundary:
+That list is also the boundary, and it is exactly what approval covers:
 
 ```
+Artifact approval  → the named visual system
+                   → global and reusable tokens
+                   → explicit component contracts
+                   → NOT every local detail promoted to a global token
+
 GLOBAL / REUSABLE / IDENTITY-BEARING   → a token, or a component contract
 LOCAL IMPLEMENTATION DETAIL            → stays local, and does not become a global token
 ```

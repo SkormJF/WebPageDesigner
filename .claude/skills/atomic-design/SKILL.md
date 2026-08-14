@@ -143,6 +143,8 @@ combinations is growing, not on principle.
 - Is this the third copy of something? Extract it.
 - Is this abstraction earning its keep, or is it one component pretending to be four?
 - Does every control's height come from a declared variant, not from the call site?
-- Do colour, spacing and radius come from tokens, with no literal values in the component?
+- Do colour and radius come from the system tokens, and reusable or layout spacing too? Spacing internal to
+  a single component may stay local where `design-system.md` allows it; an override at the call site that
+  changes identity or contradicts `design-system.md` is a finding.
 - Are all the declared states present, including the ones that are tedious to build?
 - Does the component know something about the product that a `components/ui` component should not?

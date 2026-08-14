@@ -36,7 +36,9 @@ look like buttons; it is also where type complexity accumulates fastest.
 keyboard interaction, and what a screen reader is told when state changes are the half that gets skipped.
 `references/accessibility.mdx`.
 
-**Styling through tokens.** Never a literal colour, radius or spacing value in a component.
+**Styling through tokens.** Colour and radius come from the system tokens, and so does reusable or layout
+spacing. Spacing internal to a single component may stay local where `design-system.md` allows it; an
+override at the call site that changes identity or contradicts `design-system.md` is a finding.
 `references/design-tokens.mdx`, `references/styling.mdx`.
 
 **Data attributes for state**, so styling can respond to state without prop-threading.

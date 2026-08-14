@@ -521,6 +521,166 @@ describe("Artifact is only a visual approval instrument", () => {
 
 /* ------------------------------------------------------------------ */
 
+describe("Artifact approval does not contractualise every CSS literal", () => {
+  const skill = flat(".claude/skills/artifact-design/SKILL.md");
+  const harness = flat("CLAUDE.md");
+
+  test("approval covers the named system, tokens and component contracts", () => {
+    assert.match(skill, /Artifact approval → the named visual system/);
+    assert.match(skill, /→ global and reusable tokens/);
+    assert.match(skill, /→ explicit component contracts/);
+    assert.match(skill, /→ NOT every local detail promoted to a global token/);
+  });
+
+  test("a local detail stays local and does not become a global token", () => {
+    assert.match(skill, /LOCAL IMPLEMENTATION DETAIL → stays local, and does not become a global token/);
+    assert.match(skill, /Never produce an inventory of every `margin`, `padding` and `gap`/);
+    assert.match(skill, /approving the page is not approving each `padding`, `margin` and `gap`/);
+    assert.match(harness, /not every CSS literal/);
+  });
+
+  /* The contradiction this replaced: the skill promised approval of "its exact
+     colour, radius, height, padding" and a `verbatim` copy of every value, then
+     three sections later forbade the literal inventory that would require. Each
+     pattern below is a form the absolute rule took, or would take again. */
+  test("no absolute turns each literal into an approved clause", () => {
+    for (const absolute of [
+      /approves its exact colour, radius, height, padding/i,
+      /copies the approved values verbatim/i,
+      /copy(?:ing|ies)? (?:all|every) (?:the )?internal values/i,
+      /every `?padding`?, `?margin`? and `?gap`? (?:is|are|becomes?) (?:approved|a token)/i,
+      /each (?:CSS )?literal (?:is|becomes) (?:approved|a token|contractual)/i,
+    ]) {
+      assert.doesNotMatch(skill, absolute, `artifact-design must not restate: ${absolute}`);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("token policy allows component-local spacing", () => {
+  /* One contract, stated in the four places that enforce it. Colour and radius
+     belong to the system; so does spacing that is reused or lays a page out.
+     Spacing internal to one component is an implementation detail until
+     `design-system.md` says otherwise -- and the override that changes identity
+     is the finding, not the literal. */
+  const FILES = [
+    "templates/common/.claude/agents/builder.md",
+    "templates/common/.claude/agents/reviewer.md",
+    ".claude/skills/building-components/SKILL.md",
+    ".claude/skills/atomic-design/SKILL.md",
+  ];
+
+  /* Each of these shipped in one of the four files and contradicted the
+     contract by forbidding every literal outright. */
+  const ABSOLUTES = [
+    /never a literal value on a call site/i,
+    /never a literal spacing value/i,
+    /no literal values on call sites/i,
+    /no literal values in the component/i,
+    /never a literal colour, radius or spacing value/i,
+    /colours, radii and spacing come from tokens/i,
+    /tokens used for colour, spacing and radius/i,
+    /all spacing must come from tokens/i,
+  ];
+
+  /* These read whole documents, so a plain assert.match would print the entire
+     file on failure and bury the reason. The message is the finding. */
+  const has = (text, re, msg) => assert.ok(re.test(text), msg);
+  const lacks = (text, re, msg) => assert.ok(!re.test(text), msg);
+
+  for (const rel of FILES) {
+    const text = flat(rel);
+
+    test(`${rel} permits component-local internal spacing`, () => {
+      has(
+        text,
+        /spacing internal to a single component may stay local where `design-system\.md` allows it/i,
+        `${rel} must allow component-local spacing under the approved contract`,
+      );
+    });
+
+    test(`${rel} keeps design-system.md as the authority`, () => {
+      has(
+        text,
+        /changes identity or contradicts `design-system\.md`/i,
+        `${rel} must still catch the override that breaks the approved contract`,
+      );
+      has(
+        text,
+        /colours? and radi(?:i|us) (?:come )?from the system tokens/i,
+        `${rel} must keep colour and radius on the system tokens`,
+      );
+      has(text, /reusable or layout spacing/i, `${rel} must keep reusable and layout spacing on tokens`);
+    });
+
+    test(`${rel} states no absolute that forbids every literal`, () => {
+      for (const absolute of ABSOLUTES) {
+        lacks(text, absolute, `${rel} must not restate the absolute rule: ${absolute}`);
+      }
+    });
+  }
+
+  /* Loosening the token rule must not loosen reuse-first. */
+  test("reuse-first and the declared scales survive", () => {
+    const atomic = flat(".claude/skills/atomic-design/SKILL.md");
+    assert.match(atomic, /## Reuse first, but not at any cost/);
+    assert.match(atomic, /Is this the third copy of something\? Extract it\./);
+    assert.match(atomic, /Does every control's height come from a declared variant, not from the call site\?/);
+    for (const rel of ["templates/common/.claude/agents/builder.md", "templates/common/.claude/agents/reviewer.md"]) {
+      assert.match(flat(rel), /control heights? (?:come )?from (?:the )?declared variants?/i, `${rel} keeps the size scale`);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("RESET is a phase, not a step that gets skipped", () => {
+  const harness = flat("CLAUDE.md");
+  const script = read("scripts/reset-builder.mjs");
+
+  test("the state machine still declares RESET", () => {
+    assert.match(harness, /HANDOFF_COMPLETE → RESET → IDLE/);
+  });
+
+  test("the handoff chain passes through RESET before deleting anything", () => {
+    assert.match(harness, /HANDOFF_COMPLETE → RESET → reset-builder --yes → IDLE/);
+    assert.doesNotMatch(
+      harness,
+      /HANDOFF_COMPLETE → reset-builder/,
+      "HANDOFF_COMPLETE must persist RESET first -- the phase is declared, so it is never skipped",
+    );
+  });
+
+  test("HANDOFF_COMPLETE persists RESET, and RESET is what runs the reset", () => {
+    assert.match(harness, /\*\*`HANDOFF_COMPLETE`\.\*\*[^*]*then persist `RESET`/);
+    assert.match(harness, /\*\*`RESET`\.\*\* Run `reset-builder --yes` and go `IDLE`/);
+  });
+
+  test("ABANDON confirms, persists RESET, then resets", () => {
+    assert.match(harness, /confirm, persist `RESET`, then run `reset-builder --yes`/);
+  });
+
+  /* The script exits 1 without --yes while the directory exists, so a harness
+     sentence that omits the flag describes a call that cannot succeed. */
+  test("no reset-builder invocation in the harness omits --yes", () => {
+    const invocations = [...harness.matchAll(/[Rr]un `reset-builder([^`]*)`/g)].map((m) => m[1]);
+    assert.ok(invocations.length >= 2, "the harness must say how reset-builder is invoked");
+    for (const args of invocations) {
+      assert.match(args, /--yes/, `"run \`reset-builder${args}\`" would exit 1 with .builder/current/ present`);
+    }
+    assert.match(harness, /refuses to delete without `--yes`/);
+  });
+
+  test("the script still requires --yes and takes no path", () => {
+    assert.match(script, /if \(!args\.yes\)/);
+    assert.match(script, /process\.exit\(1\)/);
+    assert.doesNotMatch(script, /args\._\[0\]|args\.target|args\.path/);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
 describe("context checkpoints", () => {
   const harness = read("CLAUDE.md");
   const projectHarness = read("templates/common/CLAUDE.md");

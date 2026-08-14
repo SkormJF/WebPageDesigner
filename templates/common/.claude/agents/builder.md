@@ -58,7 +58,10 @@ it alone. Fixing it silently makes the review span two changes and the next fail
 
 And the ones from `design-system.md`:
 
-- colours, radii and spacing come from tokens — never a literal value on a call site
+- colours and radii come from the system tokens, and so does reusable or layout spacing
+- spacing internal to a single component may stay local where `design-system.md` allows it; an override at
+  the call site that changes identity or contradicts `design-system.md` is a defect, and the Reviewer will
+  raise it
 - control heights come from the declared variant — never a one-off override where the component is used
 - every interactive element has its declared hover, focus, disabled and error states
 - focus indicators are never removed
