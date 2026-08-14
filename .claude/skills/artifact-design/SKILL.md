@@ -1,12 +1,12 @@
 ---
 name: artifact-design
-description: Build the interactive artifact that carries a proposed visual direction to a human for approval, element by element. Use in Discovery Round 4, and whenever a visual direction needs to be seen and agreed rather than described.
+description: Build the interactive artifact that carries a proposed visual direction to a human for approval. Use in Discovery Round 4, and whenever a visual direction needs to be seen and agreed rather than described.
 ---
 
 # Artifact Design
 
 The artifact exists to be **approved**, not admired and not shipped. Its whole job is to turn a visual
-direction into something a person can look at, argue with, and say yes to — one element at a time.
+direction into something a person can look at, argue with, and say yes to.
 
 It is a real page, not a picture of one. That distinction is the reason it exists: a static image cannot
 show a hover, a keyboard focus ring, or a disabled control, and those are precisely the decisions that
@@ -151,20 +151,22 @@ consistently afterwards. That is a question about roles, not about count.
 
 ## The approval conversation
 
-**Element by element. Not "¿te gusta?"**
-
-Present each of these on its own and resolve it before moving to the next:
+**One approval turn when nothing is contested.** Present the published artifact, then name the major
+decisions in a few lines so the human knows what they are agreeing to:
 
 ```
 palette · typography · button style · layout and composition
 · backgrounds and texture · overall tone · (where they exist) the sign-in and panel shell
 ```
 
-Each gets its own yes-or-change. **Do not advance while one is unresolved** — a general "looks good" collects
-approval for things the human has not actually looked at, and they discover it after the build.
+Then ask once: `[ Aprobar dirección visual ] [ Quiero cambios ]`. **Naming the decisions is what separates
+one honest question from "¿te gusta?"** — a general "looks good" over decisions nobody listed collects
+approval for things the human never actually looked at, and they discover it after the build.
 
-When they ask for a change, make it and **republish to the same URL**. They refresh; no stray links pile up
-and there is never a question of which version was approved.
+**When they want changes**, resolve those specifically. Ask about the one element that is genuinely
+ambiguous rather than re-opening all of them, make the change, **republish to the same URL**, and ask for
+approval again. They refresh; no stray links pile up and there is never a question of which version was
+approved.
 
 **Record the approved values as they ended up.** Not the proposal, the outcome.
 

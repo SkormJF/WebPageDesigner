@@ -1,28 +1,20 @@
 # DESIGN SYSTEM — [PROJECT_NAME]
 
-<!-- SLOT: This file owns the approved visual contract. Every value here was approved by a human in
-     the Artifact -- it is copied from what they saw, not re-derived afterwards from taste. If a
-     value in this file differs from the Artifact the human approved, that is a defect, regardless
-     of which value is better.
-
-     It holds the durable truth and nothing else: named tokens, roles, tiers, rhythm, component
-     contracts, states, responsive behaviour, motion, intentional exceptions. No draft history, no
-     debugging notes, no Spec Reviewer commentary, no narrative of how the direction was reached,
-     and no inventory of every CSS literal in the Artifact -- a global, reusable or identity-bearing
-     value becomes a token or a component rule here; a local implementation detail stays local.
-     Git keeps the history; this file keeps what is true now.
+<!-- SLOT: Owns the approved visual contract, copied from the Artifact a human approved rather than
+     re-derived from taste; a value differing from it is a defect regardless of which is better. Named
+     system decisions are durable, component-local literals need not become global tokens. No draft
+     history, no review commentary, no inventory of every CSS literal.
      Every SLOT comment must be removed before the Spec Gate will pass. -->
 
 ## Approval
 
 - **Approved on:** [TBD — YYYY-MM-DD]
 - **Approved from:** [TBD — Artifact URL]
-- **Elements approved individually:** palette · typography · buttons · layout · backgrounds · tone [· auth/panel shell]
+- **Decisions approved:** palette · typography · buttons · layout · backgrounds · tone [· auth/panel shell]
 
 ## Concept
 
-<!-- SLOT: One or two sentences on what this system is doing and why it fits this product. The
-     thread that makes the rest cohere. Not adjectives. -->
+<!-- SLOT: One or two sentences on what this system does and why it fits this product. Not adjectives. -->
 
 [TBD]
 
@@ -37,16 +29,11 @@
 | `--color-surface` | [TBD] | [TBD] |
 | `--color-text` | [TBD] | [TBD] |
 
-**Contrast verified:** [TBD — the pairs that were actually measured and their ratios; body text 4.5:1, large
-text and UI components 3:1. Write `UNVERIFIED` for anything that was not measured. A claim of AA on a pair
-nobody measured is worse than an honest gap, and the full audit runs later at the Quality Gate.]
+**Contrast verified:** [TBD — the pairs actually measured and their ratios; body 4.5:1, large text and UI 3:1.
+Write `UNVERIFIED` for anything that was not measured; the full audit runs at the Quality Gate.]
 
-<!-- SLOT: Every colour the product uses is a token. A literal colour value written into a component
-     is the drift this file exists to prevent, and it almost always arrives through a placeholder --
-     the gradient standing in for a photo that has not been sent, the empty state, the tinted swatch.
-     They feel temporary, so a raw value gets typed instead of a token, and then the placeholder
-     outlives the excuse. Build placeholder tones from existing tokens. If none fits, the palette is
-     missing one: add it here. -->
+<!-- SLOT: Every colour is a token, placeholder tones included — build those from existing tokens, and if
+     none fits, add one here. -->
 
 ## Typography
 
@@ -60,10 +47,8 @@ nobody measured is worse than an honest gap, and the full audit runs later at th
 - **Base size:** [TBD]
 - **Loading:** [TBD — self-hosted or framework font loader; never a CDN link at runtime]
 
-<!-- SLOT: If the base size was raised because a human revealed a reading-comfort need rather than a
-     preference, record it here as an accessibility decision with that reason attached. It stops a
-     later polish pass from reading it as an oversight and shrinking it back. This is conditional --
-     only when the condition actually appeared. -->
+<!-- SLOT: A base size raised for a stated reading-comfort need is recorded here as an accessibility
+     decision with its reason, so a later pass does not shrink it back. -->
 
 ## Spacing and rhythm
 
@@ -74,8 +59,7 @@ nobody measured is worse than an honest gap, and the full audit runs later at th
 
 ## Surfaces
 
-<!-- SLOT: Elevation, borders, radii, shadows. Radii come from one token scale and nowhere else --
-     an arbitrary radius on a call site is the same class of drift as a raw colour value. -->
+<!-- SLOT: Radii come from one token scale and nowhere else. -->
 
 | Surface | Background | Border | Radius | Shadow |
 |---|---|---|---|---|
@@ -85,39 +69,22 @@ nobody measured is worse than an honest gap, and the full audit runs later at th
 
 ## Control sizes
 
-<!-- SLOT: A small number of control heights -- two is usually enough -- assigned to the component
-     variants themselves, so no call site ever needs a one-off height override.
-
-     THESE VALUES ARE THIS PROJECT'S, decided from the approved artifact and from what the product
-     actually is: its platform, interaction model, information density and audience. A compact tier
-     near 32px and a standard near 44px is a common pairing, not a requirement -- a dense data tool
-     and a phone-first booking flow have no business sharing a number.
-
-     Decided before the build, not after: a component's declared default is not what pages end up
-     using unless it was chosen with real content in mind, and once every instance has its own
-     override the same final height arrives via a different padding/font-size combination in each
-     file. That stops being a one-line fix at about a dozen occurrences. The discipline is one
-     declared value per tier, whatever the values are. -->
+<!-- SLOT: Two tiers is usually enough, declared on the component variants so no call site needs a one-off
+     override. The values are this project's — a dense data tool and a booking flow share no number. -->
 
 | Tier | Height | Used by |
 |---|---|---|
 | Compact | [TBD] | [TBD — secondary and inline actions] |
 | Standard | [TBD] | [TBD — form fields and primary actions] |
 
-**Touch targets:** WCAG 2.2 AA requires 24×24 (SC 2.5.8); AAA is 44×44 (SC 2.5.5). A compact tier above the
-AA floor is compliant, not a defect, and inflating every control to the AAA number flattens the hierarchy
-this scale exists to create. Where a target is genuinely small, grow the hit area with padding before
-shrinking the visual box.
-
-**Accessibility outranks the hierarchy.** If this product's audience needs larger targets, the sizes go up
-and the scale is rebuilt around that — record the reason here so a later pass reads it as a decision rather
-than an inconsistency.
+**Touch targets:** WCAG 2.2 AA requires 24×24 (SC 2.5.8), AAA 44×44 (SC 2.5.5). A compact tier above the AA floor
+is compliant, not a defect; grow a small target with padding rather than shrinking its visual box.
+**Accessibility outranks the hierarchy:** if this audience needs larger targets, the scale is rebuilt around that,
+with the reason recorded here.
 
 ## Interaction states
 
-<!-- SLOT: Fixed once on the component, never improvised per section. A static reference can only
-     ever show the default, which is exactly why these get written down: left undeclared, each
-     section invents its own version and they drift. -->
+<!-- SLOT: Fixed once on the component, never improvised per section. -->
 
 | State | Buttons | Inputs | Links |
 |---|---|---|---|
@@ -129,7 +96,7 @@ than an inconsistency.
 | Loading | [TBD] | — | — |
 | Error | — | [TBD] | — |
 
-**Focus is never removed.** A focus indicator may be replaced with a better one; it may not be deleted.
+**Focus is never removed.** It may be replaced with a better indicator; it may not be deleted.
 
 ## Component visual rules
 
@@ -154,26 +121,20 @@ than an inconsistency.
 - **Easing:** [TBD]
 - **What animates:** [TBD]
 
-**Reduced motion:** every animation has a still path under `prefers-reduced-motion`. This is not a
-preference and does not get traded away — it costs nothing and it is the difference between a page that
-works and one that makes someone ill.
+**Reduced motion:** every animation has a still path under `prefers-reduced-motion`. Not a preference, not traded
+away.
 
 ## Media direction
 
-<!-- SLOT: What imagery this product uses and what it never uses. If there are no photographs, say
-     what stands in for them and build it from tokens. -->
+<!-- SLOT: What imagery this product uses and never uses. With no photographs, what stands in for them, built
+     from tokens. -->
 
 [TBD]
 
 ## Deliberate departures
 
-<!-- SLOT: Where the human asked for something that is normally avoided -- a heavily blurred surface,
-     a dark page with a glow, oversized display type, pronounced motion -- record it here as their
-     decision, with the one-line reason. Two things follow from writing it down: a later pass does
-     not "fix" it back, and the project's own quality checks are updated so the build is not failed
-     against a default the human deliberately overruled.
-     What never appears in this section: contrast below AA, removed focus indicators, motion with no
-     reduced-motion path, text baked into images, or a custom cursor that replaces the system one.
-     Those are not taste, and they are not the human's to trade away on someone else's behalf. -->
+<!-- SLOT: Something normally avoided that the human asked for, recorded as their decision with its reason,
+     so a later pass does not "fix" it back. Never here: contrast below AA, removed focus indicators, motion
+     with no reduced-motion path, text baked into images, a custom cursor — not theirs to trade away. -->
 
 - [TBD, or "none"]

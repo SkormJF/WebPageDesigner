@@ -1,51 +1,36 @@
 # REQUIREMENTS — [PROJECT_NAME]
 
-<!-- SLOT: This file owns WHAT the product must do. Never how. A requirement that names a library,
-     a component or a file path has leaked into design.md's territory.
+<!-- SLOT: Owns WHAT the product must do, never how. A requirement naming a library, a component or a file
+     path has leaked into design.md's territory.
      Every SLOT comment must be removed before the Spec Gate will pass. -->
 
 ## How to read this
 
-Each requirement has a stable ID (`REQ-001`, `REQ-002`, …). **IDs are permanent.** When a requirement is
-dropped, it is marked `WITHDRAWN` and its ID is never reused — `tasks.md`, commit messages and review notes
-point at these numbers, and a recycled ID silently reassigns that history.
-
-EARS-style wording is used where it clarifies and skipped where it would be ceremony:
+**IDs are permanent.** A dropped requirement is marked `WITHDRAWN` and its ID is never reused. EARS wording is used
+where it clarifies and skipped where it would be ceremony:
 
 ```
-Ubiquitous     The system shall <response>
-Event-driven   When <trigger>, the system shall <response>
-State-driven   While <state>, the system shall <response>
-Conditional    If <condition>, then the system shall <response>
-Optional       Where <feature is included>, the system shall <response>
+Ubiquitous  The system shall <response>          Conditional  If <condition>, then the system shall …
+Event       When <trigger>, the system shall …   Optional     Where <feature is included>, the system shall …
+State       While <state>, the system shall …
 ```
 
 ## Functional requirements
 
-<!-- SLOT: One table row per requirement. Keep each one testable -- if you cannot describe what
-     "not met" looks like, it is a goal, not a requirement. -->
+<!-- SLOT: One row per requirement, each testable — if you cannot describe what "not met" looks like, it is
+     a goal. A MUST that no task covers fails the Spec Gate. -->
 
 | ID | Requirement | Priority | Source |
 |---|---|---|---|
 | REQ-001 | [TBD] | MUST | [TBD — where in discovery.md this came from] |
 
-<!-- Priority: MUST / SHOULD / COULD. A MUST that no task covers fails the Spec Gate. -->
-
 ## Non-functional requirements
 
-<!-- SLOT: Performance, accessibility, security, privacy, availability, compatibility -- but only
-     where THIS product carries a specific constraint of its own: a page that must stay usable on a
-     2G connection, a legal retention period, a reading-comfort decision the human made, a browser
-     that has to be supported.
-
-     Harness work is not a requirement. Running axe, running Lighthouse, running E2E, an SEO audit, a
-     security review, Visual QA, the Quality Gate, applying humanizalo, using design tokens -- all of
-     that happens in the generated project's lifecycle whether or not a REQ mentions it. Writing them
-     here inflates the requirement set with rows nobody can fail meaningfully and buries the handful
-     of constraints that are genuinely this product's.
-
-     The test: could this project be built correctly and still miss this? If the answer is "no,
-     because a gate covers it", it is not a requirement. -->
+<!-- SLOT: Only where THIS product carries a constraint of its own: usable on 2G, a legal retention period, a
+     reading-comfort decision, a browser that must be supported.
+     Harness work is not a requirement — axe, Lighthouse, E2E, SEO, security review, Visual QA, the Quality
+     Gate and humanizalo run in the generated project's lifecycle whether or not a REQ names them. The test:
+     could this project be built correctly and still miss this? If a gate covers it, it is not one. -->
 
 | ID | Requirement | Priority | Source |
 |---|---|---|---|
@@ -53,19 +38,15 @@ Optional       Where <feature is included>, the system shall <response>
 
 ## Constraints on requirements
 
-<!-- SLOT: Factual and legal limits on what the product may claim or do. Anything the human stated
-     as a hard boundary -- claims that cannot be made, data that cannot be collected, wording that
-     is legally required. These bind the copy and the behaviour, and no later pass gets to soften
-     them for style. -->
+<!-- SLOT: Factual and legal limits on what the product may claim or do. No later pass softens these for
+     style. -->
 
 - [TBD]
 
 ## What must NOT be possible
 
-<!-- SLOT: From Discovery Round 3, and worth its own section because it is the half that gets
-     skipped. Access another user's data. Reach an admin action without the role. Move a record
-     into a state it should not reach from where it is. Each of these needs an enforcement point
-     named in design.md -- hiding the UI is not one. -->
+<!-- SLOT: From Discovery Round 3, and its own section because it is the half that gets skipped. Each needs
+     an enforcement point in design.md — hiding the UI is not one. -->
 
 | ID | Must not be possible | Enforcement point (design.md) |
 |---|---|---|
@@ -73,8 +54,7 @@ Optional       Where <feature is included>, the system shall <response>
 
 ## Withdrawn
 
-<!-- SLOT: IDs retired during planning, with one line on why. Keeps the numbering honest and stops
-     a withdrawn requirement from being re-added by someone who only sees a gap in the sequence. -->
+<!-- SLOT: IDs retired during planning, one line on why, so a gap in the sequence is not refilled. -->
 
 | ID | Was | Why withdrawn |
 |---|---|---|

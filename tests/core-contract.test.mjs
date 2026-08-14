@@ -346,18 +346,17 @@ describe("Supabase MCP scoping", () => {
 
 describe("always-on context budget", () => {
   /* Both harnesses are loaded on every single session, so their size is a
-     running cost rather than a style question. The intent recorded in the
-     optimization pass was 150-190 lines, ~200 maximum; what the mandatory
-     content actually compresses to is 221 (Builder) and 260 (generated), down
-     from 576 and 497. These ceilings sit just above that, so re-inflation
-     fails here instead of being discovered during a Factory Test. Lowering
-     them after a further real reduction is the point; raising them is not. */
-  const ceilings = { "CLAUDE.md": 230, "templates/common/CLAUDE.md": 270 };
+     running cost rather than a style question. The target is 200 lines each,
+     and it is the target rather than whatever the files happen to measure:
+     when the content did not fit, the fix was extracting specialist HOW to the
+     skill that owns it, never raising the ceiling. Lowering these after a
+     further real reduction is the point; raising them is not. */
+  const CEILING = 200;
 
-  for (const [rel, ceiling] of Object.entries(ceilings)) {
-    test(`${rel} stays under ${ceiling} lines`, () => {
+  for (const rel of ["CLAUDE.md", "templates/common/CLAUDE.md"]) {
+    test(`${rel} stays under ${CEILING} lines`, () => {
       const lines = read(rel).split(/\r?\n/).length;
-      assert.ok(lines <= ceiling, `${rel} is ${lines} lines, over the ${ceiling}-line ceiling`);
+      assert.ok(lines <= CEILING, `${rel} is ${lines} lines, over the ${CEILING}-line ceiling`);
     });
 
     /* A file compressed by writing 400-character lines has moved the cost, not
@@ -370,6 +369,103 @@ describe("always-on context budget", () => {
       assert.deepEqual(offenders, []);
     });
   }
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("/clear checkpoints are the only compaction policy", () => {
+  /* Two policies for the same problem is one policy too many: a harness that
+     both compacts at safe boundaries and stops at fixed checkpoints leaves the
+     model to pick, and the checkpoint is the one recovery is designed around.
+     `/compact` remains a capability the user has; it is not harness policy.
+     Prose describing a *skill's* own subject (a "compact" control tier) is not
+     an instruction to compact, hence the word-boundary slash. */
+  for (const rel of ["CLAUDE.md", "templates/common/CLAUDE.md"]) {
+    test(`${rel} never instructs /compact`, () => {
+      assert.doesNotMatch(read(rel), /\/compact\b/i);
+    });
+  }
+
+  test("the checkpoint, not compaction, is what closes a macro-phase", () => {
+    for (const rel of ["CLAUDE.md", "templates/common/CLAUDE.md"]) {
+      assert.match(flat(rel), /do not ask for `\/clear` yet/, `${rel} keeps the /clear checkpoint`);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("Artifact approval costs one turn when nothing is contested", () => {
+  const harness = flat("CLAUDE.md");
+  const skill = flat(".claude/skills/artifact-design/SKILL.md");
+
+  /* Approving palette, then typography, then buttons, each in its own turn,
+     spent a Discovery round on a direction nobody was arguing about. One
+     question is only honest if the decisions behind it were named first, so
+     both halves are asserted together -- dropping the naming would turn this
+     into the "¿te gusta?" the contract has always forbidden. */
+  test("the harness asks once, after naming the decisions", () => {
+    assert.match(harness, /One approval turn when nothing is contested/);
+    assert.match(harness, /name the major visual decisions/);
+    assert.match(harness, /\[ Aprobar dirección visual \] \[ Quiero cambios \]/);
+  });
+
+  test("the skill states the same contract", () => {
+    assert.match(skill, /One approval turn when nothing is contested/);
+    assert.match(skill, /Naming the decisions is what separates\s+one honest question from "¿te gusta\?"/);
+  });
+
+  test("a contested element still gets its own question", () => {
+    assert.match(harness, /a genuinely ambiguous element still earns its own/);
+    assert.match(skill, /Ask about the one element that is genuinely\s+ambiguous/);
+  });
+
+  test("human approval is still required, and changes republish to the same URL", () => {
+    assert.match(skill, /republish to the same URL/);
+    assert.match(harness, /republished to the same URL/);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("specification templates stay affordable to load", () => {
+  /* Every one of these is read during Planning, immediately after the B1
+     `/clear`, so their instructional text is a cost paid at the worst moment.
+     What is measured is the guidance -- SLOT comments and prose rules -- and
+     not the tables, headings and [TBD] scaffolding, which are the structure a
+     spec is written into rather than text explaining how to write it. */
+  const SPECS = ["PROJECT.md", "requirements.md", "design.md", "design-system.md", "tasks.md"];
+  const words = (s) => s.split(/\s+/).filter(Boolean).length;
+
+  const instructionWords = (text) => {
+    const slots = (text.match(/<!--[\s\S]*?-->/g) ?? []).join(" ");
+    let fenced = false;
+    let prose = 0;
+    for (const line of text.replace(/<!--[\s\S]*?-->/g, "").split(/\r?\n/)) {
+      if (/^```/.test(line)) fenced = !fenced;
+      else if (!fenced && line.trim() && !/^#/.test(line) && !/^\s*\|/.test(line) && !/^---/.test(line)) {
+        prose += words(line);
+      }
+    }
+    return words(slots) + prose;
+  };
+
+  test("the combined instructional footprint stays under 2500 words", () => {
+    const report = SPECS.map((f) => {
+      const text = read(`templates/common/specs/${f}`);
+      return { file: f, total: words(text), instructions: instructionWords(text) };
+    });
+    const combined = report.reduce((n, r) => n + r.instructions, 0);
+
+    /* Reported, not just asserted: a regression here is gradual, and the
+       per-file numbers say which template drifted. */
+    for (const r of report) {
+      console.log(`    ${r.file.padEnd(20)} ${String(r.instructions).padStart(4)} instruction words  (${r.total} total)`);
+    }
+    console.log(`    ${"COMBINED".padEnd(20)} ${String(combined).padStart(4)} instruction words`);
+
+    assert.ok(combined <= 2500, `templates carry ${combined} instruction words, over the 2500 ceiling`);
+  });
 });
 
 /* ------------------------------------------------------------------ */
