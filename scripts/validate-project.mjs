@@ -2,7 +2,7 @@
 /**
  * validate-project — prove a generated repository is ready for a fresh session.
  *
- *   node scripts/validate-project.mjs --slug <slug> [--profile <id>]
+ *   node scripts/validate-project.mjs --slug <slug>
  *
  * It answers one question and nothing else: did the Builder generate a valid
  * independent repository?
@@ -47,11 +47,18 @@ import {
   parseArgs,
   describeExecFailure,
   resolveProjectTarget,
-  readApprovedProfile,
+  readBackendMode,
 } from "./lib/common.mjs";
 
 const args = parseArgs(process.argv.slice(2));
 const config = loadConfig();
+
+if ("profile" in args) {
+  abort(
+    "--profile no longer exists.",
+    "This Factory validates its fixed Next.js baseline from builder.config.stack_profile.",
+  );
+}
 
 for (const removed of ["quick", "path"]) {
   if (removed in args) {
@@ -70,6 +77,15 @@ for (const removed of ["quick", "path"]) {
 const target = resolveProjectTarget(args.slug, config);
 
 if (!fs.existsSync(target)) abort(`No such directory: ${target}`);
+
+const backendMode = readBackendMode(target);
+if (!backendMode || backendMode.startsWith("unsupported:")) {
+  abort(
+    "The generated project's design.md does not state a supported Backend Mode.",
+    "Expected `none` or `supabase`.",
+  );
+}
+const profile = loadProfile(config.stack_profile);
 
 const results = [];
 const check = (name, ok, detail) => {
@@ -206,8 +222,33 @@ if (fs.existsSync(activeStateFile)) {
 ui.step("Harness");
 
 check("CLAUDE.md present", exists("CLAUDE.md"));
-for (const agent of ["planner", "builder", "reviewer", "db-reviewer"]) {
+for (const agent of ["planner", "builder", "reviewer"]) {
   check(`.claude/agents/${agent}.md present`, exists(`.claude/agents/${agent}.md`));
+}
+check(
+  backendMode === "supabase" ? "Supabase DB reviewer present" : "No Supabase DB reviewer in backend-less project",
+  backendMode === "supabase" ? exists(".claude/agents/db-reviewer.md") : !exists(".claude/agents/db-reviewer.md"),
+);
+check(
+  backendMode === "supabase" ? "Supabase capability contract present" : "No Supabase capability contract in backend-less project",
+  backendMode === "supabase"
+    ? exists(".claude/capabilities/supabase.md")
+    : !exists(".claude/capabilities/supabase.md"),
+);
+if (exists(".claude/agents/builder.md")) {
+  const builderAgent = read(".claude/agents/builder.md");
+  check(
+    backendMode === "supabase"
+      ? "Builder receives the writable Supabase MCP tool only for this backend"
+      : "Backend-less Builder carries no Supabase MCP tool",
+    backendMode === "supabase" ? /mcp__supabase/.test(builderAgent) : !/mcp__supabase/.test(builderAgent),
+  );
+}
+if (backendMode === "supabase" && exists(".claude/agents/db-reviewer.md")) {
+  check(
+    "Fresh DB reviewer is fail-closed until Foundation scopes it",
+    /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/.test(read(".claude/agents/db-reviewer.md")),
+  );
 }
 
 const hasState = check(".workflow/state.json present", exists(".workflow/state.json"));
@@ -289,9 +330,9 @@ if (hasClaudeSettings) {
       `effortLevel = ${JSON.stringify(settings.effortLevel)}`,
     );
     check(
-      "Fresh Supabase reviewer scope is intentionally unset",
-      settings.env?.SUPABASE_PROJECT_REF === "",
-      `SUPABASE_PROJECT_REF = ${JSON.stringify(settings.env?.SUPABASE_PROJECT_REF)}`,
+      "Project settings carry no backend identity",
+      !("SUPABASE_PROJECT_REF" in (settings.env ?? {})),
+      "Project identity belongs to the scoped MCP URLs, not a second settings source.",
     );
   }
 }
@@ -311,9 +352,10 @@ if (hasMcp) {
   if (mcp) {
     check(".mcp.json is valid JSON", true);
     const servers = Object.keys(mcp.mcpServers ?? {});
+    const expectedServers = backendMode === "supabase" ? ["supabase", "vercel"] : ["vercel"];
     check(
-      "Declares both Vercel and Supabase",
-      servers.includes("vercel") && servers.includes("supabase"),
+      backendMode === "supabase" ? "Declares Vercel + Supabase" : "Declares Vercel only",
+      JSON.stringify([...servers].sort()) === JSON.stringify(expectedServers),
       `Declared: ${servers.join(", ") || "none"}`,
     );
     /* Structure and absence of secrets only. Authentication is a human,
@@ -332,26 +374,7 @@ if (hasMcp) {
 
 ui.step("Skills");
 
-/* The project's own design.md owns its stack profile, exactly as it does at
-   creation. --profile asserts that value and cannot replace it, and
-   default_stack_profile is a Planning-time proposal that has no business
-   deciding what an already-generated project is. */
-const approvedProfile = readApprovedProfile(target);
-if (!approvedProfile) {
-  abort(
-    "The generated project's design.md does not state a stack profile.",
-    'Expected "- **Profile:** <id>" under "## Stack profile". Without it there is nothing to validate against.',
-  );
-}
-if (args.profile && args.profile !== true && args.profile !== approvedProfile) {
-  ui.fail(`VALIDATION_FAIL — code: PROFILE_MISMATCH`);
-  ui.detail(
-    `--profile "${args.profile}" does not match the profile in the project's design.md ("${approvedProfile}").`,
-  );
-  process.exit(1);
-}
-
-const profile = loadProfile(approvedProfile);
+/* The platform is fixed by the Factory; skills derive from that single baseline owner. */
 const expected = expectedSkills(profile.id);
 const skillsDir = path.join(target, ".claude", "skills");
 const actual = fs.existsSync(skillsDir)

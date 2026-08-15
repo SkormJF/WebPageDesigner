@@ -9,8 +9,8 @@ The rule that matters most here: **every finding must be provable by grep or by 
 recalled from "common issues with this framework."** A finding without a file:line citation isn't a finding
 yet.
 
-This applies to any project built here. Read `design.md` for the stack profile and `package.json` for what is
-actually installed before assuming any framework-specific behaviour exists.
+This applies to any project built here. The framework baseline is fixed to Next; read `package.json` for the optional
+dependencies actually installed before assuming a library-specific behaviour exists.
 
 ## When to run this
 
@@ -31,7 +31,7 @@ design is a failed audit — the design was approved by a human and the score wa
 
 ## What to check
 
-These hold on any React web stack. Each is a grep or a file read, not a guess.
+These hold across the generated Next/React applications. Each is a grep or a file read, not a guess.
 
 **1. The LCP element.** Find what it actually is — usually the hero image or the first heading. If it is an
 image, confirm it is not lazy-loaded and that it is discoverable in the initial HTML rather than behind a
@@ -65,9 +65,8 @@ or prior state, so it never needed the first result at all.
 children, state that lives higher than it needs to, effects that write state the render could have derived.
 These show up as INP, not as load time.
 
-**9. Client/server boundary**, where the stack has one. A component marked as client-side that did not need
-to be drags its entire import graph into the browser bundle. Where the stack has no such boundary, the
-equivalent question is what is in the initial chunk versus what could be loaded on demand.
+**9. Client/server boundary.** A component marked as client-side that did not need
+to be drags its entire import graph into the browser bundle. Also inspect what lands in the initial client chunk versus what can stay server-side or load on demand.
 
 **10. Third-party and below-the-fold work.** Analytics, chat widgets, embeds — deferred until after
 hydration, or loaded on interaction.
@@ -81,8 +80,7 @@ helpers usually deduplicate within one render pass and not across execution phas
 `references/next.md` covers the Next-specific version of several of the above — `optimizePackageImports`,
 the middleware-to-page duplication, Server Component data flow, and its image and font primitives.
 
-Load it only when `design.md` says the project is on a Next profile. On a Vite/SPA project the same
-questions are answered by looking at the bundle output, the router's code-splitting, and the entry chunk.
+Generated projects use Next. Load the Next reference when auditing rendering, routing, server/client boundaries or bundle behaviour.
 
 ## This skill diagnoses. It does not implement.
 

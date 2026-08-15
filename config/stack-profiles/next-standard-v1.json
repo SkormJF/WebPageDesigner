@@ -4,11 +4,6 @@
   "label": "Next.js App Router + Tailwind + TypeScript",
   "template": "templates/stacks/next-standard-v1",
   "status": "supported",
-  "use_when": [
-    "Server rendering, static generation or route-level data loading is wanted",
-    "The product is public-facing and indexability matters",
-    "Server actions or route handlers are the natural place for backend logic"
-  ],
   "profile_skills": [
     "shadcn-ui",
     "vercel-react-best-practices"
@@ -85,5 +80,6 @@
       "theme_static_emits_unused_contract_tokens": "pass"
     },
     "note": "Focused validation of the Tailwind source-boundary migration. The prior full Windows stack validation remains recorded above; package versions and runtime stack were not changed by this migration."
-  }
+  },
+  "role": "Fixed application baseline for every generated project; backend capability is selected separately as none or Supabase."
 }

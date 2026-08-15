@@ -15,8 +15,7 @@ actually use here?* — and hands you the answer to weigh.
 
 ## What owns what
 
-**`design-system.md` is the project's only visual source of truth.** It records what a human approved,
-element by element, from a real artifact. Nothing here overrides it, supplements it, or gets written into a
+**`design-system.md` is the project's only visual source of truth.** It records the named visual system a human approved from a real artifact. Nothing here overrides it, supplements it, or gets written into a
 second file alongside it.
 
 Use this skill **before** that contract exists — during Discovery, when proposing a direction — and after it
@@ -62,7 +61,7 @@ query returned nothing.
 
 **The corpus is web-only.** The skill came from a cross-platform ancestor and carried React Native, Expo,
 SwiftUI and VisionOS material — including a `web` domain that was, row for row, native app guidance
-(`Pressable`, `accessibilityLabel`, `SafeAreaView`). The Builder targets Next and React/Vite, so that
+(`Pressable`, `accessibilityLabel`, `SafeAreaView`). The Builder targets Next.js/React, so that
 material is gone rather than one query away from a web project. Mobile *web* and responsive behaviour are
 fully in scope and stayed.
 

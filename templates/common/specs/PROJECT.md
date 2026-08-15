@@ -2,7 +2,7 @@
 
 <!-- SLOT: Stable identity and high-level scope — what this is and who it is for. Requirements go to
      requirements.md, technical shape to design.md, visuals to design-system.md, work to tasks.md. The
-     stack profile is design.md's alone.
+     the Factory owns the fixed Next baseline; PROJECT.md does not restate it.
      Every SLOT comment must be removed before the Spec Gate will pass. -->
 
 ## Identity

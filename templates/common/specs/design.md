@@ -4,19 +4,15 @@
      (requirements.md), not visuals (design-system.md); requirements are referenced by ID.
      Every SLOT comment must be removed before the Spec Gate will pass. -->
 
-## Stack profile
-
-- **Profile:** [TBD]
-- **Deviations from the profile:** [TBD, or "none"]
-
-<!-- SLOT: A deviation is allowed but never silent: what differs and why. "Preference" is not a reason. -->
-
 ## Architecture
 
 <!-- SLOT: The shape of the system in a few sentences, plus a diagram if it earns one. Feature/domain
-     first, reuse-first, no abstraction not yet paying for itself. -->
+     first, reuse-first, no abstraction not yet paying for itself. The Factory already fixes Next.js; do not restate
+     the framework here. Record only a material implementation deviation from that baseline, with its reason. -->
 
 [TBD]
+
+- **Baseline deviations:** [TBD, or "none"]
 
 ### Boundary rules
 
@@ -57,9 +53,12 @@ These hold for this project. Violations are review findings, not style opinions:
 
 ## Backend
 
-<!-- SLOT: With no backend, write "None — static/content product" and delete the subsections below. -->
+<!-- SLOT: The Factory supports exactly two application backend modes. Choose from product need, not preference:
+     `none` for a site/app with no project-owned persistent data/auth backend; `supabase` when the product owns persistent
+     data, authentication, storage, realtime or database-enforced authorization. External APIs remain Integrations.
+     With `none`, delete the backend-only subsections below. -->
 
-**Provider:** [TBD, or "none"]
+**Mode:** [TBD: none | supabase]
 
 ### Data model
 
@@ -95,8 +94,9 @@ These hold for this project. Violations are review findings, not style opinions:
 ### Row-level security
 
 <!-- SLOT: Provider-conditional. Every table has RLS enabled and an explicit policy — RLS on with no policy
-     is broken, RLS off is open. An elevated-privilege function taking an id authorizes the caller first;
-     these are published as callable endpoints. -->
+     is broken, RLS off is open. For Supabase per-user predicates, record the optimized `(select auth.uid())`
+     form when it is semantically equivalent so the approved spec already matches the policy that should be deployed.
+     An elevated-privilege function taking an id authorizes the caller first; these are published as callable endpoints. -->
 
 | Table | RLS | Policy | Enforces |
 |---|---|---|---|
@@ -147,8 +147,8 @@ These hold for this project. Violations are review findings, not style opinions:
          - Do not inject an @supabase/ssr cookie contract.
          - Use the auth/session model the approved architecture defines.
 
-     A Vite SPA on Supabase, Supabase used only as a database, and Supabase Auth without an SSR
-     architecture all fall in the ELSE branch. Write the architectural responsibility — where the session
+     Supabase used only as a database, Supabase Auth without an SSR session architecture, or a project that chooses
+     a different Next-compatible session flow all fall in the ELSE branch. Write the architectural responsibility — where the session
      lives, who may read it, what revalidates it on each request — not another library's internals. -->
 
 [TBD]

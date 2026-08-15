@@ -1,7 +1,7 @@
 ---
 name: builder
 description: Implements one assigned build group, reuses established patterns, runs final-state checks, and returns compact evidence.
-tools: Read, Write, Edit, Glob, Grep, Bash, Skill, mcp__supabase
+tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: sonnet
 effort: high
 ---
@@ -46,20 +46,11 @@ checklist**. Load one with `Skill` only when the work in front of you needs what
 Visible product copy is the one mandatory case: when this group creates or changes user-facing copy, load `humanizalo` for
 that copy. It remains subordinate to the specs, product meaning, brand voice, technical/legal accuracy and approved SEO.
 
-## Supabase, only when this group needs it
+## Optional capabilities
 
-The writable Supabase MCP belongs to implementation, not general browsing. Verify the exact call before relying on it and
-never route around a permission denial with a CLI or credential trick.
-
-For schema changes, **write the migration SQL into the repository first** under the project's migration location, then
-apply that same migration through MCP. The remote database is deployed state, not the only source copy. Use the exact
-project ref already scoped by the Orchestrator; never probe another project.
-
-Scratch rows/users are allowed when the acceptance criterion genuinely needs them and they can be cleaned safely. Do not
-drop constraints, disable RLS, remove triggers, or weaken production invariants merely to make a test easier. A blocked
-optional check gets at most one reasonable alternative before you report the limitation.
-
-Vercel remote operations are not yours.
+When the Orchestrator assigns work that depends on an optional composed capability, read the capability contract it names
+once before remote work. That file carries the capability-specific safety and verification rules. Do not discover alternate remote
+tooling or infer a capability that the generated repository does not contain.
 
 ## Final-state verification
 

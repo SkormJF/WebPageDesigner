@@ -2,21 +2,20 @@
 /**
  * create-project — compose a new independent repository from approved specs.
  *
- *   node scripts/create-project.mjs --slug <slug> [--profile <id>]
+ *   node scripts/create-project.mjs --slug <slug>
  *
  * Runs at phase CREATING_PROJECT. The Orchestrator persists that phase *before*
  * calling this script -- write-before-act -- and this script never changes phase
  * itself. Lifecycle state has exactly one writer.
  *
- * The stack profile comes from the approved design.md. --profile is optional and
- * asserts that value; a mismatch fails with PROFILE_MISMATCH rather than picking
- * one of the two.
+ * The application stack is fixed by builder.config.json: Next.js for every project.
+ * Planning decides only whether the product needs the optional Supabase backend capability.
  *
- *   COMMON TEMPLATE + STACK TEMPLATE + INHERITED SKILLS + PROFILE SKILLS
- *   + APPROVED SPECS = NEW INDEPENDENT PROJECT
+ *   COMMON TEMPLATE + FIXED NEXT TEMPLATE + INHERITED SKILLS + NEXT SKILLS
+ *   + OPTIONAL SUPABASE CAPABILITY + APPROVED SPECS = NEW INDEPENDENT PROJECT
  *
  * Mechanical only. It does not change requirements, redesign architecture,
- * alter visual direction, choose a stack, implement features or rewrite specs.
+ * alter visual direction, choose another framework, implement features or rewrite specs.
  * It fails on an invalid assumption rather than working around it.
  *
  * The Builder owns exactly one commit in the generated repository's history.
@@ -44,7 +43,8 @@ import {
   parseArgs,
   isValidSlug,
   describeExecFailure,
-  readApprovedProfile,
+  readBackendMode,
+  composeBackendCapability,
   resolveProjectTarget,
 } from "./lib/common.mjs";
 import { runSpecGate, reportSpecGate } from "./lib/spec-gate.mjs";
@@ -95,30 +95,24 @@ if (state.slug && state.slug !== slug) {
   );
 }
 
-/* The approved stack profile lives in design.md and nowhere else. It is not
-   duplicated into state.json, and builder.config.default_stack_profile is a
-   Planning-time proposal, not an answer -- reaching for it here is how a project
-   whose design.md approved Vite gets generated on Next. */
-const approvedProfile = readApprovedProfile();
-if (!approvedProfile) {
+if ("profile" in args) {
   abort(
-    "design.md does not state an approved stack profile.",
-    'Expected "- **Profile:** <id>" under "## Stack profile". A generated project must rest on a foundation someone approved, not on a default.',
+    "--profile no longer exists.",
+    "This Factory generates Next.js only. The fixed platform is builder.config.stack_profile; Planning decides backend mode, not framework.",
   );
 }
 
-/* --profile is an assertion, never a second opinion. It may confirm what
-   design.md says; it may not overrule it, and a mismatch is a stop rather than
-   a choice between two answers. */
-if (args.profile && args.profile !== true && args.profile !== approvedProfile) {
+const backendMode = readBackendMode();
+if (!backendMode || backendMode.startsWith("unsupported:")) {
   abort(
-    `CREATE_FAILED  code: PROFILE_MISMATCH`,
-    `--profile "${args.profile}" does not match the profile approved in design.md ("${approvedProfile}"). Nothing was written.`,
+    "design.md does not state a supported Backend Mode.",
+    "Expected `**Mode:** none` or `**Mode:** supabase` under `## Backend`.",
   );
 }
 
-const profile = loadProfile(approvedProfile);
-ui.pass(`Stack profile "${profile.id}" (approved in design.md) resolves to ${profile.template}`);
+const profile = loadProfile(config.stack_profile);
+ui.pass(`Fixed stack "${profile.id}" resolves to ${profile.template}`);
+ui.pass(`Backend mode: ${backendMode}`);
 
 const templateDir = path.join(BUILDER_ROOT, profile.template);
 if (!fs.existsSync(path.join(templateDir, "package.json"))) {
@@ -176,6 +170,13 @@ ui.pass("common template");
 
 copyDir(templateDir, staging, { exclude: ["gitignore.append"] });
 ui.pass(`stack template (${profile.id})`);
+
+const backendCapability = composeBackendCapability(staging, backendMode);
+ui.pass(
+  backendCapability.supabase
+    ? "Supabase capability layer enabled (writable Builder MCP + fail-closed read-only DB reviewer)"
+    : "Static/simple capability layer: no Supabase MCP or DB reviewer installed",
+);
 
 /* .gitignore ships without its dot inside templates/ so it cannot apply to the
    Builder repo itself. Restore the name here, then append the stack's rules. */

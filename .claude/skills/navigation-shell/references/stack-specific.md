@@ -25,19 +25,6 @@ export function NavLink({ href, children }: { href: string; children: React.Reac
 }
 ```
 
-**react-router** — `useLocation()`, or `NavLink`, which already computes active state:
-
-```tsx
-import { NavLink } from "react-router";
-
-<NavLink to={href} aria-current={undefined}>
-  {({ isActive }) => <span aria-current={isActive ? "page" : undefined}>{children}</span>}
-</NavLink>
-```
-
-`react-router`'s own `NavLink` sets `aria-current="page"` itself when active, so check what it already
-emits before adding your own and ending up with two.
-
 ## Persisting sidebar state before first paint
 
 Rule 8 in `SKILL.md` says the collapse state must be readable on the server. How:
@@ -59,9 +46,6 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   );
 }
 ```
-
-**A client-rendered SPA (Vite)** has no server render to get wrong, so there is no flash of the wrong
-state — but the value still has to be read synchronously before the first render, not in an effect.
 
 ## shadcn's `sidebar`, if the project installed it
 
@@ -113,5 +97,5 @@ rather than hand-rolling the trap.
 Where a motion library is installed, its scroll primitives are the tidiest way to drive the `translateY` —
 Motion / Framer Motion exposes `useScroll` and `useMotionValueEvent` for exactly this.
 
-Neither stack profile ships one. Without it, a passive scroll listener that batches its reads into a single
+The fixed Next profile does not ship one. Without it, a passive scroll listener that batches its reads into a single
 `requestAnimationFrame` is fine; what matters is doing no layout work per event.

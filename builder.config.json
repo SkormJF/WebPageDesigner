@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "projects_root": "C:\\SkormJF\\Projects\\PagesProjects",
-  "default_stack_profile": "next-standard-v1"
+  "stack_profile": "next-standard-v1"
 }

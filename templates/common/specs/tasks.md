@@ -74,7 +74,7 @@
 The **build group declares its gate**; risk tells that gate how much evidence matters, while the gate names the capability:
 
 - `AUTO` → no Reviewer; valid only when every task in the group is `LOW`. Builder final-state checks are the gate.
-- `REVIEW` → generic read-only Reviewer for MEDIUM/HIGH work and CRITICAL work that is not a database-specific surface.
+- `REVIEW` → generic Reviewer without direct file-edit tools for MEDIUM/HIGH work and CRITICAL work that is not a database-specific surface.
 - `DB_REVIEW` → `db-reviewer` with project-scoped read-only Supabase MCP. Use it for CRITICAL
   Supabase/schema/RLS/data-integrity groups; mutation tests stay with Builder. A DB_REVIEW group must not also contain
   unrelated MEDIUM/HIGH non-DB work — split that work so one gate can competently review the full group.

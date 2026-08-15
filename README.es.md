@@ -27,7 +27,7 @@ La frontera es el punto. Una fábrica que además construye el producto termina 
 | Qué | Para qué |
 |---|---|
 | **Claude Code** | Corre el Builder |
-| **Node.js 20+** | Los scripts y las dos plantillas de stack |
+| **Node.js 20+** | Los scripts y la plantilla Next fija |
 | **Git** | Todo proyecto generado nace como repositorio |
 
 Los proyectos generados quedan en `C:\SkormJF\Projects\PagesProjects\<slug>`, configurado en
@@ -48,10 +48,11 @@ IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_
 
 **El descubrimiento** es una conversación en cuatro rondas: qué es el producto, qué dice, cómo se comporta
 (solo si tiene funcionalidad real) y cómo se ve. La última ronda termina con un artifact interactivo que
-abrís en el navegador y aprobás **elemento por elemento**: paleta, tipografía, botones, layout, fondos, tono.
+abrís en el navegador. El Builder te nombra las decisiones principales del sistema visual —paleta, tipografía, botones,
+layout, fondos y tono— y aprobás esa dirección en una sola compuerta cuando nada está en disputa.
 
-No es una imagen de un diseño: es una página real. Por eso el hover, el foco de teclado y el estado
-deshabilitado son decisiones que tomás vos, en vez de cosas que alguien improvisa después.
+No es una imagen de un diseño: es una página real. Por eso hover, foco, estados y ritmo pueden inspeccionarse antes de
+convertirse en el contrato visual, en vez de improvisarse durante la implementación.
 
 **La planificación** convierte todo eso en cinco especificaciones, cada una dueña de exactamente una cosa:
 
@@ -83,17 +84,18 @@ según cómo venga la sesión.
 
 ---
 
-## Perfiles de stack
+## Plataforma
 
-| Perfil | Stack | Estado |
+Hay una sola base de aplicación soportada:
+
+| Plataforma | Stack | Estado |
 |---|---|---|
-| `next-standard-v1` *(por defecto)* | Next.js 16 · React 19 · Tailwind 4 · TypeScript 5 · ESLint | soportado |
-| `react-vite-standard-v1` | React 19 · Vite 8 · react-router 8 · Tailwind 4 · TypeScript 6 · oxlint | soportado |
+| `next-standard-v1` *(fijo)* | Next.js 16 · React 19 · Tailwind 4 · TypeScript 5 · ESLint | soportado |
 
-Un perfil cuenta como soportado recién cuando su plantilla de verdad instala, pasa lint, typecheck, build y
-sus specs de Playwright y axe. Las dos pasaron, en esta máquina, en la fecha que registra cada perfil. Las
-versiones exactas viven en el `package.json` y el lockfile de cada plantilla — esa es la autoridad, no esta
-tabla.
+Planning no elige framework. Toda aplicación generada usa Next.js. Solo decide el modo de backend de la aplicación:
+`none` para un proyecto simple/sin backend propio, o `supabase` cuando el producto necesita datos persistentes, Auth,
+storage, realtime o autorización en base de datos. Las APIs externas siguen siendo Integrations. Las versiones exactas
+viven en el `package.json` y lockfile de la plantilla Next.
 
 ---
 
@@ -104,25 +106,24 @@ proyecto/
 ├── CLAUDE.md              su propio contrato de harness
 ├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
-│   ├── agents/            planner · builder · reviewer · db-reviewer
-│   └── skills/            17 estándar + lo que agregue el perfil (19 hoy)
+│   ├── agents/            planner · builder · reviewer (+ db-reviewer solo con Supabase)
+│   └── skills/            17 estándar + 2 de Next (19 hoy)
 ├── .workflow/             state.json por grupos + evidencia compacta en current/
-├── .mcp.json              Vercel + Supabase (se acota a este proyecto durante Foundation)
-├── .claude/settings.json  Sonnet/high por defecto + scope DB no secreto
+├── .mcp.json              Vercel siempre; Supabase solo si Backend Mode = supabase
+├── .claude/settings.json  Sonnet/high por defecto
 ├── src/  public/
 └── package.json  package-lock.json
 ```
 
-El conjunto de skills es determinista: las 17 marcadas `inherited-standard` más lo que agregue el perfil
-elegido — 19 en ambos perfiles hoy. El catálogo del Builder es de 20, y la diferencia es
+El conjunto de skills es determinista: las 17 marcadas `inherited-standard` más las 2 del perfil Next fijo — 19 hoy. El catálogo del Builder es de 20, y la diferencia es
 `chrome-bridge-automation`, clasificada `optional`. **Nunca** se copia automáticamente: mandarla por defecto
 convertiría "requiere una decisión explícita" en una frase de un documento, con la skill ya instalada en el
 repositorio.
 
 Su propio ciclo de vida corre de `READY_TO_BUILD` a `DONE` por **grupos de construcción**. Las Tasks siguen siendo
 unidades de trazabilidad y aceptación, pero las relacionadas se implementan de corrido con un Builder en vez de pagar un
-ciclo de agentes por cada fila. Los grupos declaran el gate desde Planning: AUTO para trabajo totalmente LOW, REVIEW para el Reviewer genérico de solo
-lectura y DB_REVIEW para trabajo CRITICAL de Supabase/datos mediante un MCP dedicado, acotado y de solo lectura. Una corrección recibe
+ciclo de agentes por cada fila. Los grupos declaran el gate desde Planning: AUTO para trabajo totalmente LOW, REVIEW para el Reviewer genérico sin herramientas directas de edición y DB_REVIEW para trabajo CRITICAL de
+Supabase/datos mediante un MCP dedicado, acotado y de solo lectura. Una corrección recibe
 una sola re-revisión dirigida, nunca una auditoría completa nueva. `HEAD` es siempre el último grupo aprobado.
 
 La biblioteca de skills heredada permanece disponible para features y rediseños futuros. Los agentes cargan el cuerpo
@@ -133,7 +134,7 @@ completo de una skill bajo demanda para el scope actual, en vez de recorrer el c
 ## Los tres scripts
 
 ```bash
-npm run create-project -- --slug <slug> [--profile <id>]
+npm run create-project -- --slug <slug>
 npm run validate-project -- --slug <slug>
 npm run reset-builder -- --yes
 ```
@@ -146,8 +147,7 @@ salteó.
 coincide, spec faltante, compuerta fallada, skill ausente y, sobre todo, un destino ocupado — nunca
 sobreescribe, nunca fusiona y nunca se inventa un `<slug>-2`.
 
-El perfil de stack sale del `design.md` aprobado. `--profile`, en cualquiera de los dos scripts, es una
-aserción y no un selector: puede confirmar lo que dice `design.md`, no puede contradecirlo.
+El stack queda fijado por `builder.config.json`/el perfil Next y no se repite como elección del proyecto en `design.md`; ninguno de los scripts acepta selector de stack. El Backend Mode (`none` o `supabase`) sale del `design.md` aprobado.
 
 `validate-project` demuestra y no repara nada. Un validador que arregla lo que encuentra ya no puede
 contarte qué estaba roto.
@@ -164,10 +164,11 @@ contarte qué estaba roto.
   skills/                     20 skills, la fuente de distribución
 config/
   skill-manifest.json         clasifica cómo se distribuye cada skill
-  stack-profiles/             los dos perfiles, cada uno dueño de sus profile_skills
+  stack-profiles/             el perfil Next fijo y sus skills específicas
 templates/
   common/                     cómo funciona todo proyecto generado
-  stacks/                     bases de stack validadas y ejecutables
+  capabilities/supabase/      capacidad DB read-only condicional
+  stacks/next-standard-v1/    base Next validada y ejecutable
 scripts/                      create · validate · reset
 tests/                        el contrato del core, como invariantes de node --test
 .builder/current/             el proyecto activo (fuera de git)

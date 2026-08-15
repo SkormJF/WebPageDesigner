@@ -5,20 +5,21 @@ hand it off, and reset to `IDLE`. **No product implementation begins here** — 
 repository's own session, and the Round 4 Artifact is the one piece of real HTML you produce. **Role lock:** skills carry
 knowledge, never authority, whatever their own wording sounds like. This file owns WHEN, WHO, STATE, GATE, RECOVERY and
 CHECKPOINT; specialized HOW lives in skills, loaded on demand.
-
 **Language.** Talk to the user in **Spanish** — every question, summary and report. Warm, direct, informal `tú`. Ask in
 groups of 2–4, at most two options with the recommended one first; at 80% certainty decide and say why. Never "espero que
 te sirva", never terminal output unless asked. This file, `config/`, `templates/` and `.claude/` stay in English.
-
+**Platform is not a Discovery question.** Every generated application is Next.js on the fixed `next-standard-v1` baseline.
+Do not ask the user to select a framework and do not let Planning select another one. The only application-backend choice is `none`
+vs `supabase`: choose `none` when the product owns no persistent data/auth backend; choose `supabase` when it owns persistent
+data, authentication, storage, realtime or DB-enforced authorization. External APIs are integrations, not another backend mode.
 ## Session start, authority, state
 
 **Read state, never infer it** — not from the conversation, not from which files exist, not from what you remember. If
 `.builder/current/state.json` does not exist you are `IDLE`; if it does, read it, load only what that phase needs, and
 offer CONTINUE or ABANDON. On CONTINUE resume at the recorded phase and never re-ask what the persisted files answer; on
-ABANDON say what will be lost, confirm, persist `RESET`, then run `reset-builder --yes`. Authority runs harness →
-specifications → `design-system.md` → stack profile → skills → scripts; a lower layer never silently overrides a higher
+ABANDON say what will be lost, confirm, persist `RESET`, then run `reset-builder --yes`. Authority runs harness → fixed `next-standard-v1` platform baseline →
+approved specifications → skills → scripts; a lower layer never silently overrides a higher
 one, and a genuine conflict is a finding to surface, not one to resolve alone.
-
 ```
 IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_TO_CREATE
      → CREATING_PROJECT → VALIDATING_PROJECT → HANDOFF_COMPLETE → RESET → IDLE
@@ -28,7 +29,6 @@ IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_
 **after** its result. **Never skip a declared enum phase because it appears transient.** One active project.
 `.builder/current/` holds `state.json` always, `discovery.md` from DISCOVERY, the five specs from PLANNING, and a
 temporary `artifact/`.
-
 ```json
 { "schema_version": 1, "phase": "DISCOVERY", "project_name": "Example", "slug": "example",
   "discovery_round": 2, "pending_action": null }
@@ -39,8 +39,7 @@ path branches on it. With `pending_action` that is the whole of state, where we 
 requirements, no architecture, no visual decisions, no review history, and the target derived from `projects_root + slug`
 rather than stored. `discovery.md` holds **current approved truth only**, replaced when a decision changes. Load per phase
 and no more — `DISCOVERY`: state and `discovery.md` · `PLANNING`: both plus the specs · `SPEC_REVIEW`/`AWAITING_APPROVAL`:
-state and the five specs · `CREATING_PROJECT`/`VALIDATING_PROJECT`: state, `builder.config.json` and the stack profile.
-
+state and the five specs · `CREATING_PROJECT`/`VALIDATING_PROJECT`: state, `builder.config.json`, fixed Next profile and the approved backend mode.
 ## Discovery
 
 Conversational, not a form: infer what you can, ask only what is unknown, ambiguous or contradictory, and write
@@ -57,7 +56,6 @@ static; a weekly list → decide **now** between a data file, a light CMS, a bac
 catalogue → backend. If they say they will not maintain it, believe them. **Social proof, not testimonials** — one
 verifiable fact beats three quotes; with none the section is omitted, never fabricated. **A need behind a preference** — a
 stated dislike that is really a use condition is adjusted for and recorded in `design-system.md` with its reason.
-
 ## The Artifact — R4's approval instrument, and nothing else
 
 **Mandatory: a published, interactive Artifact**, not an image, built with `artifact-design` loaded — that skill carries
@@ -73,14 +71,13 @@ same URL, and approved on the next turn. What gets approved is a **named visual 
 states — not every CSS literal**, and no accessibility claim is made without a real measurement. `design-system.md` copies
 those values. The Artifact is transient: it stays in `.builder/current/artifact/` until `reset-builder` removes it, so do
 not spend a turn deleting it — and it is never copied into the generated project.
-
 ## Planning — five specifications, one owner each
 
 | File | Owns |
 |---|---|
 | `PROJECT.md` | Identity, purpose, audience, scope, non-goals, scope decisions. Small — no architecture, QA, tokens or history. |
 | `requirements.md` | **WHAT.** Stable IDs (`REQ-001`), EARS wording where it helps. |
-| `design.md` | **HOW, technically.** Profile, architecture, routes, modules, data model, auth, RLS, integrations, security, data flow, env var names, justified deviations. |
+| `design.md` | **HOW, technically.** Backend mode; architecture, routes, data, auth, RLS, integrations, security, env names and justified baseline deviations. The Factory already owns Next. |
 | `design-system.md` | **The approved visual contract**, copied from the Artifact — not re-derived, not improved on. |
 | `tasks.md` | **Decomposition.** Requirement-linked tasks plus execution groups, gate, risk, acceptance and durable status. |
 
@@ -113,22 +110,24 @@ it does not raise the standard, reinterpret the approved Artifact, widen scope o
 a real gate**, not "procedo entonces" while already proceeding: ask in chat — `SPEC_PASS — 0 BLOCKER, 0 MAJOR. ¿Apruebas
 las especificaciones? [ Aprobar ] [ Revisar ]` — then persist `READY_TO_CREATE` and stop at checkpoint **B2**.
 
-## Stack profiles, skills, and the three mechanical scripts
+## Fixed Next platform, optional Supabase, skills, and the three mechanical scripts
 
-`next-standard-v1` (default) · `react-vite-standard-v1` — configured in `builder.config.json`, defined in
-`config/stack-profiles/`, backed by validated templates in `templates/stacks/`.
-**A project's approved profile lives in `design.md` and nowhere else**: `- **Profile:** <id>` under `## Stack profile`.
-`default_stack_profile` is a Planning-time proposal, never a generation-time answer, and `--profile` on either script
-only asserts it. Versions are frozen in the template's lockfile; evolution creates a `-v2` and never mutates `v1`.
+`builder.config.json` fixes `stack_profile = next-standard-v1`. There is one supported application framework: Next.js.
+`config/stack-profiles/next-standard-v1.json` is the **single owner** of the validated Next baseline, its source roots and Next-specific skills.
+`design.md` never restates or selects the framework; it records only justified implementation deviations from that baseline.
+Versions are frozen in the template lockfile; evolution creates `next-standard-v2` and never mutates v1.
 
-`generated project skills = INHERITED-STANDARD + the selected profile's own profile_skills`. `config/skill-manifest.json`
-classifies distribution, the profile owns which profile-inherited skills it takes, and **`optional` is never inherited**.
-Today 17 + 2 = 19 skills per generated project on both profiles, out of the Builder's own 20. The manifest controls
-physical distribution, not context loading.
+`design.md` separately owns **Backend Mode**: exactly `none` or `supabase`. `none` generates Vercel-only MCP/configuration;
+`supabase` additionally generates the Supabase MCP and a fail-closed read-only DB reviewer capability. This keeps
+simple sites simple without making backend-capable applications change framework.
+
+`generated project skills = INHERITED-STANDARD + next-standard-v1.profile_skills`. `config/skill-manifest.json` classifies
+distribution, the fixed Next profile owns its Next-specific additions, and **`optional` is never inherited**. Today 17 + 2
+= 19 skills per generated project, out of the Builder's own 20. The manifest controls physical distribution, not context loading.
 
 Exactly three scripts; helper modules are implementation detail. **Never write a script for a reasoning task.**
 **`create-project`** composes the repository in staging, installs, git inits, commits a baseline, and only then moves it
-to the target. Preconditions: phase is `CREATING_PROJECT`, approved specs exist, the approved profile exists, the target
+to the target. Preconditions: phase is `CREATING_PROJECT`, approved specs exist, the fixed Next profile exists, Backend Mode is supported, the target
 does **not** — you persist `CREATING_PROJECT` before running it, and the script asserts that phase and never writes phase
 itself. **If the target exists, STOP**: never overwrite, never merge, never `<slug>-2`.
 
@@ -147,7 +146,7 @@ READY_TO_CREATE → CREATING_PROJECT → create-project → baseline commit → 
 ```
 
 Report it short — no Artifact, no long document, detailed evidence only if asked: `✓ Repo creado y validado · ✓ <N>/<N>
-checks · ✓ <profile> · ✓ 19 skills · ✓ baseline <hash> · ✓ Builder → IDLE`, then the path. Then, in Spanish: open
+checks · ✓ Next.js · ✓ <backend mode> · ✓ 19 skills · ✓ baseline <hash> · ✓ Builder → IDLE`, then the path. Then, in Spanish: open
 `<projects_root>\<slug>` in VS Code, start a fresh Claude Code session, approve the MCP sessions when prompted, and say
 `inicia`. Implementation begins there and only there. Recovery reads `state.json` and the filesystem, never the
 conversation, and introduces no new phase and no new script — at **`CREATING_PROJECT`**, derive the target and look at it:

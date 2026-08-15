@@ -11,7 +11,7 @@ Domains: style, color, chart, landing, product, ux, typography, icons, react,
 This tool reads the corpus and prints what it found. It writes nothing.
 
     There is exactly one visual contract in a project built here -- design-system.md
-    -- and a human approved it from a real artifact, element by element. An earlier
+    -- and a human approved its named visual system from a real artifact. An earlier
     version of this script could also generate and persist a design-system/MASTER.md
     tree from search results, which would be a second source of truth for the same
     decisions, produced by a query rather than approved by anyone. That generator and
@@ -19,7 +19,7 @@ This tool reads the corpus and prints what it found. It writes nothing.
 
     The corpus is web-only. The upstream skill also carried React Native, Expo and
     VisionOS material behind a --stack flag and a "web" domain that was in fact
-    native app guidance; the Builder targets Next and React/Vite, so all of it is
+    native app guidance; the Builder targets Next.js/React, so all of it is
     gone rather than one query away from a web project.
 """
 

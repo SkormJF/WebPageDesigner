@@ -71,16 +71,17 @@ Can every piece be traced to a reason, and every reason to a piece?
 - Every requirement is covered by at least one task, or is explicitly and justifiably out of scope.
 - Requirements trace back to something in `discovery.md` — a requirement nobody asked for is scope the human
   never approved, and it is as much a finding as a missing one.
-- Technical decisions in `design.md` that deviate from the stack profile carry their justification.
+- `design.md` does not restate or select the framework. Any listed baseline deviation is material, justified, and never swaps the application away from the Factory's fixed Next platform.
 
 ### 4. Feasibility
 
-Can this be built as specified, on the declared stack profile?
+Can this be built as specified on the fixed Next baseline and the declared Backend Mode?
 
-- No requirement that the chosen stack cannot satisfy without an undeclared dependency.
+- No requirement that the fixed Next baseline plus declared integrations/backend mode cannot satisfy without an undeclared dependency.
 - Dependencies between tasks form a workable order — no task needing the output of one scheduled after it.
 - Build groups preserve that order and are real context-sharing batches, not one routine LOW task per group. A one-task
   group needs a dependency boundary or HIGH/CRITICAL risk. At most one BUILD_TASKS group may set `Clear after = YES`.
+- `design.md` declares Backend Mode exactly `none` or `supabase`; DB-specific tasks exist only when it is `supabase`.
 - Gate/capability mapping is coherent before dispatch: all-LOW groups use `AUTO`; MEDIUM/HIGH groups do not use AUTO;
   CRITICAL Supabase/schema/RLS/data-integrity uses `DB_REVIEW`; other critical surfaces use `REVIEW` unless a dedicated
   capability gate is explicitly defined.

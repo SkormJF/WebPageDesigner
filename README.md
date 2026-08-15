@@ -26,7 +26,7 @@ The boundary is the point. A factory that also builds the product ends up with n
 | What | Why |
 |---|---|
 | **Claude Code** | Runs the Builder |
-| **Node.js 20+** | The scripts and both stack templates |
+| **Node.js 20+** | The scripts and the fixed Next template |
 | **Git** | Every generated project starts as a repository |
 
 Generated projects land in `C:\SkormJF\Projects\PagesProjects\<slug>`, configured in
@@ -47,9 +47,9 @@ IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_
 
 **Discovery** is a conversation in four rounds — what the product is, what it says, how it behaves (only
 when it has real functionality), and how it looks. The last round ends with an interactive artifact you open
-in a browser and approve **element by element**: palette, typography, buttons, layout, backgrounds, tone.
-Not a picture of a design — a real page, so hover, focus and disabled states are decisions you actually make
-rather than ones somebody improvises later.
+in a browser. The Builder names the major visual-system decisions — palette, typography, buttons, layout, backgrounds and
+tone — and you approve that direction in one gate when nothing is contested. It is a real page rather than a picture, so
+hover, focus, states and rhythm can be inspected before they become the visual contract instead of being improvised later.
 
 **Planning** turns that into five specifications, each owning exactly one thing:
 
@@ -82,16 +82,18 @@ suggestion that depends on how the session is going.
 
 ---
 
-## Stack profiles
+## Platform
 
-| Profile | Stack | Status |
+There is one supported application baseline:
+
+| Platform | Stack | Status |
 |---|---|---|
-| `next-standard-v1` *(default)* | Next.js 16 · React 19 · Tailwind 4 · TypeScript 5 · ESLint | supported |
-| `react-vite-standard-v1` | React 19 · Vite 8 · react-router 8 · Tailwind 4 · TypeScript 6 · oxlint | supported |
+| `next-standard-v1` *(fixed)* | Next.js 16 · React 19 · Tailwind 4 · TypeScript 5 · ESLint | supported |
 
-A profile counts as supported only once its template really installs, lints, typechecks, builds and passes
-its Playwright and axe specs. Both did, on this machine, on the date recorded in each profile. The exact
-versions live in each template's `package.json` and lockfile — those are the authority, not this table.
+Planning does **not** choose a framework. Every generated application is Next.js. It chooses only the application
+backend mode: `none` for a simple/backend-less project, or `supabase` when the product owns persistent data, Auth,
+storage, realtime or database-enforced authorization. External APIs remain integrations. The exact runtime versions live
+in the Next template's `package.json` and lockfile.
 
 ---
 
@@ -102,24 +104,23 @@ project/
 ├── CLAUDE.md              its own harness contract
 ├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
-│   ├── agents/            planner · builder · reviewer · db-reviewer
-│   └── skills/            17 standard + the profile's additions (19 today)
+│   ├── agents/            planner · builder · reviewer (+ db-reviewer only with Supabase)
+│   └── skills/            17 standard + 2 Next additions (19 today)
 ├── .workflow/             group-centric state.json + compact current evidence
-├── .mcp.json              Vercel + Supabase (scoped to this project during Foundation)
-├── .claude/settings.json  Sonnet/high default + non-secret DB review scope
+├── .mcp.json              Vercel always; Supabase only when Backend Mode = supabase
+├── .claude/settings.json  Sonnet/high default
 ├── src/  public/
 └── package.json  package-lock.json
 ```
 
-The skill set is deterministic: the 17 marked `inherited-standard` plus whatever the chosen profile adds —
-19 for both profiles today. The Builder's own catalogue is 20, and the difference is `chrome-bridge-automation`,
+The skill set is deterministic: the 17 marked `inherited-standard` plus the fixed Next profile's 2 additions — 19 today. The Builder's own catalogue is 20, and the difference is `chrome-bridge-automation`,
 classified `optional`. It is **never** copied automatically. Shipping it by default would turn "requires an
 explicit decision" into a sentence in a document, with the skill already sitting in the repository.
 
 Its own lifecycle runs from `READY_TO_BUILD` to `DONE` in **build groups**. Tasks remain the traceability and
 acceptance units, but related tasks are implemented continuously by one Builder instead of paying for an agent cycle per
-row. Build groups declare the gate up front: AUTO for all-LOW work, REVIEW for the generic read-only Reviewer, and DB_REVIEW
-for CRITICAL Supabase/data work through a dedicated project-scoped read-only MCP. A correction gets one targeted re-review, never a fresh audit.
+row. Build groups declare the gate up front: AUTO for all-LOW work, REVIEW for the generic Reviewer without direct edit tools,
+and DB_REVIEW for CRITICAL Supabase/data work through a dedicated project-scoped read-only MCP. A correction gets one targeted re-review, never a fresh audit.
 `HEAD` is always the last approved group.
 
 The inherited skill library stays available for future features and redesigns. Agents load the full body of a skill on
@@ -130,7 +131,7 @@ demand for the current scope rather than walking the catalogue before they work.
 ## The three scripts
 
 ```bash
-npm run create-project -- --slug <slug> [--profile <id>]
+npm run create-project -- --slug <slug>
 npm run validate-project -- --slug <slug>
 npm run reset-builder -- --yes
 ```
@@ -143,8 +144,7 @@ judgement it skipped.
 missing spec, a failed gate, an absent skill, and above all an occupied target — it never overwrites, never
 merges, and never invents `<slug>-2`.
 
-The stack profile is read from the approved `design.md`. `--profile` on either script is an assertion, not a
-selector: it may confirm what `design.md` says and it may not overrule it.
+The stack is fixed by `builder.config.json`/the Next profile and is not restated as a project choice in `design.md`; neither script accepts a stack selector. Backend Mode (`none` or `supabase`) is read from the approved `design.md`.
 
 `validate-project` proves and repairs nothing. A validator that fixed what it found could not tell you what
 was broken.
@@ -161,10 +161,11 @@ was broken.
   skills/                     20 skills, the distribution source
 config/
   skill-manifest.json         classifies how each skill is distributed
-  stack-profiles/             the two profiles, each owning its own profile_skills
+  stack-profiles/             the fixed Next profile and its Next-specific skills
 templates/
   common/                     how every generated project works
-  stacks/                     validated, runnable stack baselines
+  capabilities/supabase/      conditional read-only DB review capability
+  stacks/next-standard-v1/    validated, runnable Next baseline
 scripts/                      create · validate · reset
 tests/                        the core contract, as node --test invariants
 .builder/current/             the active project (gitignored)

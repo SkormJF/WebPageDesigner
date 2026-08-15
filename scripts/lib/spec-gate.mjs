@@ -25,7 +25,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { paths, SPEC_FILES, ui, parseArgs } from "./common.mjs";
+import { paths, SPEC_FILES, ui, parseArgs, parseBackendMode } from "./common.mjs";
 
 /**
  * Sections each spec must contain. Kept here rather than in a config file
@@ -35,7 +35,7 @@ import { paths, SPEC_FILES, ui, parseArgs } from "./common.mjs";
 const REQUIRED_SECTIONS = {
   "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions in force"],
   "requirements.md": ["## Functional requirements", "## Non-functional requirements"],
-  "design.md": ["## Stack profile", "## Architecture", "## Routes", "## Security"],
+  "design.md": ["## Architecture", "## Routes", "## Backend", "## Security"],
   "design-system.md": ["## Approval", "## Color", "## Typography", "## Interaction states"],
   "tasks.md": ["## Build groups", "## Dependency order"],
 };
@@ -85,7 +85,17 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
   }
 
-  /* 4 — ID hygiene and cross-references.
+  /* 4 — fixed platform and backend mode. These are deliberately mechanical:
+     Planning does not choose a framework, and the generated capability set depends
+     on whether this product actually owns a Supabase backend. */
+  const designText = contents["design.md"] ?? "";
+  const backendMode = parseBackendMode(designText);
+  if (!backendMode) add("design.md", "Backend Mode must be exactly `none` or `supabase`");
+  else if (backendMode.startsWith("unsupported:")) {
+    add("design.md", `unsupported Backend Mode ${backendMode.slice("unsupported:".length)}; use none or supabase`);
+  }
+
+  /* 5 — ID hygiene and cross-references.
      A requirement nobody implements and a task tracing to nothing are the same
      defect seen from opposite ends, so both directions are checked. */
   const reqIds = new Set(
@@ -125,7 +135,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
     if (!reqsCitedByTasks.has(id)) add("tasks.md", `no task covers ${id}, a MUST requirement`);
   }
 
-  /* 5 — every task links to at least one requirement, one build group and one risk. */
+  /* 6 — every task links to at least one requirement, one build group and one risk. */
   const tasksText = contents["tasks.md"] ?? "";
   const taskRows = tableRows(tasksText).filter((line) => line.match(TASK_ID));
 
@@ -193,6 +203,9 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
     if (meta.gate === "DB_REVIEW" && !hasCritical) {
       add("tasks.md", `build group ${group} uses Gate DB_REVIEW but contains no CRITICAL task`);
+    }
+    if (meta.gate === "DB_REVIEW" && backendMode !== "supabase") {
+      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but design.md Backend Mode is not supabase`);
     }
   }
 

@@ -3,14 +3,14 @@
   "_doc": {
     "purpose": "Single source of truth for which skills are physically copied into a generated project. create-project copies from it; validate-project computes the same expected set and fails on a missing required skill or an unexpected extra one.",
     "not_this": "It does not control when a skill body loads into context. Physical inheritance keeps the capability available; agents still load skill content on demand rather than walking every skill.",
-    "inherited_set": "generated project skills = INHERITED-STANDARD + the selected profile's profile_skills. Nothing else. This file classifies a skill; the stack profile decides which profile-inherited skills it takes -- one owner per decision.",
+    "inherited_set": "generated project skills = INHERITED-STANDARD + the fixed Next profile's profile_skills. Nothing else. This file classifies a skill; the fixed Next profile decides which profile-inherited skills it takes -- one owner per decision.",
     "distribution": {
       "builder-only": "Stays in the Builder. Never copied.",
       "inherited-standard": "Copied into every generated project, regardless of profile.",
-      "profile-inherited": "Copied when the selected profile lists it in profile_skills.",
+      "profile-inherited": "Copied when the fixed Next profile lists it in profile_skills.",
       "optional": "NOT copied. Stays in the Builder and reaches a project only through an explicit later decision. Copying it by default would make 'requires explicit human approval' a sentence in a document rather than a property of the repository."
     },
-    "ceiling": "Project skills are dropped silently past roughly 28. A generated project receives the 17 standard skills plus the selected profile's additions -- 19 for both current profiles. Adding to the standard set is not free."
+    "ceiling": "Project skills are dropped silently past roughly 28. A generated project receives the 17 standard skills plus the fixed Next profile's 2 additions -- 19 total. Adding to the standard set is not free."
   },
   "skills": {
     "artifact-design": {

@@ -67,7 +67,7 @@ export function writeJson(file, value) {
 
 export function loadConfig() {
   const config = readJson(paths.config);
-  for (const key of ["schema_version", "projects_root", "default_stack_profile"]) {
+  for (const key of ["schema_version", "projects_root", "stack_profile"]) {
     if (config[key] === undefined) abort(`builder.config.json is missing "${key}".`);
   }
   return config;
@@ -85,60 +85,36 @@ export function loadProfile(id) {
   return readJson(file);
 }
 
-/* ---------- the approved stack profile ---------- */
+/* ---------- application backend decision in design.md ---------- */
 
 /**
- * Extract the approved stack profile id from design.md's text.
- *
- * Pure and string-in/string-out so it can be exercised directly. It matches the
- * template's own line -- `- **Profile:** <id>` under `## Stack profile` -- and
- * nothing else, because guessing from prose is how a project gets generated on a
- * foundation nobody approved.
- *
- * Line-based on purpose. The previous version delimited the section with
- * `(?=^##\s|\Z)`, and JavaScript has no `\Z`: in a regular expression it is an
- * identity escape for the letter Z, so the alternative that was supposed to mean
- * "end of input" only matched a literal Z somewhere later in the file. A
- * design.md whose `## Stack profile` was the final section parsed as null and
- * creation stopped on a profile the human had in fact approved. Walking lines
- * has no end-of-input case to get wrong.
- *
- * Handles LF and CRLF, a final newline or none, and the section appearing first,
- * in the middle, or last. Returns null when the section is absent or unfilled.
+ * Extract the fixed application backend mode from design.md. The Factory supports
+ * exactly `none` or `supabase`; integrations are not application backends.
  */
-export function parseApprovedProfile(designText) {
+export function parseBackendMode(designText) {
   if (typeof designText !== "string") return null;
 
   let insideSection = false;
-
   for (const line of designText.split(/\r\n|\n|\r/)) {
-    /* A level-2 heading either opens the section or closes it. `###` and deeper
-       belong to whichever section is currently open. */
     if (/^##[^#]/.test(line) || /^##$/.test(line)) {
-      insideSection = /^##\s+Stack profile\s*$/.test(line);
+      insideSection = /^##\s+Backend\s*$/.test(line);
       continue;
     }
     if (!insideSection) continue;
 
-    const match = line.match(/^\s*[-*]\s*\*\*Profile:\*\*\s*(.+?)\s*$/);
+    const match = line.match(/^\s*\*\*Mode:\*\*\s*(.+?)\s*$/);
     if (!match) continue;
-
-    const value = match[1].replace(/^`+|`+$/g, "").trim();
-    if (!value || value.startsWith("[")) return null; // [TBD] and friends are not a decision
-    return value;
+    const value = match[1].replace(/^`+|`+$/g, "").trim().toLowerCase();
+    if (!value || value.startsWith("[")) return null;
+    return ["none", "supabase"].includes(value) ? value : `unsupported:${value}`;
   }
-
   return null;
 }
 
-/**
- * The approved profile for the active Builder project. design.md owns this --
- * it is not duplicated into state.json, which stays minimal operational memory.
- */
-export function readApprovedProfile(dir = paths.builderCurrent) {
+export function readBackendMode(dir = paths.builderCurrent) {
   const file = path.join(dir, "design.md");
   if (!fs.existsSync(file)) return null;
-  return parseApprovedProfile(fs.readFileSync(file, "utf8"));
+  return parseBackendMode(fs.readFileSync(file, "utf8"));
 }
 
 /**
@@ -206,7 +182,7 @@ export function expectedSkills(profileId) {
         if (profileSkills.includes(name)) expected.push(name);
         break;
       /* Optional/emergency skills are NOT inherited. The set is exactly
-         inherited-standard + the selected profile's additions.
+         inherited-standard + the fixed profile's additions.
          An optional skill reaches a project only through an explicit later
          decision -- copying it by default would make "requires explicit human
          approval" a sentence in a document rather than a property of the
@@ -222,6 +198,44 @@ export function expectedSkills(profileId) {
   }
 
   return expected.sort();
+}
+
+
+/* ---------- optional backend capability ---------- */
+
+/** Compose the only optional application-backend capability into a staged project. */
+export function composeBackendCapability(staging, backendMode) {
+  if (backendMode === "none") return { supabase: false };
+  if (backendMode !== "supabase") {
+    abort(`Unsupported backend mode "${backendMode}".`, "Expected none or supabase.");
+  }
+
+  const capabilityRoot = path.join(BUILDER_ROOT, "templates", "capabilities", "supabase");
+  copyDir(capabilityRoot, staging);
+
+  /* Keep simple projects free of a dead Supabase tool declaration. The common
+     Builder is backend-agnostic; composing the Supabase capability grants the
+     writable MCP tool only to repositories that actually selected it. */
+  const builderFile = path.join(staging, ".claude", "agents", "builder.md");
+  if (!fs.existsSync(builderFile)) abort("Supabase composition requires the common Builder agent.");
+  const builderSource = fs.readFileSync(builderFile, "utf8");
+  const toolsLine = builderSource.match(/^tools:\s*(.+)$/m)?.[0];
+  if (!toolsLine) abort("Builder agent has no tools frontmatter to extend for Supabase.");
+  if (!toolsLine.includes("mcp__supabase")) {
+    fs.writeFileSync(
+      builderFile,
+      builderSource.replace(toolsLine, `${toolsLine}, mcp__supabase`),
+      "utf8",
+    );
+  }
+
+  const mcpFile = path.join(staging, ".mcp.json");
+  const mcp = readJson(mcpFile);
+  mcp.mcpServers ??= {};
+  mcp.mcpServers.supabase = { type: "http", url: "https://mcp.supabase.com/mcp" };
+  writeJson(mcpFile, mcp);
+
+  return { supabase: true };
 }
 
 /* ---------- filesystem ---------- */

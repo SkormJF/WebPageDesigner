@@ -6,7 +6,7 @@
  * node:test and node:assert only -- no framework, no dependency, and not a
  * fourth top-level script. These are the properties of the Builder that have
  * broken before or would break silently: the phase a creation runs at, what the
- * profile parser accepts, who owns the stack profile, who owns profile skills,
+ * who owns the fixed stack, who owns profile skills,
  * what a generated project starts as, and two contract sentences that were
  * factually wrong.
  *
@@ -22,7 +22,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 
-import { parseApprovedProfile, expectedSkills } from "../scripts/lib/common.mjs";
+import { parseBackendMode, composeBackendCapability, expectedSkills } from "../scripts/lib/common.mjs";
 import { runSpecGate } from "../scripts/lib/spec-gate.mjs";
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
@@ -34,78 +34,22 @@ const readJson = (rel) => JSON.parse(read(rel));
    when a paragraph is rewrapped at a different width. */
 const flat = (rel) => read(rel).replace(/\s+/g, " ");
 
-const PROFILES = ["next-standard-v1", "react-vite-standard-v1"];
+const PROFILES = ["next-standard-v1"];
 
 /* ------------------------------------------------------------------ */
 
-describe("parseApprovedProfile", () => {
-  const section = [
-    "## Stack profile",
-    "",
-    "- **Profile:** next-standard-v1",
-    '- **Deviations from the profile:** none',
-    "",
-  ].join("\n");
-
-  const preamble = ["# DESIGN — Example", "", "## Identity", "", "Some prose.", ""].join("\n");
-  const trailing = ["## Architecture", "", "More prose.", ""].join("\n");
-
-  test("section in the middle of the document", () => {
-    assert.equal(parseApprovedProfile(preamble + section + trailing), "next-standard-v1");
+describe("parseBackendMode", () => {
+  test("parses the two supported modes", () => {
+    assert.equal(parseBackendMode("## Backend\n\n**Mode:** none\n"), "none");
+    assert.equal(parseBackendMode("## Backend\n\n**Mode:** `supabase`\n"), "supabase");
   });
 
-  test("section first in the document", () => {
-    assert.equal(parseApprovedProfile(section + trailing), "next-standard-v1");
+  test("reports an unsupported explicit mode instead of silently falling back", () => {
+    assert.equal(parseBackendMode("## Backend\n\n**Mode:** firebase\n"), "unsupported:firebase");
   });
 
-  /* The old parser closed the section with `(?=^##\s|\Z)`. JavaScript has no
-     \Z -- it is an identity escape for the letter Z -- so a document whose Stack
-     profile section ran to the end parsed as null unless a literal Z happened to
-     appear later. Neither text below contains one. */
-  test("section last, with a final newline", () => {
-    assert.equal(parseApprovedProfile(preamble + section), "next-standard-v1");
-  });
-
-  test("section last, without a final newline", () => {
-    assert.equal(parseApprovedProfile((preamble + section).trimEnd()), "next-standard-v1");
-  });
-
-  test("CRLF line endings", () => {
-    const crlf = (preamble + section + trailing).replace(/\n/g, "\r\n");
-    assert.equal(parseApprovedProfile(crlf), "next-standard-v1");
-  });
-
-  test("backticked value", () => {
-    assert.equal(
-      parseApprovedProfile("## Stack profile\n\n- **Profile:** `react-vite-standard-v1`\n"),
-      "react-vite-standard-v1",
-    );
-  });
-
-  test("a deeper heading does not close the section", () => {
-    const doc = "## Stack profile\n\n### Rationale\n\ntext\n\n- **Profile:** next-standard-v1\n";
-    assert.equal(parseApprovedProfile(doc), "next-standard-v1");
-  });
-
-  test("[TBD] is not a decision", () => {
-    assert.equal(parseApprovedProfile(preamble + "## Stack profile\n\n- **Profile:** [TBD]\n"), null);
-  });
-
-  test("missing section", () => {
-    assert.equal(parseApprovedProfile(preamble + trailing), null);
-  });
-
-  test("a Profile line outside the section is ignored", () => {
-    assert.equal(parseApprovedProfile("## Notes\n\n- **Profile:** sneaky-v9\n"), null);
-  });
-
-  test("non-string input", () => {
-    assert.equal(parseApprovedProfile(undefined), null);
-    assert.equal(parseApprovedProfile(null), null);
-  });
-
-  test("the shipped design.md template is unfilled, not a decision", () => {
-    assert.equal(parseApprovedProfile(read("templates/common/specs/design.md")), null);
+  test("an unfilled template is not a backend decision", () => {
+    assert.equal(parseBackendMode(read("templates/common/specs/design.md")), null);
   });
 });
 
@@ -180,7 +124,7 @@ describe("Spec Gate understands build groups and risk", () => {
     const files = {
       "PROJECT.md": "# Project\n\n## Identity\nX\n\n## What this is\nX\n\n## Scope\nX\n\n## Decisions in force\nX\n",
       "requirements.md": "# Requirements\n\n## Functional requirements\n| ID | Priority | Requirement |\n|---|---|---|\n| REQ-001 | MUST | The system shall work. |\n\n## Non-functional requirements\nNone.\n",
-      "design.md": "# Design\n\n## Stack profile\n- **Profile:** next-standard-v1\n\n## Architecture\nX\n\n## Routes\nX\n\n## Security\nX\n",
+      "design.md": "# Design\n\n## Architecture\nX\n\n- **Baseline deviations:** none\n\n## Routes\nX\n\n## Backend\n**Mode:** none\n\n## Security\nX\n",
       "design-system.md": "# DS\n\n## Approval\nX\n\n## Color\nX\n\n## Typography\nX\n\n## Interaction states\nX\n",
       "tasks.md": tasksText,
     };
@@ -339,11 +283,26 @@ describe("creation lifecycle", () => {
 
 /* ------------------------------------------------------------------ */
 
-describe("stack profile ownership", () => {
+describe("fixed platform ownership", () => {
   const harness = read("CLAUDE.md");
+  const config = readJson("builder.config.json");
 
-  test("design.md is the only owner", () => {
-    assert.match(harness, /approved profile lives in `design\.md` and nowhere else/);
+  test("builder.config fixes Next as the only stack", () => {
+    assert.equal(config.stack_profile, "next-standard-v1");
+    assert.ok(!("default_stack_profile" in config));
+    assert.deepEqual(
+      fs.readdirSync(path.join(ROOT, "config", "stack-profiles")).filter((f) => f.endsWith(".json")),
+      ["next-standard-v1.json"],
+    );
+  });
+
+  test("design.md does not duplicate the Factory-owned stack", () => {
+    const design = read("templates/common/specs/design.md");
+    assert.doesNotMatch(design, /## Stack profile|\*\*Profile:\*\*/i);
+    assert.match(design, /Baseline deviations/);
+    assert.match(harness, /Platform is not a Discovery question/i);
+    assert.match(harness, /Do not ask the user to select a framework/i);
+    assert.match(harness, /single owner.*validated Next baseline/i);
   });
 
   test("state.json carries no profile", () => {
@@ -355,29 +314,18 @@ describe("stack profile ownership", () => {
     }
   });
 
-  test("PROJECT.md does not restate it", () => {
+  test("PROJECT.md does not restate the stack", () => {
     const project = read("templates/common/specs/PROJECT.md");
     assert.doesNotMatch(project, /^\s*[-*]\s*\*\*Profile:\*\*/m);
   });
 
-  test("both scripts treat --profile as an assertion", () => {
+  test("both scripts reject the removed --profile selector and use the fixed config", () => {
     for (const rel of ["scripts/create-project.mjs", "scripts/validate-project.mjs"]) {
       const source = read(rel);
-      assert.match(source, /readApprovedProfile\(/, `${rel} must read the approved profile`);
-      assert.match(source, /PROFILE_MISMATCH/, `${rel} must fail on a mismatched assertion`);
-      /* Prose about default_stack_profile is fine -- including the prose that
-         explains why it is not consulted. Reading the loaded config's field is
-         what must not appear, hence the lookbehind. */
-      assert.doesNotMatch(
-        source,
-        /(?<![\w.])config\.default_stack_profile|config\["default_stack_profile"\]/,
-        `${rel} must not fall back to the Planning-time default`,
-      );
-      assert.doesNotMatch(
-        source,
-        /args\.profile\s*(\?\?|\|\|)/,
-        `${rel} must not let the CLI supply the profile`,
-      );
+      assert.match(source, /--profile no longer exists/);
+      assert.match(source, /config\.stack_profile/);
+      assert.doesNotMatch(source, /config\.default_stack_profile/);
+      assert.doesNotMatch(source, /readDeclaredProfile|parseDeclaredProfile|PROFILE_MISMATCH/);
     }
   });
 });
@@ -425,7 +373,7 @@ describe("handoff recovery", () => {
 /* ------------------------------------------------------------------ */
 
 describe("Supabase MCP scoping", () => {
-  const projectHarness = read("templates/common/CLAUDE.md");
+  const projectHarness = read("templates/capabilities/supabase/.claude/capabilities/supabase.md");
 
   test("the pending action carries project_ref", () => {
     const block = projectHarness.match(/```json\n([\s\S]*?)```/g)?.find((b) => b.includes("RESTART_FOR_SUPABASE_MCP_SCOPE"));
@@ -452,10 +400,10 @@ describe("Supabase MCP scoping", () => {
     assert.match(projectHarness, /never cleared on the way in/);
   });
 
-  test("the shipped .mcp.json stays generic", () => {
+  test("the base .mcp.json stays Vercel-only until Supabase is selected", () => {
     const mcp = readJson("templates/common/.mcp.json");
-    assert.equal(mcp.mcpServers.supabase.url, "https://mcp.supabase.com/mcp");
-    assert.ok(mcp.mcpServers.vercel, "the Vercel entry ships too");
+    assert.ok(mcp.mcpServers.vercel, "the Vercel entry always ships");
+    assert.ok(!mcp.mcpServers.supabase, "Supabase is composed only for Backend Mode supabase");
   });
 });
 
@@ -1003,10 +951,10 @@ describe("Reviewer contract", () => {
 });
 
 describe("DB Reviewer capability is live but read-only", () => {
-  const reviewer = read("templates/common/.claude/agents/db-reviewer.md");
+  const reviewer = read("templates/capabilities/supabase/.claude/agents/db-reviewer.md");
 
   test("scopes its own Supabase MCP to the generated project's ref", () => {
-    assert.match(reviewer, /project_ref=\$\{SUPABASE_PROJECT_REF\}/);
+    assert.match(reviewer, /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/);
     assert.match(reviewer, /read_only=true/);
     assert.match(reviewer, /features=database,debugging,docs/);
   });
@@ -1074,15 +1022,96 @@ describe("generated project model routing is mechanical by default", () => {
     assert.equal(settings.effortLevel, "high");
   });
 
-  test("DB review scope starts empty until Foundation knows the project ref", () => {
-    assert.equal(settings.env.SUPABASE_PROJECT_REF, "");
+  test("base settings carry no Supabase scope until a Supabase project is composed", () => {
+    assert.ok(!("SUPABASE_PROJECT_REF" in (settings.env ?? {})));
+  });
+});
+
+describe("Supabase RLS baseline avoids rediscovering the Foco init-plan advisory", () => {
+  test("the conditional capability teaches the optimized auth.uid form", () => {
+    const capability = fs.readFileSync(
+      path.join(ROOT, "templates/capabilities/supabase/.claude/capabilities/supabase.md"),
+      "utf8",
+    );
+    assert.match(capability, /\(select auth\.uid\(\)\)/);
+    assert.match(capability, /keep the same optimized form in `design\.md`/i);
+  });
+
+  test("design.md asks Planning to make the optimized policy part of the approved contract", () => {
+    const design = fs.readFileSync(path.join(ROOT, "templates/common/specs/design.md"), "utf8");
+    assert.match(design, /\(select auth\.uid\(\)\)/);
+    assert.match(design, /spec already matches the policy/i);
+  });
+});
+
+describe("Supabase capability is composed only when Backend Mode requires it", () => {
+  test("the common project baseline is Vercel-only", () => {
+    const mcp = readJson("templates/common/.mcp.json");
+    const builder = read("templates/common/.claude/agents/builder.md");
+    assert.deepEqual(Object.keys(mcp.mcpServers).sort(), ["vercel"]);
+    assert.doesNotMatch(builder, /mcp__supabase/, "backend-less projects must not carry a dead Supabase Builder tool");
+    assert.ok(!fs.existsSync(path.join(ROOT, "templates/common/.claude/agents/db-reviewer.md")));
+  });
+
+  test("the conditional capability carries the read-only DB reviewer", () => {
+    const rel = "templates/capabilities/supabase/.claude/agents/db-reviewer.md";
+    assert.ok(fs.existsSync(path.join(ROOT, rel)));
+    assert.ok(fs.existsSync(path.join(ROOT, "templates/capabilities/supabase/.claude/capabilities/supabase.md")));
+    const body = flat(rel);
+    assert.match(body, /read_only=true/);
+    assert.match(body, /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/);
+  });
+
+  test("backend mode none leaves the staged project Vercel-only", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wpd-backend-none-"));
+    try {
+      fs.mkdirSync(path.join(dir, ".claude", "agents"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".mcp.json"), read("templates/common/.mcp.json"));
+      fs.writeFileSync(path.join(dir, ".claude", "settings.json"), read("templates/common/.claude/settings.json"));
+      fs.writeFileSync(path.join(dir, ".claude", "agents", "builder.md"), read("templates/common/.claude/agents/builder.md"));
+      assert.deepEqual(composeBackendCapability(dir, "none"), { supabase: false });
+      assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(path.join(dir, ".mcp.json"))).mcpServers), ["vercel"]);
+      assert.doesNotMatch(fs.readFileSync(path.join(dir, ".claude", "agents", "builder.md"), "utf8"), /mcp__supabase/);
+      assert.ok(!fs.existsSync(path.join(dir, ".claude", "agents", "db-reviewer.md")));
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  test("backend mode supabase composes MCP, reviewer scope and DB reviewer", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wpd-backend-supabase-"));
+    try {
+      fs.mkdirSync(path.join(dir, ".claude", "agents"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".mcp.json"), read("templates/common/.mcp.json"));
+      fs.writeFileSync(path.join(dir, ".claude", "settings.json"), read("templates/common/.claude/settings.json"));
+      fs.writeFileSync(path.join(dir, ".claude", "agents", "builder.md"), read("templates/common/.claude/agents/builder.md"));
+      assert.deepEqual(composeBackendCapability(dir, "supabase"), { supabase: true });
+      const mcp = JSON.parse(fs.readFileSync(path.join(dir, ".mcp.json")));
+      const settings = JSON.parse(fs.readFileSync(path.join(dir, ".claude", "settings.json")));
+      const builder = fs.readFileSync(path.join(dir, ".claude", "agents", "builder.md"), "utf8");
+      const dbReviewer = fs.readFileSync(path.join(dir, ".claude", "agents", "db-reviewer.md"), "utf8");
+      assert.equal(mcp.mcpServers.supabase.url, "https://mcp.supabase.com/mcp");
+      assert.ok(!("SUPABASE_PROJECT_REF" in (settings.env ?? {})));
+      assert.match(builder, /^tools:.*mcp__supabase/m);
+      assert.match(dbReviewer, /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/);
+      assert.ok(fs.existsSync(path.join(dir, ".claude", "agents", "db-reviewer.md")));
+      assert.ok(fs.existsSync(path.join(dir, ".claude", "capabilities", "supabase.md")));
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  test("the Spec Gate rejects DB_REVIEW when Backend Mode is not supabase", () => {
+    assert.match(read("scripts/lib/spec-gate.mjs"), /DB_REVIEW.*backendMode !== "supabase"/s);
+  });
+
+  test("the generated-project validator enforces the same capability shape", () => {
+    const validator = read("scripts/validate-project.mjs");
+    assert.match(validator, /Supabase capability contract present/);
+    assert.match(validator, /Backend-less Builder carries no Supabase MCP tool/);
+    assert.match(validator, /Builder receives the writable Supabase MCP tool only for this backend/);
   });
 });
 
 describe("Tailwind source roots exclude harness and specifications", () => {
   const cases = [
     { id: "next-standard-v1", css: "templates/stacks/next-standard-v1/src/app/globals.css", roots: ["src"] },
-    { id: "react-vite-standard-v1", css: "templates/stacks/react-vite-standard-v1/src/index.css", roots: ["src", "index.html"] },
   ];
 
   for (const item of cases) {
@@ -1117,8 +1146,8 @@ describe("Supabase SSR session contract", () => {
      a promise the supported browser client does not keep and no reviewer could
      verify. The fix stated a contract; the contract then overshot, handing the
      @supabase/ssr cookie pattern to *any* project that touched Supabase. That
-     is wrong for a Vite SPA, for Supabase used only as a database, and for
-     Supabase Auth without an SSR architecture. The vendor does not decide the
+     is wrong for Supabase used only as a database, and for Supabase Auth
+     without an SSR architecture. The vendor does not decide the
      session mechanism -- the approved architecture does.
 
      So these tests guard the behaviour on both sides: no blanket HttpOnly, and
@@ -1197,13 +1226,12 @@ describe("Supabase SSR session contract", () => {
     assert.match(text, /auth\/session model the approved architecture defines/i);
   });
 
-  /* The three shapes that were being handed the contract by default. */
-  test("the excluded architectures are named, not left to inference", () => {
+  /* Next stays fixed, but Supabase still does not imply one session architecture. */
+  test("the excluded Supabase architectures are named, not left to inference", () => {
     const text = design();
     for (const [label, pattern] of [
-      ["a Vite SPA on Supabase", /vite[^.]{0,20}\bspa\b/i],
       ["Supabase as a database only", /(?:only as a database|database only)/i],
-      ["Supabase Auth without SSR", /supabase auth without[^.]{0,20}\bssr\b/i],
+      ["Supabase Auth without SSR", /supabase auth without[^.]{0,30}\bssr\b/i],
     ]) {
       assert.match(text, pattern, `the ELSE branch must name ${label}`);
     }
@@ -1271,7 +1299,7 @@ describe("inherited skills carry no Builder operational dependency", () => {
   };
 
   test("the inherited set is non-empty and matches the manifest", () => {
-    assert.equal(inherited.length, 19, "both current profiles inherit the same 19 skills");
+    assert.equal(inherited.length, 19, "the fixed Next profile inherits exactly 19 skills");
   });
 
   for (const skill of inherited) {
@@ -1368,14 +1396,10 @@ describe("the generated language check compares a value", () => {
     assert.match(flat("templates/common/specs/tasks.md"), /the document `lang` must carry PROJECT\.md's `Language tag`/);
   });
 
-  test("both stack templates point their lang attribute at that decision", () => {
-    for (const [rel, id] of [
-      ["templates/stacks/next-standard-v1/src/app/layout.tsx", "next"],
-      ["templates/stacks/react-vite-standard-v1/index.html", "vite"],
-    ]) {
-      const text = flat(rel);
-      assert.match(text, /`lang` must equal PROJECT\.md's `Language tag`/, `${id}: the source of truth is named`);
-      assert.match(text, /the template's placeholder/, `${id}: en is declared a placeholder, not a decision`);
-    }
+  test("the Next template points its lang attribute at that decision", () => {
+    const rel = "templates/stacks/next-standard-v1/src/app/layout.tsx";
+    const text = flat(rel);
+    assert.match(text, /`lang` must equal PROJECT\.md's `Language tag`/, "the source of truth is named");
+    assert.match(text, /the template's placeholder/, "en is declared a placeholder, not a decision");
   });
 });

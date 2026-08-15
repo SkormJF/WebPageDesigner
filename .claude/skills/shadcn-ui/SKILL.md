@@ -59,7 +59,7 @@ The generated project pins its own versions, and shadcn's own surface has moved 
   expose `render`. Which one this project has is visible in `components.json` and in the component source.
   Assuming the wrong one produces code that typechecks against nothing.
 - **Tailwind version and sources.** On Tailwind v4 the theme is declared in CSS via `@theme` and there is no
-  `tailwind.config.ts`. Generated stack templates also scope detection explicitly with `source(none)` + `@source`; preserve
+  `tailwind.config.ts`. The generated Next template also scopes detection explicitly with `source(none)` + `@source`; preserve
   those application roots and never re-enable repository-wide scanning just to make a class appear.
 - **Form primitives are not guaranteed.** Some registry versions ship no `Form`/`FormField` wrapper. Check
   whether the file actually exists after adding it; if it does not, wire the form directly rather than

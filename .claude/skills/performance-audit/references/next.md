@@ -1,6 +1,6 @@
 # Next-specific performance checks
 
-Load this only when `design.md` says the project runs on a Next stack profile. On a Vite/SPA project none of
+Generated projects run on the fixed Next stack profile. This reference covers the Next-specific part of the audit; none of
 it applies, and the cross-stack checks in `SKILL.md` are the whole audit.
 
 ## Duplicate auth/session verification across the middleware boundary

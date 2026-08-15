@@ -13,7 +13,7 @@ built, change phase, or override the approved design system.
 Everything below is a rule with a reason. Where a rule cites a WCAG success criterion, that criterion is Level AA unless stated otherwise — meaning it's part of the accessibility baseline `CLAUDE.md`'s Quality Gate already commits every project to.
 
 **This core assumes React and CSS, and nothing else.** No router, no component library, no motion library.
-Projects here run on different stack profiles and install different dependencies — so before importing
+Generated projects here run on the fixed Next profile but still install dependencies per product — so before importing
 anything named below, confirm it is in the project's own `package.json`. Router-, shadcn- and
 motion-library-specific material lives in `references/stack-specific.md` and applies only where those
 dependencies actually exist.

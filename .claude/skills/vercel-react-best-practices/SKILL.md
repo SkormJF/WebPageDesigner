@@ -13,14 +13,9 @@ Comprehensive performance optimization guide for React and Next.js applications,
 
 ## Check the stack before applying a rule
 
-This skill ships to every project here, and the projects do not all run Next. Before applying any rule,
-establish which stack you are on — `design.md` names the profile, and `package.json` is what is actually
-installed.
-
-```
-Next project      → React rules apply, Next-specific rules apply
-React/Vite (SPA)  → React and browser rules apply, Next-specific rules do not
-```
+Every generated project uses the fixed Next baseline. Before applying a rule, still read `package.json`: optional
+dependencies and product-specific libraries are not guaranteed merely because the framework is fixed. React rules and
+Next-specific rules both apply when their underlying API or pattern is actually present.
 
 **Next-specific** means anything that depends on a Next-only API or execution model: Server Components and
 the server/client boundary, Server Actions, RSC payload and serialization, `next/dynamic`, `next/image`,

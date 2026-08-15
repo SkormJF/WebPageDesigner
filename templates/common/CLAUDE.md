@@ -8,7 +8,6 @@ this sequence.
 
 **Language.** Talk to the user in **Spanish** — questions, status and findings. Warm, direct, informal `tú`, with short
 updates only at real milestones. Harness documents stay in English. Product language comes from `PROJECT.md`.
-
 ## The specifications are the contract
 
 ```
@@ -55,8 +54,8 @@ select GROUP → validate declared Gate capability → persist active_tasks / IM
 
 
 **Capability gate before dispatch.** Do not launch a Reviewer and discover later that it cannot perform the declared gate.
-`AUTO` requires no agent; `REVIEW` requires the generic Reviewer tools; `DB_REVIEW` requires `SUPABASE_PROJECT_REF` plus
-the `supabase_review` read-only MCP. If a required capability is absent, stop immediately with `REVIEW_CONFLICT` before
+`AUTO` requires no agent; `REVIEW` requires the generic Reviewer tools; `DB_REVIEW` requires the `db-reviewer` inline
+`supabase_review` MCP to carry the real project ref (never `__UNSCOPED_UNTIL_FOUNDATION__`). If a required capability is absent, stop immediately with `REVIEW_CONFLICT` before
 spending a review turn on CLI/tool discovery.
 
 **Maximum two reviewer runs for a group. No third automatic pass.** The second run checks prior findings, the correction
@@ -114,36 +113,14 @@ the gate.
 You own deploy; `vercel-deploy` carries the procedure. Ready to deploy requires Visual QA PASS · Human Preview approved ·
 E2E PASS · Quality Gate PASS · no blockers · consistent workflow · `phase = READY_TO_DEPLOY`, then explicit human approval.
 
-`.mcp.json` ships Vercel and Supabase. Verify the exact capability before relying on it; no silent CLI fallback for remote
-Vercel work and never persist a secret. If `design.md` declares Supabase, scope the main MCP during `FOUNDATION` **before
-schema work**: authorize → create/select THIS project's DB → obtain `project_ref` → rewrite the Supabase URL to
-`https://mcp.supabase.com/mcp?project_ref=<PROJECT_REF>` → set `.claude/settings.json` env `SUPABASE_PROJECT_REF` to the
-same non-secret id → commit → persist the restart action → tell the human to restart → **STOP**. The dedicated
-`db-reviewer` resolves that env var into its own project-scoped, read-only Supabase MCP.
-
-```json
-{ "pending_action": { "type": "RESTART_FOR_SUPABASE_MCP_SCOPE", "project_ref": "abc123" } }
-```
-
-`project_ref` is mandatory in that record. On recovery, derive and compare all three values before any Supabase work:
-
-```text
-expected_ref = pending_action.project_ref
-disk_ref = project_ref parsed from .mcp.json
-settings_ref = .claude/settings.json env SUPABASE_PROJECT_REF
-expected_ref != disk_ref OR expected_ref != settings_ref → stay blocked
-```
-
-Then make one read-only call that must **prove identity, not connectivity**. Only `PASS → pending_action = null`; it is
-never cleared on the way in. A 200 proves a server answered, not which project answered. Never probe another project to
-test isolation.
+`.mcp.json` always ships Vercel. Backend Mode `none` ships no Supabase capability and must never select `DB_REVIEW`.
+Backend Mode `supabase` additionally ships `.claude/capabilities/supabase.md`; **read it before any Supabase remote work**
+and include that capability file in the assignment of any Builder group that uses Supabase. Follow its project-scoping,
+restart, recovery, migration and read-only DB-review rules. No silent CLI fallback for remote operations and never persist a secret.
 
 Record every consequential remote mutation **before** running it as
 `external_operation = { kind, target, started_at }`; observe the real result, record it, then clear to `null`. Metadata
 only. Never auto-retry an interrupted remote mutation.
-
-Database migrations are code: when schema work is approved, create a versioned local SQL migration first and apply that
-same migration through the authorized MCP. The remote database is deployed state, not the only copy of the source.
 
 ## Recovery
 
