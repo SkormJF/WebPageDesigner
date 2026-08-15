@@ -1,22 +1,28 @@
 # TASKS — [PROJECT_NAME]
 
-<!-- SLOT: Owns implementation decomposition, build grouping, gate selection, risk and durable task status. `.workflow/` holds only the
-     group in flight; git holds code history. Remove every SLOT before Spec Gate. -->
+<!-- SLOT: Owns implementation decomposition, fixed-phase grouping, capability/gate selection, risk and durable task
+     status. `.workflow/` holds only the group in flight; git holds code history. Remove every SLOT before Spec Gate. -->
 
 ## How to read this
 
 - IDs are stable: `TASK-001`, `TASK-002`, … Never reused.
 - Every task links to at least one `REQ-xxx`; every MUST is covered or explicitly out of scope in `requirements.md`.
-- **Task != agent cycle.** Tasks are traceability/acceptance units. Related tasks execute together in build groups.
-- Risk is `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`; it controls how much independent review the group earns.
-- Status is durable: `PENDING` → `ACTIVE` → `DONE`, written only by the Orchestrator. `DONE` means its build group was
-  approved and committed.
-- A routine LOW task does not deserve its own group. One-task groups require a real dependency boundary or HIGH/CRITICAL
-  risk.
+- **Task != agent cycle.** A task is an outcome/acceptance unit, not a file, component, route or single requirement.
+  One task may satisfy several requirements and touch many files.
+- The harness owns exactly three implementation phases: `FOUNDATION`, `BUILD_TASKS`, `INTEGRATION`. Planning may create
+  build groups inside them; it never creates lifecycle phases.
+- Plan **groups first, tasks second**: start from the smallest meaningful context/capability boundaries, then create only
+  the tasks needed for traceability and objective acceptance.
+- Risk is `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`.
+- Status is durable: `PENDING` → `ACTIVE` → `DONE`, written only by the Orchestrator. At project generation every task
+  starts `PENDING`; `DONE` means its build group was approved and committed.
+- A routine LOW task does not deserve its own group. Split only for a real dependency, context, capability or review
+  boundary. The natural starting point is one group per fixed phase, splitting only when one of those boundaries requires it.
 
 ## Dependency order
 
-<!-- SLOT: Executable task order. If the graph has no valid order, the decomposition is wrong. -->
+<!-- SLOT: Executable task order. `Depends on` means a real prerequisite, not merely the order Claude will probably work.
+     Dependencies may stay within a phase or point to an earlier phase; never to a later phase. -->
 
 ```
 [TBD]
@@ -24,68 +30,77 @@
 
 ## Build groups
 
-<!-- SLOT: Meaningful context-sharing batches. Keep groups compact in count; split only for a real dependency, context,
-     capability or review boundary. `Clear after = YES` is optional and may appear at most once inside BUILD_TASKS, only
-     at a genuine context-domain boundary. Fixed harness checkpoints already exist after FOUNDATION, BUILD_TASKS and INTEGRATION, plus HUMAN_PREVIEW approval and QUALITY_GATE PASS. -->
+<!-- SLOT: Meaningful context-sharing batches. Capability is what the Builder needs; Gate is how the completed group is
+     independently accepted. `Clear after = YES` is optional and may appear at most once, only in BUILD_TASKS at a genuine
+     context-domain boundary. Fixed harness checkpoints already exist after FOUNDATION, BUILD_TASKS and INTEGRATION, plus
+     HUMAN_PREVIEW approval and QUALITY_GATE PASS. -->
 
-| Group | Phase | Purpose | Gate | Clear after |
-|---|---|---|---|---|
-| FOUNDATION | FOUNDATION | [TBD] | AUTO | NO |
-| BUILD-01 | BUILD_TASKS | [TBD] | REVIEW | NO |
-| INTEGRATION | INTEGRATION | [TBD] | REVIEW | NO |
+| Group | Phase | Purpose | Capability | Gate | Clear after |
+|---|---|---|---|---|---|
+| FOUNDATION | FOUNDATION | [TBD] | BASE | AUTO | NO |
+| BUILD-01 | BUILD_TASKS | [TBD] | BASE | REVIEW | NO |
+| INTEGRATION | INTEGRATION | [TBD] | BASE | REVIEW | NO |
+
+### Fixed phase ownership
+
+**FOUNDATION** — shared prerequisites only: verified Next baseline, approved tokens/fonts/theme, shared primitives and test
+baseline; when Backend Mode is `supabase`, backend bootstrap/versioned prerequisite migrations may live here. Do not put
+standalone product flows here.
+
+**BUILD_TASKS** — the product itself: pages, feature flows, CRUD, forms, dashboards, Auth UI and business logic. Related
+work stays together so the Builder can reuse context and patterns.
+
+**INTEGRATION** — connect and verify already-built features: navigation, protected-route/session boundaries, loading/
+empty/error states, cross-feature behaviour, frontend/backend wiring and regression. It is **not** a second feature-build
+phase; a feature missing from BUILD_TASKS is a planning gap, not Integration work.
 
 ---
 
 ## Foundation
 
-<!-- SLOT: Verified dependencies, approved tokens, stack baseline, backend connection where required, testing foundation
-     and first shared primitives. Include a task whose acceptance states: the document `lang` must carry PROJECT.md's `Language tag`. -->
+<!-- SLOT: Include a task whose acceptance states: the document `lang` must carry PROJECT.md's `Language tag`. -->
 
 | ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
 |---|---|---|---|---|---|---|---|
-| TASK-001 | [TBD] | REQ-xxx | — | FOUNDATION | LOW | [TBD] | PENDING |
+| TASK-001 | [TBD outcome] | REQ-xxx | — | FOUNDATION | LOW | [TBD] | PENDING |
 
 ## Features
 
 | ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
 |---|---|---|---|---|---|---|---|
-| TASK-0xx | [TBD] | REQ-xxx | TASK-00x | BUILD-01 | MEDIUM | [TBD] | PENDING |
+| TASK-0xx | [TBD outcome] | REQ-xxx | TASK-00x | BUILD-01 | MEDIUM | [TBD] | PENDING |
 
 ## Integration
 
-<!-- SLOT: Cross-feature behaviour, routes, shared state and backend boundaries. Verification, not a second design pass. -->
-
 | ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
 |---|---|---|---|---|---|---|---|
-| TASK-1xx | [TBD] | REQ-xxx | [TBD] | INTEGRATION | MEDIUM | [TBD] | PENDING |
-
-## Product-specific work
-
-<!-- SLOT: Optional — migrations, imports, seed work or other non-feature construction. Delete if unused. -->
-
-| ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
-|---|---|---|---|---|---|---|---|
-| TASK-1xx | [TBD] | REQ-xxx | [TBD] | [TBD] | HIGH | [TBD] | PENDING |
+| TASK-1xx | [TBD integration outcome] | REQ-xxx | [TBD] | INTEGRATION | MEDIUM | [TBD] | PENDING |
 
 ---
 
-## Review policy
+## Capability and review policy
 
-The **build group declares its gate**; risk tells that gate how much evidence matters, while the gate names the capability:
+`Capability` and `Gate` are separate on purpose: capability controls what the Builder may use; gate controls how the final
+group is accepted.
 
-- `AUTO` → no Reviewer; valid only when every task in the group is `LOW`. Builder final-state checks are the gate.
-- `REVIEW` → generic Reviewer without direct file-edit tools for MEDIUM/HIGH work and CRITICAL work that is not a database-specific surface.
-- `DB_REVIEW` → `db-reviewer` with project-scoped read-only Supabase MCP. Use it for CRITICAL
-  Supabase/schema/RLS/data-integrity groups; mutation tests stay with Builder. A DB_REVIEW group must not also contain
-  unrelated MEDIUM/HIGH non-DB work — split that work so one gate can competently review the full group.
+- `BASE` → normal project tools only.
+- `SUPABASE` → valid only when `design.md` says `Backend Mode: supabase`; the Builder receives the composed Supabase
+  capability for that group.
+- `AUTO` → no Reviewer; valid only when every task in the group is `LOW`. Builder final cleaned-state checks are the gate.
+- `REVIEW` → generic Reviewer for MEDIUM/HIGH work and CRITICAL work that is not a database-specific surface.
+- `DB_REVIEW` → only for a `SUPABASE` group containing CRITICAL schema/RLS/authorization/data-integrity work; uses the
+  project-scoped read-only DB Reviewer. Mutation tests remain Builder work.
+- A DB_REVIEW group must not also contain unrelated MEDIUM/HIGH non-DB work; split when one gate could not competently
+  review the full group.
 - One correction round maximum: findings → targeted Builder correction → targeted re-review. No third automatic pass.
 
-`Gate` is explicit instead of inferred from a risk label so the Orchestrator can capability-check **before** dispatch rather
-than discovering mid-review that the selected agent lacks the tool the gate requires.
+Before dispatch, the Orchestrator validates both required capability and gate. A missing capability fails fast; agents do
+not spend turns discovering substitute CLIs or bypasses.
 
 ## What does NOT get a task
 
-`VISUAL_QA`, `E2E` and `QUALITY_GATE` are lifecycle phases for whole-product verification, so there is no `TASK-9xx` quality block. A task carries local acceptance; global accessibility/performance/security belongs to the gate.
+`VISUAL_QA`, `E2E` and `QUALITY_GATE` are whole-product lifecycle phases. There is no `TASK-9xx` quality block. A task
+carries local acceptance; global accessibility/performance/security belongs to the later gate.
 
 ## Acceptance criteria
 

@@ -64,6 +64,7 @@
     "note": "Exact resolved versions live in the template's package.json and package-lock.json, which are the authority. This block records what was actually run, not what is expected to work."
   },
   "notes": [
+    "Next agent-rule generation is disabled (`agentRules: false`) because the generated repository owns CLAUDE.md; agents consult the installed version-matched node_modules/next/dist/docs selectively when a Next-specific detail is uncertain.",
     "Tailwind source discovery is explicit: the stylesheet disables automatic repository scanning and registers only the profile's application source roots. Harness/spec/docs files must never influence production CSS.",
     "Next 16 renamed middleware.ts to proxy.ts and the exported function middleware to proxy. Same mechanism, breaking change. Using the pre-16 filename compiles cleanly and the file is then never invoked -- there is no error to notice. Check node_modules/next/dist/docs before writing one.",
     "The stock scaffold hardcodes `font-family: Arial, Helvetica, sans-serif` on body in globals.css, which beats the theme regardless of how correctly the font tokens are wired. Both fonts download, neither is used, and the build reports no error. This template ships the fix (`font-family: var(--font-sans)`); do not reintroduce a literal family there.",

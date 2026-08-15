@@ -13,7 +13,6 @@ Do not ask the user to select a framework and do not let Planning select another
 vs `supabase`: choose `none` when the product owns no persistent data/auth backend; choose `supabase` when it owns persistent
 data, authentication, storage, realtime or DB-enforced authorization. External APIs are integrations, not another backend mode.
 ## Session start, authority, state
-
 **Read state, never infer it** — not from the conversation, not from which files exist, not from what you remember. If
 `.builder/current/state.json` does not exist you are `IDLE`; if it does, read it, load only what that phase needs, and
 offer CONTINUE or ABANDON. On CONTINUE resume at the recorded phase and never re-ask what the persisted files answer; on
@@ -41,7 +40,6 @@ rather than stored. `discovery.md` holds **current approved truth only**, replac
 and no more — `DISCOVERY`: state and `discovery.md` · `PLANNING`: both plus the specs · `SPEC_REVIEW`/`AWAITING_APPROVAL`:
 state and the five specs · `CREATING_PROJECT`/`VALIDATING_PROJECT`: state, `builder.config.json`, fixed Next profile and the approved backend mode.
 ## Discovery
-
 Conversational, not a form: infer what you can, ask only what is unknown, ambiguous or contradictory, and write
 `discovery.md` from the moment the project has a name, updating it and `discovery_round` every round. **R1 product and
 context** — purpose, users, type, business context, objective, constraints. **R2 content** — copy, CTAs, supplied assets,
@@ -49,7 +47,6 @@ language, tone, factual and claim limits, and whether they must **receive files*
 direction**, *only if R1 found real functionality* — the flow narrated end to end first, then entities and relations,
 roles, the states a record moves through, derived values, one concrete case, and **what must NOT be possible**; summarize
 back. **R4 visual direction** — reference site (`web-reader`), colour, light or dark, feeling, then assets, then approval.
-
 Four answers decide more than they look. **Real functionality or a presentation?** decides whether R3 runs at all — never
 infer it later. **"¿Qué parte de esto va a cambiar, cada cuánto, y quién lo va a cambiar?"**, in those words: nothing →
 static; a weekly list → decide **now** between a data file, a light CMS, a backend, or leaving it off the page; a
@@ -57,12 +54,10 @@ catalogue → backend. If they say they will not maintain it, believe them. **So
 verifiable fact beats three quotes; with none the section is omitted, never fabricated. **A need behind a preference** — a
 stated dislike that is really a use condition is adjusted for and recorded in `design-system.md` with its reason.
 ## The Artifact — R4's approval instrument, and nothing else
-
 **Mandatory: a published, interactive Artifact**, not an image, built with `artifact-design` loaded — that skill carries
 the how. Reuse it later only when a material change alters the visual contract and needs re-approval. **Never for anything
 else**: not reports, summaries, `SPEC_PASS`/`SPEC_FAIL`, spec or deploy approval, check lists or operational documents —
 each of those is a short chat message with a question.
-
 **One approval turn when nothing is contested.** Present the Artifact, name the major visual decisions in a few lines —
 palette, typography, buttons, layout, backgrounds and tone, plus the sign-in and panel shell where they exist — and ask
 once: `[ Aprobar dirección visual ] [ Quiero cambios ]`. Naming them is what separates one honest question from a bare
@@ -72,7 +67,6 @@ states — not every CSS literal**, and no accessibility claim is made without a
 those values. The Artifact is transient: it stays in `.builder/current/artifact/` until `reset-builder` removes it, so do
 not spend a turn deleting it — and it is never copied into the generated project.
 ## Planning — five specifications, one owner each
-
 | File | Owns |
 |---|---|
 | `PROJECT.md` | Identity, purpose, audience, scope, non-goals, scope decisions. Small — no architecture, QA, tokens or history. |
@@ -80,17 +74,20 @@ not spend a turn deleting it — and it is never copied into the generated proje
 | `design.md` | **HOW, technically.** Backend mode; architecture, routes, data, auth, RLS, integrations, security, env names and justified baseline deviations. The Factory already owns Next. |
 | `design-system.md` | **The approved visual contract**, copied from the Artifact — not re-derived, not improved on. |
 | `tasks.md` | **Decomposition.** Requirement-linked tasks plus execution groups, gate, risk, acceptance and durable status. |
-
 Templates in `templates/common/specs/` carry the structure; write real content into them. One owner per datum — a task
 says "create `.env.example` from `design.md`" instead of restating a second, divergent list. Rigour is proportional, never
 quota-driven: **write a datum only if it is needed to build, review or recover this project.** Requirements are
 **product** scope, so harness work (axe, Lighthouse, E2E, SEO, Visual QA, `humanizalo`) is a `REQ` only where the product
-carries its own constraint; tasks are **construction**, so a **global audit belongs to its later gate** and no `TASK-9xx`
-QA block is generated. Tasks remain traceability units; Planning also assigns `Group`, `Gate` and `Risk` so the generated repo can
-build related work continuously instead of launching an agent cycle per row. Groups are meaningful context batches, not a
-way to isolate routine LOW tasks; at most one BUILD_TASKS group may request an extra `/clear` boundary. **Transversal
-change:** detect scope → modify only the affected sections → preserve unrelated
-approved decisions → revalidate. Broad re-review only for structural change.
+carries its own constraint; a **global audit belongs to its later gate** and no `TASK-9xx` QA block is generated.
+**Planning order is fixed:** `REQ/EARS → fixed phase → minimum meaningful Build Groups → outcome-based Tasks`. The
+harness owns exactly `FOUNDATION`, `BUILD_TASKS`, `INTEGRATION`; Planning never invents lifecycle phases. FOUNDATION owns
+shared prerequisites, BUILD_TASKS owns product features/flows, and INTEGRATION only wires/verifies already-built features.
+Start from the smallest useful groups and split only for a real dependency, context, capability or review boundary. A task
+is a traceability/acceptance outcome, not a file, component, route or one requirement; one task may satisfy several REQs
+and touch many files. Every group declares `Capability = BASE | SUPABASE`, `Gate = AUTO | REVIEW | DB_REVIEW` and
+`Clear after = YES | NO`; every task declares `Risk`. At most one BUILD_TASKS group may request an extra `/clear`.
+**Transversal change:** detect scope → modify only affected sections → preserve unrelated approved decisions → revalidate.
+Broad re-review only for structural change.
 
 ## Spec Gate
 
@@ -103,7 +100,8 @@ cause to the human. There is no third automatic pass.
 ```
 
 **Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, ID hygiene, requirement↔task references,
-orphan MUSTs. Deterministic, and it does not analyse visual literals. **Spec Reviewer:** the `spec-reviewer` subagent,
+orphan MUSTs, fixed phase coverage, group capability/gate/clear rules, initial task status, dependency direction and cycles.
+Deterministic, and it does not judge visual literals or whether a group is semantically well-sized. **Spec Reviewer:** the `spec-reviewer` subagent,
 which owns its own criteria; it reviews and reports, never fixing specs, writing code or changing phase. Its second run
 checks the earlier findings, the regressions the corrections introduced and any obvious BLOCKER/MAJOR missed first time —
 it does not raise the standard, reinterpret the approved Artifact, widen scope or invent design rules. **Human approval is
@@ -111,26 +109,24 @@ a real gate**, not "procedo entonces" while already proceeding: ask in chat — 
 las especificaciones? [ Aprobar ] [ Revisar ]` — then persist `READY_TO_CREATE` and stop at checkpoint **B2**.
 
 ## Fixed Next platform, optional Supabase, skills, and the three mechanical scripts
-
 `builder.config.json` fixes `stack_profile = next-standard-v1`. There is one supported application framework: Next.js.
 `config/stack-profiles/next-standard-v1.json` is the **single owner** of the validated Next baseline, its source roots and Next-specific skills.
 `design.md` never restates or selects the framework; it records only justified implementation deviations from that baseline.
 Versions are frozen in the template lockfile; evolution creates `next-standard-v2` and never mutates v1.
-
+The Next template sets `agentRules: false`: this repository's generated `CLAUDE.md` is authoritative and `next dev` must
+not upsert framework agent rules into it. For version-specific Next details, agents read the installed
+`node_modules/next/dist/docs/` selectively on demand.
 `design.md` separately owns **Backend Mode**: exactly `none` or `supabase`. `none` generates Vercel-only MCP/configuration;
 `supabase` additionally generates the Supabase MCP and a fail-closed read-only DB reviewer capability. This keeps
 simple sites simple without making backend-capable applications change framework.
-
 `generated project skills = INHERITED-STANDARD + next-standard-v1.profile_skills`. `config/skill-manifest.json` classifies
 distribution, the fixed Next profile owns its Next-specific additions, and **`optional` is never inherited**. Today 17 + 2
 = 19 skills per generated project, out of the Builder's own 20. The manifest controls physical distribution, not context loading.
-
 Exactly three scripts; helper modules are implementation detail. **Never write a script for a reasoning task.**
 **`create-project`** composes the repository in staging, installs, git inits, commits a baseline, and only then moves it
 to the target. Preconditions: phase is `CREATING_PROJECT`, approved specs exist, the fixed Next profile exists, Backend Mode is supported, the target
 does **not** — you persist `CREATING_PROJECT` before running it, and the script asserts that phase and never writes phase
 itself. **If the target exists, STOP**: never overwrite, never merge, never `<slug>-2`.
-
 **`validate-project`** proves the result is ready for a fresh session — location, git baseline, specs, harness, skills,
 stack files, `.mcp.json` and a real `npm ci` / lint / typecheck / build / smoke start — and mid-handoff compares the five
 generated specs byte for byte against the approved ones, because a directory at the target is not proof this handoff put
@@ -164,31 +160,27 @@ the evidence. **`HANDOFF_COMPLETE`.** The target is already validated: report th
 **`RESET`.** Run `reset-builder --yes` and go `IDLE`. Regenerate nothing at either phase.
 
 ## Context checkpoints
-
-Two fixed stops at the macro-phase boundaries — **not** conditional on how full the context looks. Before stopping, the
-next phase, every durable decision and any `pending_action` must already be on disk; if anything still lives only in the
-chat, **do not ask for `/clear` yet**. Then print exactly this and **STOP**, without continuing into the next phase — you
-never run `/clear` yourself, the user does, and you recover from disk:
+Two fixed stops at macro-phase boundaries — **not** conditional on context fullness. A normal `/clear` checkpoint is
+legal only after every durable decision is on disk, the next phase is persisted, and `pending_action = null`; an operational
+restart is a different stop and never masquerades as `/clear`. If anything still lives only in chat or an action is pending,
+**do not ask for `/clear` yet**. Then print exactly this and **STOP**, without continuing into the next phase — you never run `/clear` yourself:
 
 ```
 CONTEXT CHECKPOINT
-
 ✓ Estado persistido
 ✓ Decisiones persistidas
 ✓ Siguiente fase: <PHASE>
-
 Ejecuta:
 1. /clear
 2. continúa
 ```
 
-**B1 — after the Artifact is approved.** Persist `discovery.md`, `design-system.md`, phase `PLANNING`; the next session
-reads those three and starts Planning, without re-reading the Artifact's HTML unless a specific visual contradiction
-appears. **B2 — after human spec approval.** Persist phase `READY_TO_CREATE`; the next session persists
-`CREATING_PROJECT`, creates, validates, hands off and resets.
+**B1 — after the Artifact is approved.** Persist `discovery.md`, `design-system.md`, phase `PLANNING`, confirm
+`pending_action = null`; the next session starts Planning without re-reading the Artifact's HTML unless a specific visual
+contradiction appears. **B2 — after human spec approval.** Persist phase `READY_TO_CREATE`, confirm `pending_action = null`;
+the next session persists `CREATING_PROJECT`, creates, validates, hands off and resets.
 
 ## Verification, environment, model
-
 Close every phase with a check that can fail: not "did the scaffold run?" but "does `<target>/src/` contain files?" **Exit
 code 0 is not proof** — a tool here can exit 0 having installed nothing, and a pipe replaces the command's status with its
 own, so redirect and inspect (`cmd > out.log 2>&1; echo $?`) or test for the artifact that should exist. **"Configured"

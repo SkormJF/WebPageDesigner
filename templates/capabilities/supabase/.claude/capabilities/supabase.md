@@ -8,7 +8,8 @@ project already contains the Supabase MCP and `db-reviewer`; this file owns thei
 Before schema work: authorize → create/select THIS project's database → obtain `project_ref` → rewrite `.mcp.json` to
 `https://mcp.supabase.com/mcp?project_ref=<PROJECT_REF>` → rewrite the inline `supabase_review` URL in
 `.claude/agents/db-reviewer.md` from `__UNSCOPED_UNTIL_FOUNDATION__` to the same ref → commit → persist the restart
-action → tell the human to restart → **STOP**. Never probe another project to test isolation.
+action → print `RESTART REQUIRED — Supabase MCP scope changed. Reinicia Claude Code y luego escribe continúa.` → **STOP**.
+This is an operational restart, **not** a `/clear` context checkpoint. Never probe another project to test isolation.
 
 ```json
 { "pending_action": { "type": "RESTART_FOR_SUPABASE_MCP_SCOPE", "project_ref": "abc123" } }
@@ -23,8 +24,8 @@ reviewer_ref = project_ref parsed from .claude/agents/db-reviewer.md supabase_re
 expected_ref != disk_ref OR expected_ref != reviewer_ref → stay blocked
 ```
 
-Then make one read-only call that must **prove identity, not connectivity**. Only `PASS → pending_action = null`; it is
-never cleared on the way in. A 200 proves a server answered, not which project answered.
+After restart, read state and both scoped files from disk, then make one read-only call that must **prove identity, not connectivity**. Only `PASS → pending_action = null`; it is never cleared on the way in. A 200 proves a server answered,
+not which project answered. Do not emit a normal `/clear` checkpoint while this pending action exists.
 
 ## Builder mutation rules
 

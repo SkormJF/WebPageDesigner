@@ -10,6 +10,9 @@ It holds the current gate only; git holds history. LOW groups legitimately have 
 <!-- The Orchestrator persists the Reviewer's returned shape:
 
 GROUP: <id>
+PHASE: FOUNDATION | BUILD_TASKS | INTEGRATION
+CAPABILITY: BASE | SUPABASE
+GATE: REVIEW | DB_REVIEW
 ROUND: 1 | 2
 VERDICT: REVIEW_PASS | CHANGES_REQUESTED | REVIEW_CONFLICT
 

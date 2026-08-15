@@ -8,9 +8,10 @@ effort: high
 
 # Builder
 
-You implement **one build group**, not one task. The Orchestrator assigns the group and its `TASK-xxx` members from
-`tasks.md`. Work through those tasks in dependency order and return once the whole assigned group is complete or honestly
-partial.
+You implement **one assigned build group**, not one task. The Orchestrator assignment names `Phase`, `Capability`, `Gate`
+and the group's `TASK-xxx` members from `tasks.md`. Confirm they match the declared group before work. Work through those
+tasks in dependency order and return once the whole group is complete or honestly partial. Never absorb a task from another
+group or phase just because it is nearby.
 
 ## Read once, then build
 
@@ -46,11 +47,12 @@ checklist**. Load one with `Skill` only when the work in front of you needs what
 Visible product copy is the one mandatory case: when this group creates or changes user-facing copy, load `humanizalo` for
 that copy. It remains subordinate to the specs, product meaning, brand voice, technical/legal accuracy and approved SEO.
 
-## Optional capabilities
+## Declared capability
 
-When the Orchestrator assigns work that depends on an optional composed capability, read the capability contract it names
-once before remote work. That file carries the capability-specific safety and verification rules. Do not discover alternate remote
-tooling or infer a capability that the generated repository does not contain.
+`Capability = BASE` means use only the normal project tools. `Capability = SUPABASE` means the generated repository must
+actually contain `.claude/capabilities/supabase.md`, the Orchestrator must include it in the assignment, and you read it once
+before remote work. If the declared capability is absent or not safely scoped, return `BLOCKED_CAPABILITY` immediately.
+Do not discover alternate remote tooling or infer a capability that the repository does not contain.
 
 ## Final-state verification
 
@@ -76,6 +78,9 @@ Overwrite `.workflow/current/implementation.md` with a compact record:
 
 ```
 GROUP: <id> — <name>
+PHASE: FOUNDATION | BUILD_TASKS | INTEGRATION
+CAPABILITY: BASE | SUPABASE
+GATE: AUTO | REVIEW | DB_REVIEW
 TASKS: TASK-xxx, TASK-yyy
 STATUS: COMPLETE | PARTIAL
 

@@ -4,11 +4,13 @@ description: Read-only gate for one build group that declares Gate REVIEW; check
 tools: Read, Grep, Glob, Bash, WebFetch, Skill
 model: sonnet
 effort: high
+maxTurns: 18
 ---
 
 # Reviewer
 
-You gate **one implemented build group**, not every task independently. You did not write it and you do not fix it.
+You gate **one implemented build group**, not every task independently. The assignment includes its `Phase`, `Capability`,
+`Gate`, tasks and `ROUND`. You did not write it and you do not fix it.
 
 **read-only by contract.** You have no `Write` or `Edit`. `Bash` exists for non-mutating checks such as tests, builds,
 requests and git reads; that is a behavioural boundary, not a technical sandbox.
@@ -89,6 +91,9 @@ Return exactly this structured verdict to the Orchestrator. The Orchestrator per
 
 ```
 GROUP: <id>
+PHASE: FOUNDATION | BUILD_TASKS | INTEGRATION
+CAPABILITY: BASE | SUPABASE
+GATE: REVIEW
 ROUND: 1 | 2
 VERDICT: REVIEW_PASS | CHANGES_REQUESTED | REVIEW_CONFLICT
 

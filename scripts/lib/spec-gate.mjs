@@ -1,23 +1,14 @@
 /**
  * Mechanical Spec Gate.
  *
- * The first of the three conditions that close Planning:
+ * Mechanical Spec Gate PASS + Spec Reviewer PASS + explicit Human Approval
+ * = READY_TO_CREATE.
  *
- *   Mechanical Spec Gate PASS + Spec Reviewer PASS + explicit Human Approval
- *   = READY_TO_CREATE
- *
- * This half is deterministic and checks only what can be checked without
- * judgement: required files, unresolved placeholders, well-formed IDs, valid
- * requirement/task references, orphan critical requirements, and the presence
- * of required contract sections.
- *
- * It deliberately says nothing about whether the specs are *right*. That is
- * the Spec Reviewer's job, and conflating the two would let a well-formed but
- * wrong specification pass as approved.
- *
- * Helper module, not a fourth top-level script: create-project runs it as a
- * hard precondition, and the Orchestrator may run it directly during
- * SPEC_REVIEW for early feedback.
+ * This module checks only deterministic contract shape: required files/sections,
+ * unresolved placeholders, IDs/references, fixed execution phases, build-group
+ * capability/gate/clear rules, initial task status, and dependency validity.
+ * Whether the plan is semantically good-sized or faithful to the approved
+ * product remains the Spec Reviewer's job.
  *
  *   node scripts/lib/spec-gate.mjs [--dir <path>]
  */
@@ -27,20 +18,14 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { paths, SPEC_FILES, ui, parseArgs, parseBackendMode } from "./common.mjs";
 
-/**
- * Sections each spec must contain. Kept here rather than in a config file
- * because the gate is the only consumer -- a second copy would be one more
- * thing to drift.
- */
 const REQUIRED_SECTIONS = {
   "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions in force"],
   "requirements.md": ["## Functional requirements", "## Non-functional requirements"],
   "design.md": ["## Architecture", "## Routes", "## Backend", "## Security"],
   "design-system.md": ["## Approval", "## Color", "## Typography", "## Interaction states"],
-  "tasks.md": ["## Build groups", "## Dependency order"],
+  "tasks.md": ["## Dependency order", "## Build groups", "### Fixed phase ownership"],
 };
 
-/** Markers that mean a decision was never made. */
 const PLACEHOLDER_PATTERNS = [
   { label: "unresolved [TBD]", re: /\[TBD/g },
   { label: "unremoved <!-- SLOT: --> guidance", re: /<!--\s*SLOT:/g },
@@ -50,17 +35,32 @@ const PLACEHOLDER_PATTERNS = [
 
 const REQ_ID = /\bREQ-\d{3}\b/g;
 const TASK_ID = /\bTASK-\d{3}\b/g;
+const PHASES = ["FOUNDATION", "BUILD_TASKS", "INTEGRATION"];
+const PHASE_ORDER = new Map(PHASES.map((phase, index) => [phase, index]));
+const CAPABILITIES = ["BASE", "SUPABASE"];
+const GATES = ["AUTO", "REVIEW", "DB_REVIEW"];
+const RISKS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+
+const tableRows = (text) =>
+  text
+    .split(/\r?\n/)
+    .filter((line) => /^\s*\|/.test(line) && !/^\s*\|[\s|:-]+\|?\s*$/.test(line));
+
+const cellsOf = (line) => line.split("|").slice(1, -1).map((cell) => cell.trim());
+
+const sectionBody = (text, heading) => {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text.match(new RegExp(`${escaped}\\s*([\\s\\S]*?)(?=\\n---|\\n## |$)`))?.[1] ?? "";
+};
 
 export function runSpecGate(dir = paths.builderCurrent) {
   const findings = [];
   const add = (file, message) => findings.push({ file, message });
 
-  /* 1 — required files */
+  /* 1 — required files. */
   const missing = SPEC_FILES.filter((f) => !fs.existsSync(path.join(dir, f)));
   for (const f of missing) add(f, "required specification is missing");
-  if (missing.length === SPEC_FILES.length) {
-    return { pass: false, findings, checked: 0 };
-  }
+  if (missing.length === SPEC_FILES.length) return { pass: false, findings, checked: 0 };
 
   const contents = {};
   for (const f of SPEC_FILES) {
@@ -68,7 +68,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
     if (fs.existsSync(file)) contents[f] = fs.readFileSync(file, "utf8");
   }
 
-  /* 2 — unresolved placeholders */
+  /* 2 — unresolved template markers. */
   for (const [file, text] of Object.entries(contents)) {
     for (const { label, re } of PLACEHOLDER_PATTERNS) {
       const hits = text.match(re);
@@ -76,7 +76,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
   }
 
-  /* 3 — required contract sections */
+  /* 3 — required contract sections. */
   for (const [file, sections] of Object.entries(REQUIRED_SECTIONS)) {
     const text = contents[file];
     if (text === undefined) continue;
@@ -85,9 +85,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
   }
 
-  /* 4 — fixed platform and backend mode. These are deliberately mechanical:
-     Planning does not choose a framework, and the generated capability set depends
-     on whether this product actually owns a Supabase backend. */
+  /* 4 — fixed platform and backend mode. */
   const designText = contents["design.md"] ?? "";
   const backendMode = parseBackendMode(designText);
   if (!backendMode) add("design.md", "Backend Mode must be exactly `none` or `supabase`");
@@ -95,95 +93,131 @@ export function runSpecGate(dir = paths.builderCurrent) {
     add("design.md", `unsupported Backend Mode ${backendMode.slice("unsupported:".length)}; use none or supabase`);
   }
 
-  /* 5 — ID hygiene and cross-references.
-     A requirement nobody implements and a task tracing to nothing are the same
-     defect seen from opposite ends, so both directions are checked. */
-  const reqIds = new Set(
-    [...(contents["requirements.md"] ?? "").matchAll(REQ_ID)].map((m) => m[0]),
-  );
-  const taskIds = new Set([...(contents["tasks.md"] ?? "").matchAll(TASK_ID)].map((m) => m[0]));
+  const requirementsText = contents["requirements.md"] ?? "";
+  const tasksText = contents["tasks.md"] ?? "";
 
+  /* 5 — requirement declarations. */
+  const reqIds = new Set([...requirementsText.matchAll(REQ_ID)].map((m) => m[0]));
   if (reqIds.size === 0) add("requirements.md", "no REQ-nnn identifiers found");
-  if (taskIds.size === 0) add("tasks.md", "no TASK-nnn identifiers found");
 
-  const reqsCitedByTasks = new Set(
-    [...(contents["tasks.md"] ?? "").matchAll(REQ_ID)].map((m) => m[0]),
-  );
-
-  for (const id of reqsCitedByTasks) {
-    if (!reqIds.has(id)) add("tasks.md", `references ${id}, which requirements.md does not define`);
-  }
-
-  /* An uncovered MUST is a gate failure; an uncovered SHOULD/COULD is not.
-     Read priority from the row the ID appears on. */
   const withdrawn = new Set();
-  const withdrawnSection = (contents["requirements.md"] ?? "").split("## Withdrawn")[1] ?? "";
+  const withdrawnSection = requirementsText.split("## Withdrawn")[1] ?? "";
   for (const m of withdrawnSection.matchAll(REQ_ID)) withdrawn.add(m[0]);
 
-  /* Only markdown table rows carry declarations. A fenced dependency graph
-     mentions the same IDs and is not a declaration of anything -- reading it
-     as one reports every node in the graph as an untraced task. */
-  const tableRows = (text) =>
-    text.split(/\r?\n/).filter((line) => /^\s*\|/.test(line) && !/^\s*\|[\s|:-]+\|?\s*$/.test(line));
-
-  for (const line of tableRows(contents["requirements.md"] ?? "")) {
-    const found = line.match(REQ_ID);
-    if (!found) continue;
-    const id = found[0];
-    if (withdrawn.has(id)) continue;
-    if (!/\bMUST\b/.test(line)) continue;
-    if (!reqsCitedByTasks.has(id)) add("tasks.md", `no task covers ${id}, a MUST requirement`);
-  }
-
-  /* 6 — every task links to at least one requirement, one build group and one risk. */
-  const tasksText = contents["tasks.md"] ?? "";
-  const taskRows = tableRows(tasksText).filter((line) => line.match(TASK_ID));
-
-  const groupsSection = tasksText.match(/## Build groups\s*([\s\S]*?)(?=\n---|\n## )/)?.[1] ?? "";
+  /* 6 — build groups, fixed phases, capability, gate and clear contract. */
+  const groupsSection = sectionBody(tasksText, "## Build groups");
   const groupRows = tableRows(groupsSection);
   const groups = new Map();
   let extraClearCount = 0;
 
   for (const line of groupRows) {
-    const cells = line.split("|").slice(1, -1).map((cell) => cell.trim());
-    if (cells.length < 5 || cells[0] === "Group") continue;
-    const [group, phase, _purpose, gate, clearAfter] = cells;
+    const cells = cellsOf(line);
+    if (cells[0] === "Group") continue;
+    if (cells.length < 6) {
+      add("tasks.md", `build-group row has ${cells.length} columns; expected Group, Phase, Purpose, Capability, Gate, Clear after`);
+      continue;
+    }
+
+    const [group, phase, _purpose, capability, gate, clearAfter] = cells;
     if (!group) continue;
     if (groups.has(group)) add("tasks.md", `build group ${group} is declared more than once`);
-    groups.set(group, { phase, gate, clearAfter, risks: [] });
-    if (!["FOUNDATION", "BUILD_TASKS", "INTEGRATION"].includes(phase)) {
-      add("tasks.md", `build group ${group} has invalid phase ${phase || "(empty)"}`);
+
+    const meta = { phase, capability, gate, clearAfter, risks: [] };
+    groups.set(group, meta);
+
+    if (!PHASES.includes(phase)) add("tasks.md", `build group ${group} has invalid Phase ${phase || "(empty)"}`);
+    if (!CAPABILITIES.includes(capability)) {
+      add("tasks.md", `build group ${group} has invalid Capability ${capability || "(empty)"}`);
     }
-    if (!["AUTO", "REVIEW", "DB_REVIEW"].includes(gate)) {
-      add("tasks.md", `build group ${group} has invalid Gate ${gate || "(empty)"}`);
-    }
+    if (!GATES.includes(gate)) add("tasks.md", `build group ${group} has invalid Gate ${gate || "(empty)"}`);
     if (!["YES", "NO"].includes(clearAfter)) {
       add("tasks.md", `build group ${group} has invalid Clear after value ${clearAfter || "(empty)"}`);
     }
-    if (phase === "BUILD_TASKS" && clearAfter === "YES") extraClearCount += 1;
+
+    if (clearAfter === "YES") {
+      if (phase !== "BUILD_TASKS") {
+        add("tasks.md", `build group ${group} requests Clear after = YES outside BUILD_TASKS`);
+      } else {
+        extraClearCount += 1;
+      }
+    }
+
+    if (capability === "SUPABASE" && backendMode !== "supabase") {
+      add("tasks.md", `build group ${group} requires Capability SUPABASE but design.md Backend Mode is not supabase`);
+    }
+    if (gate === "DB_REVIEW" && capability !== "SUPABASE") {
+      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but Capability is not SUPABASE`);
+    }
+    if (gate === "DB_REVIEW" && backendMode !== "supabase") {
+      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but design.md Backend Mode is not supabase`);
+    }
   }
 
   if (groups.size === 0) add("tasks.md", "no build groups declared");
   if (extraClearCount > 1) add("tasks.md", "more than one BUILD_TASKS group requests Clear after = YES");
 
-  const taskCountByGroup = new Map();
-  for (const line of taskRows) {
-    const task = line.match(TASK_ID);
-    if (!task) continue;
-    if (!line.match(REQ_ID)) add("tasks.md", `${task[0]} links to no requirement`);
+  for (const phase of PHASES) {
+    if (![...groups.values()].some((meta) => meta.phase === phase)) {
+      add("tasks.md", `fixed phase ${phase} has no declared build group`);
+    }
+  }
 
-    const cells = line.split("|").slice(1, -1).map((cell) => cell.trim());
-    const group = cells[4];
-    const risk = cells[5];
-    if (!group || !groups.has(group)) {
-      add("tasks.md", `${task[0]} belongs to undeclared build group ${group || "(empty)"}`);
-    } else {
-      taskCountByGroup.set(group, (taskCountByGroup.get(group) ?? 0) + 1);
-      groups.get(group).risks.push(risk);
+  /* 7 — task declarations and requirement links.
+     Only table rows are declarations; dependency diagrams may repeat IDs. */
+  const taskRows = tableRows(tasksText).filter((line) => line.match(TASK_ID));
+  const tasks = new Map();
+  const reqsCitedByTasks = new Set();
+
+  for (const line of taskRows) {
+    const cells = cellsOf(line);
+    if (cells[0] === "ID") continue;
+    const idMatch = cells[0]?.match(/^TASK-\d{3}$/);
+    if (!idMatch) continue;
+    const id = idMatch[0];
+
+    if (tasks.has(id)) {
+      add("tasks.md", `${id} is declared more than once`);
+      continue;
     }
-    if (!["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(risk)) {
-      add("tasks.md", `${task[0]} has invalid Risk ${risk || "(empty)"}`);
+    if (cells.length < 8) {
+      add("tasks.md", `${id} row has ${cells.length} columns; expected 8 task columns`);
+      continue;
     }
+
+    const [_taskId, _name, requirementsCell, dependsCell, group, risk, _acceptance, status] = cells;
+    const linkedReqs = [...requirementsCell.matchAll(REQ_ID)].map((m) => m[0]);
+    if (linkedReqs.length === 0) add("tasks.md", `${id} links to no requirement`);
+    for (const req of linkedReqs) {
+      reqsCitedByTasks.add(req);
+      if (!reqIds.has(req)) add("tasks.md", `references ${req}, which requirements.md does not define`);
+    }
+
+    if (!groups.has(group)) add("tasks.md", `${id} belongs to undeclared build group ${group || "(empty)"}`);
+    if (!RISKS.includes(risk)) add("tasks.md", `${id} has invalid Risk ${risk || "(empty)"}`);
+    if (status !== "PENDING") add("tasks.md", `${id} must start PENDING before project generation; found ${status || "(empty)"}`);
+
+    const deps = [...dependsCell.matchAll(TASK_ID)].map((m) => m[0]);
+    if (deps.includes(id)) add("tasks.md", `${id} depends on itself`);
+
+    tasks.set(id, { group, risk, deps });
+    if (groups.has(group)) groups.get(group).risks.push(risk);
+  }
+
+  if (tasks.size === 0) add("tasks.md", "no TASK-nnn declarations found");
+
+  /* MUST coverage. */
+  for (const line of tableRows(requirementsText)) {
+    const found = line.match(REQ_ID);
+    if (!found) continue;
+    const id = found[0];
+    if (withdrawn.has(id) || !/\bMUST\b/.test(line)) continue;
+    if (!reqsCitedByTasks.has(id)) add("tasks.md", `no task covers ${id}, a MUST requirement`);
+  }
+
+  /* Every declared group must have work; gate/risk compatibility is mechanical. */
+  const taskCountByGroup = new Map();
+  for (const task of tasks.values()) {
+    if (groups.has(task.group)) taskCountByGroup.set(task.group, (taskCountByGroup.get(task.group) ?? 0) + 1);
   }
 
   for (const [group, meta] of groups.entries()) {
@@ -191,23 +225,62 @@ export function runSpecGate(dir = paths.builderCurrent) {
       add("tasks.md", `build group ${group} contains no task`);
       continue;
     }
-    const validRisks = meta.risks.filter((risk) => ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(risk));
+
+    const validRisks = meta.risks.filter((risk) => RISKS.includes(risk));
     const allLow = validRisks.length > 0 && validRisks.every((risk) => risk === "LOW");
     const hasNonLow = validRisks.some((risk) => risk !== "LOW");
     const hasCritical = validRisks.includes("CRITICAL");
-    if (allLow && meta.gate !== "AUTO") {
-      add("tasks.md", `build group ${group} is all LOW and must use Gate AUTO`);
-    }
+
+    if (allLow && meta.gate !== "AUTO") add("tasks.md", `build group ${group} is all LOW and must use Gate AUTO`);
     if (hasNonLow && meta.gate === "AUTO") {
       add("tasks.md", `build group ${group} contains non-LOW work and cannot use Gate AUTO`);
     }
     if (meta.gate === "DB_REVIEW" && !hasCritical) {
       add("tasks.md", `build group ${group} uses Gate DB_REVIEW but contains no CRITICAL task`);
     }
-    if (meta.gate === "DB_REVIEW" && backendMode !== "supabase") {
-      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but design.md Backend Mode is not supabase`);
+  }
+
+  /* 8 — dependency targets, phase direction and cycles. */
+  for (const [id, task] of tasks.entries()) {
+    const taskPhase = groups.get(task.group)?.phase;
+    for (const dep of task.deps) {
+      if (!tasks.has(dep)) {
+        add("tasks.md", `${id} depends on undeclared task ${dep}`);
+        continue;
+      }
+      const depTask = tasks.get(dep);
+      const depPhase = groups.get(depTask.group)?.phase;
+      if (PHASE_ORDER.has(taskPhase) && PHASE_ORDER.has(depPhase) && PHASE_ORDER.get(depPhase) > PHASE_ORDER.get(taskPhase)) {
+        add("tasks.md", `${id} in ${taskPhase} depends on later-phase ${dep} in ${depPhase}`);
+      }
     }
   }
+
+  const visiting = new Set();
+  const visited = new Set();
+  let cycleReported = false;
+
+  const visit = (id, stack) => {
+    if (visited.has(id) || cycleReported) return;
+    if (visiting.has(id)) {
+      const start = stack.indexOf(id);
+      const cycle = [...stack.slice(start), id].join(" -> ");
+      add("tasks.md", `task dependency cycle detected: ${cycle}`);
+      cycleReported = true;
+      return;
+    }
+
+    visiting.add(id);
+    stack.push(id);
+    for (const dep of tasks.get(id)?.deps ?? []) {
+      if (tasks.has(dep)) visit(dep, stack);
+    }
+    stack.pop();
+    visiting.delete(id);
+    visited.add(id);
+  };
+
+  for (const id of tasks.keys()) visit(id, []);
 
   return { pass: findings.length === 0, findings, checked: Object.keys(contents).length };
 }
@@ -221,11 +294,6 @@ export function reportSpecGate(result) {
   for (const { file, message } of result.findings) ui.detail(`${file}: ${message}`);
 }
 
-/* Direct invocation.
-   pathToFileURL, not string concatenation: on Windows import.meta.url is
-   `file:///C:/...` while a hand-built `file://` + argv[1] yields
-   `file://C:/...`. They never match, the block silently never runs, and the
-   script exits 0 having done nothing -- which reads as a pass. */
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = parseArgs(process.argv.slice(2));
   const dir = typeof args.dir === "string" ? path.resolve(args.dir) : paths.builderCurrent;

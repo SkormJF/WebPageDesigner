@@ -10,6 +10,9 @@ status lives in `tasks.md`; code history lives in git.
 <!-- The Builder writes this shape:
 
 GROUP: <id> — <name>
+PHASE: FOUNDATION | BUILD_TASKS | INTEGRATION
+CAPABILITY: BASE | SUPABASE
+GATE: AUTO | REVIEW | DB_REVIEW
 TASKS: TASK-xxx, TASK-yyy
 STATUS: COMPLETE | PARTIAL
 

@@ -117,11 +117,12 @@ The skill set is deterministic: the 17 marked `inherited-standard` plus the fixe
 classified `optional`. It is **never** copied automatically. Shipping it by default would turn "requires an
 explicit decision" into a sentence in a document, with the skill already sitting in the repository.
 
-Its own lifecycle runs from `READY_TO_BUILD` to `DONE` in **build groups**. Tasks remain the traceability and
-acceptance units, but related tasks are implemented continuously by one Builder instead of paying for an agent cycle per
-row. Build groups declare the gate up front: AUTO for all-LOW work, REVIEW for the generic Reviewer without direct edit tools,
-and DB_REVIEW for CRITICAL Supabase/data work through a dedicated project-scoped read-only MCP. A correction gets one targeted re-review, never a fresh audit.
-`HEAD` is always the last approved group.
+Its lifecycle uses the fixed implementation phases `FOUNDATION → BUILD_TASKS → INTEGRATION`, followed by
+preview/QA/deploy. Tasks remain traceability and acceptance units; **build groups are the execution units**. Planning
+creates the minimum meaningful groups inside those fixed phases, and every group declares `Capability` (`BASE` or
+`SUPABASE`) separately from its `Gate` (`AUTO`, `REVIEW`, `DB_REVIEW`). Related tasks therefore run continuously through
+one Builder instead of paying for an agent cycle per row. A correction gets one targeted re-review, never a fresh audit;
+after the second failed review the harness stops for a human decision. `HEAD` is always the last approved group.
 
 The inherited skill library stays available for future features and redesigns. Agents load the full body of a skill on
 demand for the current scope rather than walking the catalogue before they work.

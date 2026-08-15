@@ -67,7 +67,7 @@ Do the specs agree with each other?
 
 Can every piece be traced to a reason, and every reason to a piece?
 
-- Every task links to at least one requirement, has one valid `Risk`, and belongs to exactly one declared build group; every group declares a valid `Gate`.
+- Every task links to at least one requirement, has one valid `Risk`, and belongs to exactly one declared build group; every group declares fixed `Phase`, valid `Capability`, valid `Gate` and `Clear after`.
 - Every requirement is covered by at least one task, or is explicitly and justifiably out of scope.
 - Requirements trace back to something in `discovery.md` — a requirement nobody asked for is scope the human
   never approved, and it is as much a finding as a missing one.
@@ -78,15 +78,23 @@ Can every piece be traced to a reason, and every reason to a piece?
 Can this be built as specified on the fixed Next baseline and the declared Backend Mode?
 
 - No requirement that the fixed Next baseline plus declared integrations/backend mode cannot satisfy without an undeclared dependency.
-- Dependencies between tasks form a workable order — no task needing the output of one scheduled after it.
-- Build groups preserve that order and are real context-sharing batches, not one routine LOW task per group. A one-task
-  group needs a dependency boundary or HIGH/CRITICAL risk. At most one BUILD_TASKS group may set `Clear after = YES`.
-- `design.md` declares Backend Mode exactly `none` or `supabase`; DB-specific tasks exist only when it is `supabase`.
-- Gate/capability mapping is coherent before dispatch: all-LOW groups use `AUTO`; MEDIUM/HIGH groups do not use AUTO;
-  CRITICAL Supabase/schema/RLS/data-integrity uses `DB_REVIEW`; other critical surfaces use `REVIEW` unless a dedicated
-  capability gate is explicitly defined.
-- A CRITICAL Supabase/schema/RLS/data-integrity group does not also contain unrelated MEDIUM/HIGH non-DB work; split
-  the group when one gate could not competently review its full surface.
+- The execution phases are exactly `FOUNDATION`, `BUILD_TASKS`, `INTEGRATION`; Planning did not invent another phase.
+  FOUNDATION contains shared prerequisites, BUILD_TASKS product features, and INTEGRATION only wiring/regression of work
+  already built — not deferred feature implementation.
+- Dependencies form an acyclic workable order. A task may depend within its phase or on an earlier phase, never a later one;
+  `Depends on` is a real prerequisite, not merely probable implementation order.
+- Planning went **groups first, tasks second**. Groups are meaningful context/capability boundaries, not one routine LOW
+  task each; tasks are outcome-based, not one per component/file/route/REQ. Repeated one-task LOW groups or component-per-task
+  decomposition that would create needless agent cycles is a **MAJOR efficiency defect**, not harmless style.
+- Start from the minimum useful groups and split only for dependency, context, capability or review boundaries. At most one
+  BUILD_TASKS group may set `Clear after = YES`; FOUNDATION/INTEGRATION groups never do.
+- `design.md` declares Backend Mode exactly `none` or `supabase`. `Capability = SUPABASE` exists only with backend
+  `supabase`; DB-specific tasks do not exist with `none`.
+- Gate/capability mapping is coherent before dispatch: all-LOW groups use `AUTO`; non-LOW groups do not; `DB_REVIEW`
+  requires `Capability = SUPABASE` and CRITICAL Supabase/schema/RLS/data-integrity work. Other critical surfaces use
+  `REVIEW` unless a dedicated capability gate is explicitly defined.
+- A DB_REVIEW group does not also contain unrelated MEDIUM/HIGH non-DB work; split when one gate cannot competently review
+  the full surface.
 - Derived and calculated values have a stated mechanism, not just a stated result.
 - Security-relevant requirements (access control, role separation, data isolation) have an enforcement point
   named in `design.md`, not left implied by the UI.
@@ -110,7 +118,7 @@ This is the check nobody else performs, and the one most worth your attention.
 | Severity | Meaning | Effect |
 |---|---|---|
 | `BLOCKER` | The specs cannot produce a correct product. Contradiction, missing requirement with no owner, security requirement with no enforcement point, infeasible on the declared stack. | **SPEC_FAIL** |
-| `MAJOR` | A real defect that will surface during implementation and cost a rework. Untraceable requirement, drifted approved value, task graph that cannot be executed in order. | **SPEC_FAIL** |
+| `MAJOR` | A real defect that will surface during implementation or waste the harness materially. Untraceable requirement, drifted approved value, invalid task graph, or needless microtask/group fragmentation that recreates per-task agent cycles. | **SPEC_FAIL** |
 | `MINOR` | Worth fixing, does not endanger the build. Wording, a clarification, a non-load-bearing inconsistency. | Reported, does not fail |
 
 **Any BLOCKER or any MAJOR means `SPEC_FAIL`.** There is no aggregate score and no "mostly fine". One MAJOR

@@ -118,13 +118,13 @@ describe("skill distribution", () => {
 
 /* ------------------------------------------------------------------ */
 
-describe("Spec Gate understands build groups and risk", () => {
-  const makeSpecs = (tasksText) => {
+describe("Spec Gate enforces fixed phases, capabilities, gates and dependency shape", () => {
+  const makeSpecs = (tasksText, backendMode = "none", requirementsText = null) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wpd-spec-groups-"));
     const files = {
       "PROJECT.md": "# Project\n\n## Identity\nX\n\n## What this is\nX\n\n## Scope\nX\n\n## Decisions in force\nX\n",
-      "requirements.md": "# Requirements\n\n## Functional requirements\n| ID | Priority | Requirement |\n|---|---|---|\n| REQ-001 | MUST | The system shall work. |\n\n## Non-functional requirements\nNone.\n",
-      "design.md": "# Design\n\n## Architecture\nX\n\n- **Baseline deviations:** none\n\n## Routes\nX\n\n## Backend\n**Mode:** none\n\n## Security\nX\n",
+      "requirements.md": requirementsText ?? "# Requirements\n\n## Functional requirements\n| ID | Priority | Requirement |\n|---|---|---|\n| REQ-001 | MUST | The system shall work. |\n\n## Non-functional requirements\nNone.\n",
+      "design.md": `# Design\n\n## Architecture\nX\n\n- **Baseline deviations:** none\n\n## Routes\nX\n\n## Backend\n**Mode:** ${backendMode}\n\n## Security\nX\n`,
       "design-system.md": "# DS\n\n## Approval\nX\n\n## Color\nX\n\n## Typography\nX\n\n## Interaction states\nX\n",
       "tasks.md": tasksText,
     };
@@ -135,96 +135,137 @@ describe("Spec Gate understands build groups and risk", () => {
   const validTasks = `# Tasks
 
 ## Dependency order
-TASK-001
+TASK-001 -> TASK-002 -> TASK-003
 
 ## Build groups
-| Group | Phase | Purpose | Gate | Clear after |
-|---|---|---|---|---|
-| FOUNDATION | FOUNDATION | baseline | AUTO | NO |
+| Group | Phase | Purpose | Capability | Gate | Clear after |
+|---|---|---|---|---|---|
+| FOUNDATION | FOUNDATION | baseline | BASE | AUTO | NO |
+| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |
+| INTEGRATION | INTEGRATION | wiring | BASE | REVIEW | NO |
+
+### Fixed phase ownership
+FOUNDATION shared prerequisites. BUILD_TASKS features. INTEGRATION wiring.
 
 ## Foundation
 | ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
 |---|---|---|---|---|---|---|---|
 | TASK-001 | Baseline | REQ-001 | — | FOUNDATION | LOW | Build succeeds. | PENDING |
+
+## Features
+| ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
+|---|---|---|---|---|---|---|---|
+| TASK-002 | Feature outcome | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Feature works. | PENDING |
+
+## Integration
+| ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
+|---|---|---|---|---|---|---|---|
+| TASK-003 | Integrated outcome | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Integrated flow works. | PENDING |
 `;
 
-  test("accepts a task with one declared group and valid risk", () => {
-    const dir = makeSpecs(validTasks);
+  const run = (tasks, backend = "none") => {
+    const dir = makeSpecs(tasks, backend);
     try {
-      assert.equal(runSpecGate(dir).pass, true);
+      return runSpecGate(dir);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  };
+
+  test("accepts one valid group in each fixed phase", () => {
+    assert.equal(run(validTasks).pass, true);
   });
 
-  test("rejects undeclared groups and invalid risk", () => {
-    const bad = validTasks.replace("| FOUNDATION | LOW |", "| MISSING | EXTREME |");
-    const dir = makeSpecs(bad);
-    try {
-      const result = runSpecGate(dir);
-      assert.equal(result.pass, false);
-      assert.ok(result.findings.some((f) => /undeclared build group MISSING/.test(f.message)));
-      assert.ok(result.findings.some((f) => /invalid Risk EXTREME/.test(f.message)));
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-
-  test("rejects an unknown build-group Gate", () => {
-    const bad = validTasks.replace("| FOUNDATION | FOUNDATION | baseline | AUTO | NO |", "| FOUNDATION | FOUNDATION | baseline | SURPRISE | NO |");
-    const dir = makeSpecs(bad);
-    try {
-      const result = runSpecGate(dir);
-      assert.equal(result.pass, false);
-      assert.ok(result.findings.some((f) => /invalid Gate SURPRISE/.test(f.message)));
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  test("rejects an AUTO gate for non-LOW work", () => {
-    const bad = validTasks.replace("| FOUNDATION | LOW |", "| FOUNDATION | HIGH |");
-    const dir = makeSpecs(bad);
-    try {
-      const result = runSpecGate(dir);
-      assert.equal(result.pass, false);
-      assert.ok(result.findings.some((f) => /contains non-LOW work and cannot use Gate AUTO/.test(f.message)));
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  test("rejects DB_REVIEW without a CRITICAL task", () => {
-    const bad = validTasks.replace("| FOUNDATION | FOUNDATION | baseline | AUTO | NO |", "| FOUNDATION | FOUNDATION | baseline | DB_REVIEW | NO |");
-    const dir = makeSpecs(bad);
-    try {
-      const result = runSpecGate(dir);
-      assert.equal(result.pass, false);
-      assert.ok(result.findings.some((f) => /uses Gate DB_REVIEW but contains no CRITICAL task/.test(f.message)));
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  test("allows at most one optional clear boundary inside BUILD_TASKS", () => {
+  test("rejects a missing fixed phase", () => {
     const bad = validTasks
-      .replace(
-        "| FOUNDATION | FOUNDATION | baseline | AUTO | NO |",
-        "| FOUNDATION | FOUNDATION | baseline | AUTO | NO |\n| BUILD-01 | BUILD_TASKS | one | AUTO | YES |\n| BUILD-02 | BUILD_TASKS | two | AUTO | YES |",
-      )
-      .replace(
-        "| TASK-001 | Baseline | REQ-001 | — | FOUNDATION | LOW | Build succeeds. | PENDING |",
-        "| TASK-001 | Baseline | REQ-001 | — | FOUNDATION | LOW | Build succeeds. | PENDING |\n| TASK-002 | Feature | REQ-001 | TASK-001 | BUILD-01 | LOW | Works. | PENDING |\n| TASK-003 | Feature 2 | REQ-001 | TASK-002 | BUILD-02 | LOW | Works. | PENDING |",
-      );
-    const dir = makeSpecs(bad);
-    try {
-      const result = runSpecGate(dir);
-      assert.equal(result.pass, false);
-      assert.ok(result.findings.some((f) => /more than one BUILD_TASKS group requests Clear after = YES/.test(f.message)));
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
+      .replace("| INTEGRATION | INTEGRATION | wiring | BASE | REVIEW | NO |\n", "")
+      .replace("| TASK-003 | Integrated outcome | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Integrated flow works. | PENDING |\n", "");
+    const result = run(bad);
+    assert.equal(result.pass, false);
+    assert.ok(result.findings.some((f) => /fixed phase INTEGRATION has no declared build group/.test(f.message)));
+  });
+
+  test("rejects unknown capability and gate", () => {
+    const bad = validTasks.replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+      "| BUILD-01 | BUILD_TASKS | features | MAGIC | SURPRISE | NO |");
+    const result = run(bad);
+    assert.ok(result.findings.some((f) => /invalid Capability MAGIC/.test(f.message)));
+    assert.ok(result.findings.some((f) => /invalid Gate SURPRISE/.test(f.message)));
+  });
+
+  test("AUTO is all-LOW only", () => {
+    const bad = validTasks.replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+      "| BUILD-01 | BUILD_TASKS | features | BASE | AUTO | NO |");
+    const result = run(bad);
+    assert.ok(result.findings.some((f) => /contains non-LOW work and cannot use Gate AUTO/.test(f.message)));
+  });
+
+  test("SUPABASE capability is impossible on Backend Mode none", () => {
+    const bad = validTasks.replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+      "| BUILD-01 | BUILD_TASKS | features | SUPABASE | REVIEW | NO |");
+    const result = run(bad, "none");
+    assert.ok(result.findings.some((f) => /requires Capability SUPABASE.*Backend Mode is not supabase/.test(f.message)));
+  });
+
+  test("DB_REVIEW requires SUPABASE capability and CRITICAL work", () => {
+    const noCapability = validTasks.replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+      "| BUILD-01 | BUILD_TASKS | features | BASE | DB_REVIEW | NO |");
+    let result = run(noCapability, "supabase");
+    assert.ok(result.findings.some((f) => /uses Gate DB_REVIEW but Capability is not SUPABASE/.test(f.message)));
+
+    const noCritical = validTasks.replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+      "| BUILD-01 | BUILD_TASKS | features | SUPABASE | DB_REVIEW | NO |");
+    result = run(noCritical, "supabase");
+    assert.ok(result.findings.some((f) => /uses Gate DB_REVIEW but contains no CRITICAL task/.test(f.message)));
+  });
+
+  test("accepts a correctly scoped critical Supabase group", () => {
+    const good = validTasks
+      .replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+        "| BUILD-01 | BUILD_TASKS | features | SUPABASE | DB_REVIEW | NO |")
+      .replace("| TASK-002 | Feature outcome | REQ-001 | TASK-001 | BUILD-01 | MEDIUM |",
+        "| TASK-002 | Feature outcome | REQ-001 | TASK-001 | BUILD-01 | CRITICAL |");
+    assert.equal(run(good, "supabase").pass, true);
+  });
+
+  test("Clear after YES is allowed at most once and only in BUILD_TASKS", () => {
+    const outside = validTasks.replace("| FOUNDATION | FOUNDATION | baseline | BASE | AUTO | NO |",
+      "| FOUNDATION | FOUNDATION | baseline | BASE | AUTO | YES |");
+    let result = run(outside);
+    assert.ok(result.findings.some((f) => /requests Clear after = YES outside BUILD_TASKS/.test(f.message)));
+
+    const twice = validTasks
+      .replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+        "| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | YES |\n| BUILD-02 | BUILD_TASKS | more | BASE | AUTO | YES |")
+      .replace("## Integration\n", `| TASK-004 | More build work | REQ-001 | TASK-001 | BUILD-02 | LOW | More works. | PENDING |\n\n## Integration\n`);
+    result = run(twice);
+    assert.ok(result.findings.some((f) => /more than one BUILD_TASKS group requests Clear after = YES/.test(f.message)));
+  });
+
+  test("every task must start PENDING", () => {
+    const bad = validTasks.replace("| Integrated flow works. | PENDING |", "| Integrated flow works. | ACTIVE |");
+    const result = run(bad);
+    assert.ok(result.findings.some((f) => /TASK-003 must start PENDING/.test(f.message)));
+  });
+
+  test("rejects undeclared and backward-across-phase dependencies", () => {
+    const undeclared = validTasks.replace("| TASK-002 | Feature outcome | REQ-001 | TASK-001 |",
+      "| TASK-002 | Feature outcome | REQ-001 | TASK-999 |");
+    let result = run(undeclared);
+    assert.ok(result.findings.some((f) => /TASK-002 depends on undeclared task TASK-999/.test(f.message)));
+
+    const backward = validTasks.replace("| TASK-001 | Baseline | REQ-001 | — |",
+      "| TASK-001 | Baseline | REQ-001 | TASK-003 |");
+    result = run(backward);
+    assert.ok(result.findings.some((f) => /TASK-001 in FOUNDATION depends on later-phase TASK-003 in INTEGRATION/.test(f.message)));
+  });
+
+  test("rejects dependency cycles", () => {
+    const bad = validTasks
+      .replace("| TASK-001 | Baseline | REQ-001 | — |", "| TASK-001 | Baseline | REQ-001 | TASK-002 |")
+      .replace("| TASK-002 | Feature outcome | REQ-001 | TASK-001 |", "| TASK-002 | Feature outcome | REQ-001 | TASK-001 |");
+    const result = run(bad);
+    assert.ok(result.findings.some((f) => /dependency cycle detected/.test(f.message)));
   });
 });
 
@@ -327,6 +368,50 @@ describe("fixed platform ownership", () => {
       assert.doesNotMatch(source, /config\.default_stack_profile/);
       assert.doesNotMatch(source, /readDeclaredProfile|parseDeclaredProfile|PROFILE_MISMATCH/);
     }
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("agent ownership and Next harness integrity", () => {
+  test("the Factory has only spec-reviewer; Planner belongs to generated projects", () => {
+    const factoryAgents = fs.readdirSync(path.join(ROOT, ".claude", "agents")).filter((name) => name.endsWith(".md")).sort();
+    const generatedAgents = fs.readdirSync(path.join(ROOT, "templates/common/.claude/agents")).filter((name) => name.endsWith(".md")).sort();
+    assert.deepEqual(factoryAgents, ["spec-reviewer.md"]);
+    assert.deepEqual(generatedAgents, ["builder.md", "planner.md", "reviewer.md"]);
+  });
+
+  test("Next cannot rewrite the repository-owned CLAUDE.md", () => {
+    const config = read("templates/stacks/next-standard-v1/next.config.ts");
+    const profile = flat("config/stack-profiles/next-standard-v1.json");
+    const harness = flat("templates/common/CLAUDE.md");
+    assert.match(config, /agentRules:\s*false/);
+    assert.match(profile, /agent-rule generation is disabled/i);
+    assert.match(harness, /node_modules\/next\/dist\/docs/);
+  });
+
+  test("the inherited Planner is dormant during initial build and re-enters fixed phases only after approved future work", () => {
+    const planner = flat("templates/common/.claude/agents/planner.md");
+    const harness = flat("templates/common/CLAUDE.md");
+    assert.match(planner, /not part of the initial build loop/i);
+    assert.match(planner, /REENTRY: FOUNDATION \| BUILD_TASKS/);
+    assert.match(harness, /`DONE` is stable until the human requests meaningful new work/i);
+    assert.match(harness, /re-enter FOUNDATION only for backend\/platform\/shared-baseline prerequisites/i);
+  });
+
+  test("review agents have mechanical turn ceilings in addition to the two-round orchestration ceiling", () => {
+    const reviewer = read("templates/common/.claude/agents/reviewer.md");
+    const dbReviewer = read("templates/capabilities/supabase/.claude/agents/db-reviewer.md");
+    assert.match(reviewer, /^maxTurns:\s*18$/m);
+    assert.match(dbReviewer, /^maxTurns:\s*24$/m);
+    assert.match(flat("templates/common/CLAUDE.md"), /Maximum \*\*two Reviewer runs per group\*\*/i);
+  });
+
+  test("Spec Reviewer treats over-fragmentation as a real planning defect", () => {
+    const reviewer = flat(".claude/agents/spec-reviewer.md");
+    assert.match(reviewer, /groups first, tasks second/i);
+    assert.match(reviewer, /one-task LOW groups/i);
+    assert.match(reviewer, /MAJOR efficiency defect/i);
   });
 });
 
@@ -780,11 +865,10 @@ describe("context checkpoints", () => {
     });
   }
 
-  test("B1 and B2 are where they belong", () => {
+  test("B1 and B2 are where they belong and carry no pending action", () => {
     const prose = harness.replace(/\s+/g, " ");
-    assert.match(prose, /\*\*B1 — after the Artifact is approved\.\*\*[^|]*?phase `PLANNING`/);
-    assert.match(prose, /\*\*B2 — after human spec approval\.\*\*[^|]*?`READY_TO_CREATE`/);
-    /* B1 exists so Planning does not re-read the artifact's HTML. */
+    assert.match(prose, /\*\*B1 — after the Artifact is approved\.\*\*[^|]*?phase `PLANNING`[^|]*?`pending_action = null`/);
+    assert.match(prose, /\*\*B2 — after human spec approval\.\*\*[^|]*?`READY_TO_CREATE`[^|]*?`pending_action = null`/);
     assert.match(prose, /re-read(ing)? the Artifact's HTML/);
   });
 
@@ -796,15 +880,31 @@ describe("context checkpoints", () => {
       ["P4", "E2E"],
       ["P5", "READY_TO_DEPLOY"],
     ]) {
-      assert.match(
-        projectHarness,
-        new RegExp(`${id}\\s+[^\\n]*→ persist phase ${phase}`),
-        `${id} must persist ${phase}`,
-      );
+      assert.match(projectHarness, new RegExp(`${id}\\s+[^\\n]*→ persist phase ${phase}`), `${id} must persist ${phase}`);
     }
-    /* Every generated-project checkpoint leaves no build group in flight across /clear. */
-    assert.match(projectHarness, /current_group = null.*group_stage = null/);
-    assert.match(projectHarness, /active_tasks = \[\].*review_round = 0/);
+  });
+
+  test("a generated-project /clear boundary has no work or operation in flight", () => {
+    const prose = projectHarness.replace(/\s+/g, " ");
+    for (const expected of [
+      "current_group = null",
+      "group_stage = null",
+      "active_tasks = []",
+      "review_round = 0",
+      "pending_action = null",
+      "external_operation = null",
+    ]) {
+      assert.ok(prose.includes(expected), `safe checkpoint must require ${expected}`);
+    }
+    assert.match(prose, /last completed group approved and committed/);
+    assert.match(prose, /next lifecycle phase already persisted/);
+  });
+
+  test("Supabase scope restart is explicitly not a /clear checkpoint", () => {
+    const prose = projectHarness.replace(/\s+/g, " ");
+    assert.match(prose, /operational restart, not `\/clear`/i);
+    assert.match(prose, /RESTART REQUIRED — Supabase MCP scope changed/);
+    assert.match(prose, /never a CONTEXT CHECKPOINT/i);
   });
 });
 
@@ -986,33 +1086,57 @@ const instructionDocs = () => {
 describe("generated build groups replace per-task agent cycles", () => {
   const harness = flat("templates/common/CLAUDE.md");
   const builder = flat("templates/common/.claude/agents/builder.md");
+  const planner = flat("templates/common/.claude/agents/planner.md");
   const tasks = flat("templates/common/specs/tasks.md");
 
   test("tasks stay traceable without becoming agent cycles", () => {
-    assert.match(harness, /a task is not an agent cycle/i);
-    assert.match(builder, /\*\*one build group\*\*, not one task/i);
+    assert.match(harness, /A task is not an agent cycle/i);
+    assert.match(builder, /\*\*one assigned build group\*\*, not one task/i);
     assert.match(tasks, /Task != agent cycle/i);
   });
 
-  test("declared gates control review cost and capability", () => {
-    assert.match(harness, /Gate AUTO\s+→ mechanical evidence gate, no Reviewer/);
-    assert.match(harness, /Gate REVIEW\s+→ generic Reviewer once/);
-    assert.match(harness, /Gate DB_REVIEW\s+→ db-reviewer once/);
-    assert.match(harness, /Capability gate before dispatch/i);
+  test("fixed phases are owned by the harness, not Planning", () => {
+    assert.match(harness, /These phases are fixed by the harness\. Planning never invents lifecycle phases/i);
+    for (const phase of ["FOUNDATION", "BUILD_TASKS", "INTEGRATION"]) {
+      assert.ok(tasks.includes(`**${phase}**`), `${phase} ownership must be explained in tasks.md`);
+    }
+    assert.match(planner, /You never invent a phase/i);
   });
 
-  test("Orchestrator coordinates but does not perform a third technical review", () => {
-    assert.match(harness, /Orchestrator does not perform technical review/i);
-  });
-
-  test("the task template carries Group/Risk and build groups carry Gate explicitly", () => {
+  test("groups declare capability separately from review gate", () => {
     const taskDoc = read("templates/common/specs/tasks.md");
+    assert.match(taskDoc, /\| Group \| Phase \| Purpose \| Capability \| Gate \| Clear after \|/);
     assert.match(taskDoc, /\| ID \| Task \| Requirements \| Depends on \| Group \| Risk \| Acceptance \| Status \|/);
-    assert.match(taskDoc, /\| Group \| Phase \| Purpose \| Gate \| Clear after \|/);
-    assert.match(tasks, /LOW.*MEDIUM.*HIGH.*CRITICAL/i);
-    assert.match(tasks, /AUTO.*REVIEW.*DB_REVIEW/i);
+    assert.match(tasks, /Capability.*Gate.*separate on purpose/i);
+    assert.match(tasks, /BASE.*SUPABASE/i);
+  });
+
+  test("gate routing is automatic and proportional", () => {
+    assert.match(harness, /AUTO.*no Reviewer/i);
+    assert.match(harness, /REVIEW.*generic Reviewer/i);
+    assert.match(harness, /DB_REVIEW.*db-reviewer/i);
+    assert.match(harness, /Capability gate before dispatch/i);
+    assert.match(harness, /user never selects an internal agent/i);
+  });
+
+  test("Orchestrator coordinates but does not perform technical review", () => {
+    assert.match(harness, /Orchestrator does not perform technical review/i);
+    assert.match(harness, /do not rerun Builder commands/i);
+  });
+
+  test("review loops are capped and round two is targeted", () => {
+    assert.match(harness, /Maximum \*\*two Reviewer runs per group\*\*/i);
+    assert.match(harness, /ROUND 2.*correction diff.*minimum affected regression/i);
+    assert.match(harness, /no third automatic review/i);
+  });
+
+  test("E2E is a whole-product phase, not a task loop", () => {
+    assert.match(harness, /not E2E after every task/i);
+    assert.match(harness, /persistent Playwright E2E pass happens once after integration and Human Preview/i);
   });
 });
+
+/* ------------------------------------------------------------------ */
 
 describe("generated project model routing is mechanical by default", () => {
   const settings = readJson("templates/common/.claude/settings.json");

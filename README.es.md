@@ -120,11 +120,13 @@ El conjunto de skills es determinista: las 17 marcadas `inherited-standard` más
 convertiría "requiere una decisión explícita" en una frase de un documento, con la skill ya instalada en el
 repositorio.
 
-Su propio ciclo de vida corre de `READY_TO_BUILD` a `DONE` por **grupos de construcción**. Las Tasks siguen siendo
-unidades de trazabilidad y aceptación, pero las relacionadas se implementan de corrido con un Builder en vez de pagar un
-ciclo de agentes por cada fila. Los grupos declaran el gate desde Planning: AUTO para trabajo totalmente LOW, REVIEW para el Reviewer genérico sin herramientas directas de edición y DB_REVIEW para trabajo CRITICAL de
-Supabase/datos mediante un MCP dedicado, acotado y de solo lectura. Una corrección recibe
-una sola re-revisión dirigida, nunca una auditoría completa nueva. `HEAD` es siempre el último grupo aprobado.
+Su ciclo de vida usa las fases fijas de implementación `FOUNDATION → BUILD_TASKS → INTEGRATION`, y después
+preview/QA/deploy. Las Tasks siguen siendo unidades de trazabilidad y aceptación; **los Build Groups son las unidades de
+ejecución**. Planning crea el mínimo de grupos significativos dentro de esas fases y cada grupo declara `Capability`
+(`BASE` o `SUPABASE`) por separado de su `Gate` (`AUTO`, `REVIEW`, `DB_REVIEW`). Así las Tasks relacionadas se construyen
+de corrido con un Builder en vez de pagar un ciclo de agentes por cada fila. Una corrección recibe una sola re-revisión
+dirigida; si la segunda revisión sigue fallando, el harness se detiene para una decisión humana. `HEAD` es siempre el
+último grupo aprobado.
 
 La biblioteca de skills heredada permanece disponible para features y rediseños futuros. Los agentes cargan el cuerpo
 completo de una skill bajo demanda para el scope actual, en vez de recorrer el catálogo antes de trabajar.
