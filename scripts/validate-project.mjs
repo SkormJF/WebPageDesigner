@@ -291,8 +291,13 @@ if (hasState) {
     `review_round = ${JSON.stringify(state.review_round)}`,
   );
   check(
-    "Workflow schema is group-centric v2",
-    state.schema_version === 2,
+    "Global correction round starts at zero",
+    state.global_round === 0,
+    `global_round = ${JSON.stringify(state.global_round)}`,
+  );
+  check(
+    "Workflow schema is group/global-gate centric v3",
+    state.schema_version === 3,
     `schema_version = ${JSON.stringify(state.schema_version)}`,
   );
 }

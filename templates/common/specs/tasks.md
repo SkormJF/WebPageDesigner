@@ -88,10 +88,14 @@ group is accepted.
   capability for that group.
 - `AUTO` → no Reviewer; valid only when every task in the group is `LOW`. Builder final cleaned-state checks are the gate.
 - `REVIEW` → generic Reviewer for MEDIUM/HIGH work and CRITICAL work that is not a database-specific surface.
-- `DB_REVIEW` → only for a `SUPABASE` group containing CRITICAL schema/RLS/authorization/data-integrity work; uses the
-  project-scoped read-only DB Reviewer. Mutation tests remain Builder work.
-- A DB_REVIEW group must not also contain unrelated MEDIUM/HIGH non-DB work; split when one gate could not competently
-  review the full group.
+- `DB_REVIEW` → only for a `SUPABASE` group containing CRITICAL schema/RLS/authorization/data-integrity work whose final
+  state is independently inspectable from versioned SQL plus the DB Reviewer's read-only `database`, `debugging` and `docs`
+  tools. Mutation tests remain Builder work.
+- Supabase project/Auth settings (email confirmation, SMTP, password/provider/project settings), Storage configuration and
+  other control-plane configuration are **not DB_REVIEW surfaces**. Keep them in a `SUPABASE + REVIEW` group and make their
+  acceptance observable through code/public application behaviour, or record an explicit human/platform precondition.
+- A DB_REVIEW group must not also contain work its Reviewer cannot independently observe; split when one gate cannot
+  competently review the full group.
 - One correction round maximum: findings → targeted Builder correction → targeted re-review. No third automatic pass.
 
 Before dispatch, the Orchestrator validates both required capability and gate. A missing capability fails fast; agents do
@@ -99,8 +103,11 @@ not spend turns discovering substitute CLIs or bypasses.
 
 ## What does NOT get a task
 
-`VISUAL_QA`, `E2E` and `QUALITY_GATE` are whole-product lifecycle phases. There is no `TASK-9xx` quality block. A task
-carries local acceptance; global accessibility/performance/security belongs to the later gate.
+`VISUAL_QA`, `E2E`, `QUALITY_GATE`, `DEPLOY` and `POST_DEPLOY` are whole-product lifecycle phases. There is no `TASK-9xx`
+quality block and no standalone task whose outcome is "the E2E suite passes". A task carries local acceptance; global
+accessibility/performance/security belongs to the later gate. Persistent Playwright specs are authored alongside the
+feature/integration behaviour they cover and may be discovered or run narrowly during build; the **full suite executes only
+in lifecycle phase E2E**. Never require "break the test once to prove it fails" as acceptance.
 
 ## Acceptance criteria
 

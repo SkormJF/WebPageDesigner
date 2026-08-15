@@ -30,7 +30,10 @@ groups. If the sentinel is still present, the server is unavailable, or identity
 - `.workflow/current/implementation.md`
 - prior findings only on round 2
 
-The local migration is the reviewable source; the live DB proves that deployed state matches it.
+The local migration is the reviewable source; the live DB proves that deployed state matches it. Supabase Auth/project
+settings, SMTP/email confirmation, Storage configuration and other control-plane settings are outside this reviewer's
+feature groups and must never be assigned to DB_REVIEW. If such acceptance appears in the group, return `REVIEW_CONFLICT`
+immediately instead of inventing a workaround.
 
 ## What to verify live
 

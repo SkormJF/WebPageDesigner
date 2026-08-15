@@ -228,6 +228,34 @@ FOUNDATION shared prerequisites. BUILD_TASKS features. INTEGRATION wiring.
     assert.equal(run(good, "supabase").pass, true);
   });
 
+  test("rejects global E2E ceremony leaked into an Integration task", () => {
+    const bad = validTasks.replace(
+      "| TASK-003 | Integrated outcome | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Integrated flow works. | PENDING |",
+      "| TASK-003 | The end-to-end suite covers the critical paths | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | The E2E suite runs green and is verified by breaking it once. | PENDING |",
+    );
+    const result = run(bad);
+    assert.ok(result.findings.some((f) => /standalone E2E-suite work belongs to lifecycle phase E2E/.test(f.message)));
+    assert.ok(result.findings.some((f) => /deliberately breaking a test is not task acceptance/.test(f.message)));
+  });
+
+  test("allows Playwright spec authoring without a global E2E pass inside the task", () => {
+    const good = validTasks.replace(
+      "| TASK-003 | Integrated outcome | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Integrated flow works. | PENDING |",
+      "| TASK-003 | Persistent Playwright specs cover the integrated critical paths | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Playwright discovers the authored specs and one focused route spec can run locally; the full suite is deferred to lifecycle E2E. | PENDING |",
+    );
+    assert.equal(run(good).pass, true);
+  });
+
+  test("rejects Supabase Auth/control-plane settings inside DB_REVIEW", () => {
+    const bad = validTasks
+      .replace("| BUILD-01 | BUILD_TASKS | features | BASE | REVIEW | NO |",
+        "| BUILD-01 | BUILD_TASKS | features | SUPABASE | DB_REVIEW | NO |")
+      .replace("| TASK-002 | Feature outcome | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Feature works. | PENDING |",
+        "| TASK-002 | The project's authentication is configured for email sign-up | REQ-001 | TASK-001 | BUILD-01 | CRITICAL | Email confirmation is disabled and signup establishes a session immediately. | PENDING |");
+    const result = run(bad, "supabase");
+    assert.ok(result.findings.some((f) => /TASK-002 places Supabase Auth\/project\/control-plane configuration inside DB_REVIEW/.test(f.message)));
+  });
+
   test("Clear after YES is allowed at most once and only in BUILD_TASKS", () => {
     const outside = validTasks.replace("| FOUNDATION | FOUNDATION | baseline | BASE | AUTO | NO |",
       "| FOUNDATION | FOUNDATION | baseline | BASE | AUTO | YES |");
@@ -285,7 +313,8 @@ describe("generated project starting state", () => {
     }
     assert.deepEqual(state.active_tasks, []);
     assert.equal(state.review_round, 0);
-    assert.equal(state.schema_version, 2);
+    assert.equal(state.global_round, 0);
+    assert.equal(state.schema_version, 3);
   });
 });
 
@@ -399,9 +428,11 @@ describe("agent ownership and Next harness integrity", () => {
     assert.match(harness, /re-enter FOUNDATION only for backend\/platform\/shared-baseline prerequisites/i);
   });
 
-  test("review agents have mechanical turn ceilings in addition to the two-round orchestration ceiling", () => {
+  test("review agents have mechanical turn ceilings in addition to orchestration ceilings", () => {
+    const specReviewer = read(".claude/agents/spec-reviewer.md");
     const reviewer = read("templates/common/.claude/agents/reviewer.md");
     const dbReviewer = read("templates/capabilities/supabase/.claude/agents/db-reviewer.md");
+    assert.match(specReviewer, /^maxTurns:\s*24$/m);
     assert.match(reviewer, /^maxTurns:\s*18$/m);
     assert.match(dbReviewer, /^maxTurns:\s*24$/m);
     assert.match(flat("templates/common/CLAUDE.md"), /Maximum \*\*two Reviewer runs per group\*\*/i);
@@ -891,6 +922,7 @@ describe("context checkpoints", () => {
       "group_stage = null",
       "active_tasks = []",
       "review_round = 0",
+      "global_round = 0",
       "pending_action = null",
       "external_operation = null",
     ]) {
@@ -946,6 +978,18 @@ describe("Spec Reviewer cannot loop", () => {
   test("BLOCKER and MAJOR still fail", () => {
     assert.match(harness, /BLOCKER or MAJOR → SPEC_FAIL/);
     assert.match(reviewer, /Any BLOCKER or any MAJOR means `SPEC_FAIL`/);
+  });
+
+  test("the Spec Reviewer checks gate reviewability, not only risk labels", () => {
+    const reviewer = flat(".claude/agents/spec-reviewer.md");
+    assert.match(reviewer, /MAJOR reviewability defect/i);
+    assert.match(reviewer, /Auth\/project settings/i);
+    assert.match(reviewer, /full suite executes only after Human Preview/i);
+  });
+
+  test("the second Spec Reviewer run does not hunt unrelated MINOR findings", () => {
+    const reviewer = flat(".claude/agents/spec-reviewer.md");
+    assert.match(reviewer, /Do not hunt for unrelated new MINOR findings on the second pass/i);
   });
 
   test("the second run does not raise the standard", () => {
@@ -1083,6 +1127,17 @@ const instructionDocs = () => {
   return ["CLAUDE.md", ...found];
 };
 
+describe("SPEC_PASS minor cleanup stays mechanical", () => {
+  const harness = flat("CLAUDE.md");
+
+  test("minor clarifications after SPEC_PASS do not trigger a third reviewer", () => {
+    assert.match(harness, /rerun \*\*only the mechanical Spec Gate plus an exact diff sanity check\*\*/i);
+    assert.match(harness, /never call a third Spec Reviewer/i);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
 describe("generated build groups replace per-task agent cycles", () => {
   const harness = flat("templates/common/CLAUDE.md");
   const builder = flat("templates/common/.claude/agents/builder.md");
@@ -1119,9 +1174,13 @@ describe("generated build groups replace per-task agent cycles", () => {
     assert.match(harness, /user never selects an internal agent/i);
   });
 
-  test("Orchestrator coordinates but does not perform technical review", () => {
-    assert.match(harness, /Orchestrator does not perform technical review/i);
-    assert.match(harness, /do not rerun Builder commands/i);
+  test("Orchestrator coordinates build groups but owns global lifecycle gates", () => {
+    assert.match(harness, /coordination during build groups; owner of global lifecycle gates/i);
+    assert.match(harness, /do \*\*not\*\*\s+rerun Builder commands/i);
+    for (const phase of ["LOCAL_PREVIEW", "VISUAL_QA", "E2E", "QUALITY_GATE", "DEPLOY", "POST_DEPLOY"]) {
+      assert.ok(harness.includes(phase), `${phase} must have an explicit global owner`);
+    }
+    assert.match(harness, /global-gate defect is routed back to Builder as a targeted correction/i);
   });
 
   test("review loops are capped and round two is targeted", () => {
@@ -1130,9 +1189,31 @@ describe("generated build groups replace per-task agent cycles", () => {
     assert.match(harness, /no third automatic review/i);
   });
 
-  test("E2E is a whole-product phase, not a task loop", () => {
+  test("E2E is a single final-candidate whole-product phase, not a task loop", () => {
     assert.match(harness, /not E2E after every task/i);
-    assert.match(harness, /persistent Playwright E2E pass happens once after integration and Human Preview/i);
+    assert.match(harness, /full Playwright suite runs only in lifecycle phase `E2E`/i);
+    assert.match(harness, /There is no planned duplicate full-suite run/i);
+    assert.match(harness, /consume the recorded E2E PASS rather than rerunning the full suite/i);
+    assert.match(harness, /while phase remains\s+`QUALITY_GATE`, rerun the full E2E suite for the changed candidate/i);
+    assert.doesNotMatch(harness, /returns? to `?E2E`?/i);
+  });
+
+  test("global gate corrections are Builder-routed and capped", () => {
+    assert.match(harness, /Persist `global_round = 1`/i);
+    assert.match(harness, /One second targeted correction is allowed with `global_round = 2`/i);
+    assert.match(harness, /if the same global phase still cannot pass, STOP and ask the human/i);
+    assert.match(builder, /targeted global-gate correction/i);
+  });
+
+  test("post-deploy smoke failures stop instead of auto-redeploying", () => {
+    assert.match(harness, /post-deploy smoke check fails/i);
+    assert.match(harness, /STOP for the human/i);
+    assert.match(harness, /never auto-redeploy/i);
+  });
+
+  test("the generated lifecycle has no orphan VAULT_WRITE phase", () => {
+    assert.doesNotMatch(harness, /VAULT_WRITE/);
+    assert.match(harness, /DEPLOY → POST_DEPLOY → DONE/);
   });
 });
 
@@ -1184,6 +1265,12 @@ describe("Supabase capability is composed only when Backend Mode requires it", (
     const body = flat(rel);
     assert.match(body, /read_only=true/);
     assert.match(body, /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/);
+  });
+
+  test("the DB reviewer explicitly rejects Auth/control-plane work", () => {
+    const body = flat("templates/capabilities/supabase/.claude/agents/db-reviewer.md");
+    assert.match(body, /Auth\/project settings.*outside this reviewer's feature groups/i);
+    assert.match(body, /return `REVIEW_CONFLICT` immediately/i);
   });
 
   test("backend mode none leaves the staged project Vercel-only", () => {

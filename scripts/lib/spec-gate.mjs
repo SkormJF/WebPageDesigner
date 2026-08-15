@@ -41,6 +41,31 @@ const CAPABILITIES = ["BASE", "SUPABASE"];
 const GATES = ["AUTO", "REVIEW", "DB_REVIEW"];
 const RISKS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
+/* Obvious planning mistakes that are deterministic enough to reject before the
+   semantic Spec Reviewer. These are deliberately narrow: the gate catches the
+   exact lifecycle/capability leaks the harness can prove mechanically, while
+   sizing and nuanced reviewability remain reviewer judgement. */
+const GLOBAL_LIFECYCLE_TASK_PATTERNS = [
+  { re: /\b(?:e2e|end[- ]to[- ]end)\s+suite\b/i, label: "standalone E2E-suite work belongs to lifecycle phase E2E" },
+  { re: /\b(?:full|whole|global|serious|persistent)\s+(?:playwright\s+)?(?:e2e|end[- ]to[- ]end)\b/i, label: "full E2E execution belongs to lifecycle phase E2E" },
+  { re: /\bvisual\s+qa\b/i, label: "Visual QA is a whole-product lifecycle phase, not a task" },
+  { re: /\bquality\s+gate\b/i, label: "Quality Gate is a whole-product lifecycle phase, not a task" },
+  { re: /\bpost[- ]deploy\b/i, label: "Post-deploy is a lifecycle phase, not a task" },
+  { re: /\bbreak(?:ing)?\s+(?:it|the\s+test|a\s+test)\s+once\b/i, label: "deliberately breaking a test is not task acceptance" },
+];
+
+const DB_REVIEW_CONTROL_PLANE_PATTERNS = [
+  /\bauth(?:entication)?\s+(?:project\s+)?settings?\b/i,
+  /\bauthentication\s+is\s+configured\b/i,
+  /\bemail\s+confirmation\b/i,
+  /\bsmtp\b/i,
+  /\bpassword\s+(?:policy|settings?)\b/i,
+  /\bprovider\s+(?:configuration|settings?)\b/i,
+  /\bproject\s+settings?\b/i,
+  /\bstorage\s+(?:configuration|settings?)\b/i,
+  /\bedge\s+function\s+(?:deploy|deployment)\b/i,
+];
+
 const tableRows = (text) =>
   text
     .split(/\r?\n/)
@@ -184,7 +209,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
       continue;
     }
 
-    const [_taskId, _name, requirementsCell, dependsCell, group, risk, _acceptance, status] = cells;
+    const [_taskId, name, requirementsCell, dependsCell, group, risk, acceptance, status] = cells;
     const linkedReqs = [...requirementsCell.matchAll(REQ_ID)].map((m) => m[0]);
     if (linkedReqs.length === 0) add("tasks.md", `${id} links to no requirement`);
     for (const req of linkedReqs) {
@@ -199,7 +224,12 @@ export function runSpecGate(dir = paths.builderCurrent) {
     const deps = [...dependsCell.matchAll(TASK_ID)].map((m) => m[0]);
     if (deps.includes(id)) add("tasks.md", `${id} depends on itself`);
 
-    tasks.set(id, { group, risk, deps });
+    tasks.set(id, { group, risk, deps, name, acceptance });
+
+    const lifecycleText = `${name} ${acceptance}`;
+    for (const rule of GLOBAL_LIFECYCLE_TASK_PATTERNS) {
+      if (rule.re.test(lifecycleText)) add("tasks.md", `${id}: ${rule.label}`);
+    }
     if (groups.has(group)) groups.get(group).risks.push(risk);
   }
 
@@ -237,6 +267,19 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
     if (meta.gate === "DB_REVIEW" && !hasCritical) {
       add("tasks.md", `build group ${group} uses Gate DB_REVIEW but contains no CRITICAL task`);
+    }
+
+    if (meta.gate === "DB_REVIEW") {
+      for (const [taskId, task] of tasks.entries()) {
+        if (task.group !== group) continue;
+        const reviewText = `${task.name} ${task.acceptance}`;
+        if (DB_REVIEW_CONTROL_PLANE_PATTERNS.some((re) => re.test(reviewText))) {
+          add(
+            "tasks.md",
+            `${taskId} places Supabase Auth/project/control-plane configuration inside DB_REVIEW; split it to SUPABASE + REVIEW or an explicit human/platform precondition`,
+          );
+        }
+      }
     }
   }
 

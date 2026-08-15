@@ -85,7 +85,13 @@ shared prerequisites, BUILD_TASKS owns product features/flows, and INTEGRATION o
 Start from the smallest useful groups and split only for a real dependency, context, capability or review boundary. A task
 is a traceability/acceptance outcome, not a file, component, route or one requirement; one task may satisfy several REQs
 and touch many files. Every group declares `Capability = BASE | SUPABASE`, `Gate = AUTO | REVIEW | DB_REVIEW` and
-`Clear after = YES | NO`; every task declares `Risk`. At most one BUILD_TASKS group may request an extra `/clear`.
+`Clear after = YES | NO`; every task declares `Risk`. At most one BUILD_TASKS group may request an extra `/clear`. A
+DB_REVIEW group is restricted to surfaces the generated read-only DB Reviewer can actually observe from versioned SQL plus
+Supabase database/debugging/docs tools; Auth/project settings, email confirmation/SMTP and other control-plane settings must
+be separated into `SUPABASE + REVIEW` with observable behaviour or an explicit human precondition; when they belong to an
+Auth flow, prefer the existing Auth feature group rather than creating a database-only or one-task group just for configuration. Global lifecycle work
+(VISUAL_QA, full E2E, QUALITY_GATE, DEPLOY/POST_DEPLOY) never becomes a Task; Playwright specs may be authored earlier, but
+the full suite executes only in the generated project's E2E phase.
 **Transversal change:** detect scope → modify only affected sections → preserve unrelated approved decisions → revalidate.
 Broad re-review only for structural change.
 
@@ -100,12 +106,15 @@ cause to the human. There is no third automatic pass.
 ```
 
 **Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, ID hygiene, requirement↔task references,
-orphan MUSTs, fixed phase coverage, group capability/gate/clear rules, initial task status, dependency direction and cycles.
+orphan MUSTs, fixed phase coverage, group capability/gate/clear rules, obvious DB-reviewability violations, global-gate/E2E
+ceremony leaked into tasks, initial task status, dependency direction and cycles.
 Deterministic, and it does not judge visual literals or whether a group is semantically well-sized. **Spec Reviewer:** the `spec-reviewer` subagent,
 which owns its own criteria; it reviews and reports, never fixing specs, writing code or changing phase. Its second run
 checks the earlier findings, the regressions the corrections introduced and any obvious BLOCKER/MAJOR missed first time —
-it does not raise the standard, reinterpret the approved Artifact, widen scope or invent design rules. **Human approval is
-a real gate**, not "procedo entonces" while already proceeding: ask in chat — `SPEC_PASS — 0 BLOCKER, 0 MAJOR. ¿Apruebas
+it does not raise the standard, reinterpret the approved Artifact, widen scope, hunt unrelated new MINORs or invent design
+rules. If `SPEC_PASS` includes MINOR clarifications that touch no approved decision, you may apply them once, then rerun
+**only the mechanical Spec Gate plus an exact diff sanity check**; never call a third Spec Reviewer. **Human approval is a
+real gate**, not "procedo entonces" while already proceeding: ask in chat — `SPEC_PASS — 0 BLOCKER, 0 MAJOR. ¿Apruebas
 las especificaciones? [ Aprobar ] [ Revisar ]` — then persist `READY_TO_CREATE` and stop at checkpoint **B2**.
 
 ## Fixed Next platform, optional Supabase, skills, and the three mechanical scripts

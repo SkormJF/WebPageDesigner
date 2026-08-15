@@ -44,4 +44,6 @@ check gets at most one reasonable alternative.
 ## Database source and review
 
 `DB_REVIEW` uses the dedicated `db-reviewer`, whose own MCP is project-scoped and `read_only=true`; mutation-based
-verification stays with Builder.
+verification stays with Builder. Its enabled feature groups are `database,debugging,docs`, so Auth/project settings, SMTP,
+email-confirmation settings, Storage configuration and other remote control-plane configuration must be planned outside
+DB_REVIEW and verified through observable application/public behaviour or an explicit human/platform precondition.

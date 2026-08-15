@@ -122,7 +122,10 @@ preview/QA/deploy. Tasks remain traceability and acceptance units; **build group
 creates the minimum meaningful groups inside those fixed phases, and every group declares `Capability` (`BASE` or
 `SUPABASE`) separately from its `Gate` (`AUTO`, `REVIEW`, `DB_REVIEW`). Related tasks therefore run continuously through
 one Builder instead of paying for an agent cycle per row. A correction gets one targeted re-review, never a fresh audit;
-after the second failed review the harness stops for a human decision. `HEAD` is always the last approved group.
+after the second failed review the harness stops for a human decision. DB_REVIEW is reserved for state the read-only DB
+reviewer can actually inspect; Auth/control-plane settings stay outside it. `HEAD` is always the last approved group.
+After INTEGRATION, the main Orchestrator owns the global preview/QA/E2E/deploy lifecycle; one final-candidate E2E pass is
+planned, not a duplicate suite inside an Integration task. Global-gate corrections are targeted and capped at two attempts.
 
 The inherited skill library stays available for future features and redesigns. Agents load the full body of a skill on
 demand for the current scope rather than walking the catalogue before they work.

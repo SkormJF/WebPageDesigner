@@ -125,8 +125,11 @@ preview/QA/deploy. Las Tasks siguen siendo unidades de trazabilidad y aceptació
 ejecución**. Planning crea el mínimo de grupos significativos dentro de esas fases y cada grupo declara `Capability`
 (`BASE` o `SUPABASE`) por separado de su `Gate` (`AUTO`, `REVIEW`, `DB_REVIEW`). Así las Tasks relacionadas se construyen
 de corrido con un Builder en vez de pagar un ciclo de agentes por cada fila. Una corrección recibe una sola re-revisión
-dirigida; si la segunda revisión sigue fallando, el harness se detiene para una decisión humana. `HEAD` es siempre el
-último grupo aprobado.
+dirigida; si la segunda revisión sigue fallando, el harness se detiene para una decisión humana. DB_REVIEW queda reservado
+para estado que el DB Reviewer read-only realmente puede inspeccionar; configuración de Auth/control-plane queda fuera.
+`HEAD` es siempre el último grupo aprobado. Después de INTEGRATION, el Orchestrator principal es dueño del ciclo global de
+preview/QA/E2E/deploy; se planifica una sola pasada E2E sobre el candidato final, no una suite duplicada dentro de una Task
+de Integration. Las correcciones de gates globales son dirigidas y tienen máximo dos intentos.
 
 La biblioteca de skills heredada permanece disponible para features y rediseños futuros. Los agentes cargan el cuerpo
 completo de una skill bajo demanda para el scope actual, en vez de recorrer el catálogo antes de trabajar.

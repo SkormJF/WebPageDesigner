@@ -4,6 +4,7 @@ description: Independent review of the five Builder specifications before projec
 tools: Read, Grep, Glob
 model: opus
 effort: xhigh
+maxTurns: 24
 ---
 
 # Spec Reviewer
@@ -90,11 +91,18 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
   BUILD_TASKS group may set `Clear after = YES`; FOUNDATION/INTEGRATION groups never do.
 - `design.md` declares Backend Mode exactly `none` or `supabase`. `Capability = SUPABASE` exists only with backend
   `supabase`; DB-specific tasks do not exist with `none`.
-- Gate/capability mapping is coherent before dispatch: all-LOW groups use `AUTO`; non-LOW groups do not; `DB_REVIEW`
-  requires `Capability = SUPABASE` and CRITICAL Supabase/schema/RLS/data-integrity work. Other critical surfaces use
-  `REVIEW` unless a dedicated capability gate is explicitly defined.
-- A DB_REVIEW group does not also contain unrelated MEDIUM/HIGH non-DB work; split when one gate cannot competently review
-  the full surface.
+- Gate/capability mapping is coherent **and reviewable** before dispatch: all-LOW groups use `AUTO`; non-LOW groups do not;
+  `DB_REVIEW` requires `Capability = SUPABASE` and CRITICAL Supabase/schema/RLS/data-integrity work whose risk-bearing
+  **final state** can be independently inspected through versioned SQL plus the generated DB Reviewer's read-only
+  `database`, `debugging`, `docs` tools. Builder-owned mutation tests may supplement that final-state review. Other critical
+  surfaces use `REVIEW` unless a dedicated capability gate is explicitly defined.
+- A DB_REVIEW group does not contain Supabase Auth/project settings, email-confirmation/SMTP settings, Storage configuration,
+  Edge Function deployment or any other control-plane/app behaviour its declared Reviewer cannot observe. Those belong in
+  a separate `SUPABASE + REVIEW` group with observable behaviour or an explicit human/platform precondition. A group whose
+  acceptance requires a tool/credential its Reviewer does not have is a **MAJOR reviewability defect**.
+- Global lifecycle gates do not leak into tasks: there is no standalone E2E-suite-pass task, Visual QA task, Quality Gate
+  task or deploy task. Playwright specs may be authored with the behaviour they cover; the full suite executes only after
+  Human Preview in lifecycle phase E2E. Deliberately breaking a test once is not an acceptance criterion.
 - Derived and calculated values have a stated mechanism, not just a stated result.
 - Security-relevant requirements (access control, role separation, data isolation) have an enforcement point
   named in `design.md`, not left implied by the UI.
@@ -184,6 +192,9 @@ the findings from the first pass, and whether each was actually resolved
 regressions the corrections introduced — a fix in one spec routinely breaks consistency with another
 an obvious BLOCKER or MAJOR that the first pass missed
 ```
+
+Do not hunt for unrelated new MINOR findings on the second pass. Report a new MINOR only when it is a direct regression of
+the correction you are already inspecting.
 
 You do **not** raise the standard, reinterpret the approved Artifact, widen scope, or invent design rules
 that were not applied the first time. A specification that passed on the first pass and was not touched does

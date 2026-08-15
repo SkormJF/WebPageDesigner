@@ -39,13 +39,19 @@ After that it follows the normal `INTEGRATION → preview → QA → deploy` lif
 7. Assign each group `Capability = BASE | SUPABASE` and `Gate = AUTO | REVIEW | DB_REVIEW`.
    - `SUPABASE` is valid only for a project whose `design.md` has `Backend Mode: supabase`.
    - `AUTO` is valid only for all-LOW groups.
-   - `DB_REVIEW` is for CRITICAL Supabase/schema/RLS/authorization/data-integrity work and requires `SUPABASE`.
-   - Split unrelated non-DB work away from DB_REVIEW.
-8. `Depends on` names a real prerequisite, not a likely implementation order. Never make an earlier phase depend on a
+   - `DB_REVIEW` is for CRITICAL Supabase/schema/RLS/authorization/data-integrity work whose final state is independently
+     observable with the read-only database/debugging/docs reviewer; it requires `SUPABASE`.
+   - Supabase Auth/project settings, SMTP/email confirmation, Storage configuration and other control-plane settings are
+     not DB_REVIEW surfaces; route them to `SUPABASE + REVIEW` with observable behaviour or an explicit human precondition,
+     preferably inside the existing Auth feature group rather than a database-only or one-task configuration group.
+   - Split any work the declared Reviewer cannot competently observe away from DB_REVIEW.
+8. Keep global lifecycle gates out of tasks. Persistent Playwright specs may be authored with the behaviour they cover,
+   but no task owns a full E2E pass, Visual QA, Quality Gate, deploy, or a deliberate test-break ceremony.
+9. `Depends on` names a real prerequisite, not a likely implementation order. Never make an earlier phase depend on a
    later phase and never create a dependency cycle.
-9. For calculations, access control or data integrity, name a real-data verification bar. Do not turn LOW work into an
+10. For calculations, access control or data integrity, name a real-data verification bar. Do not turn LOW work into an
    independent audit.
-10. At most one group inside `BUILD_TASKS` may request `Clear after = YES`, only at a genuine context-domain boundary.
+11. At most one group inside `BUILD_TASKS` may request `Clear after = YES`, only at a genuine context-domain boundary.
     The harness already has fixed checkpoints after FOUNDATION, BUILD_TASKS, INTEGRATION, HUMAN_PREVIEW and QUALITY_GATE.
 
 ## Skills

@@ -1,13 +1,13 @@
-# Review — current build group
+# Review — current gate evidence
 
-No build group has been reviewed yet. This project is at `READY_TO_BUILD`.
+No build-group or global-gate review has run yet. This project is at `READY_TO_BUILD`.
 
-The Orchestrator overwrites this file with the Reviewer's returned verdict only when the group's risk requires review.
-It holds the current gate only; git holds history. LOW groups legitimately have no Reviewer pass.
+The Orchestrator overwrites this file with either a Reviewer verdict for the current build group or compact findings from a
+whole-product lifecycle gate that needs a targeted Builder correction. It holds current truth only; git holds history.
 
 ---
 
-<!-- The Orchestrator persists the Reviewer's returned shape:
+<!-- Build-group review shape:
 
 GROUP: <id>
 PHASE: FOUNDATION | BUILD_TASKS | INTEGRATION
@@ -25,4 +25,12 @@ CHECKS
 SUMMARY
 <2-4 sentences>
 
+Global-gate correction shape:
+
+GLOBAL_PHASE: LOCAL_PREVIEW | VISUAL_QA | E2E | QUALITY_GATE
+GLOBAL_ROUND: 1 | 2
+VERDICT: CORRECTION_REQUIRED
+OWNER_SURFACE: <existing group/task ids>
+FINDINGS: <compact concrete findings>
+CHECKS: <failed gate evidence>
 -->
