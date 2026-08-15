@@ -296,8 +296,13 @@ if (hasState) {
     `global_round = ${JSON.stringify(state.global_round)}`,
   );
   check(
-    "Workflow schema is group/global-gate centric v3",
-    state.schema_version === 3,
+    "Human platform actions start incomplete",
+    Array.isArray(state.completed_human_actions) && state.completed_human_actions.length === 0,
+    `completed_human_actions = ${JSON.stringify(state.completed_human_actions)}`,
+  );
+  check(
+    "Workflow schema is group/global-gate centric v4",
+    state.schema_version === 4,
     `schema_version = ${JSON.stringify(state.schema_version)}`,
   );
 }

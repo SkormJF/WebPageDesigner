@@ -124,7 +124,7 @@ describe("Spec Gate enforces fixed phases, capabilities, gates and dependency sh
     const files = {
       "PROJECT.md": "# Project\n\n## Identity\nX\n\n## What this is\nX\n\n## Scope\nX\n\n## Decisions in force\nX\n",
       "requirements.md": requirementsText ?? "# Requirements\n\n## Functional requirements\n| ID | Priority | Requirement |\n|---|---|---|\n| REQ-001 | MUST | The system shall work. |\n\n## Non-functional requirements\nNone.\n",
-      "design.md": `# Design\n\n## Architecture\nX\n\n- **Baseline deviations:** none\n\n## Routes\nX\n\n## Backend\n**Mode:** ${backendMode}\n\n## Security\nX\n`,
+      "design.md": `# Design\n\n## Architecture\nX\n\n- **Baseline deviations:** none\n\n## Routes\nX\n\n## Backend\n**Mode:** ${backendMode}\n\n## Human platform actions\n| ID | Human-only action | Before group | Completion proof |\n|---|---|---|---|\n| — | None | — | — |\n\n## Security\nX\n`,
       "design-system.md": "# DS\n\n## Approval\nX\n\n## Color\nX\n\n## Typography\nX\n\n## Interaction states\nX\n",
       "tasks.md": tasksText,
     };
@@ -238,6 +238,54 @@ FOUNDATION shared prerequisites. BUILD_TASKS features. INTEGRATION wiring.
     assert.ok(result.findings.some((f) => /deliberately breaking a test is not task acceptance/.test(f.message)));
   });
 
+  test("rejects a disguised full lifecycle regression pass in Integration", () => {
+    const bad = validTasks.replace(
+      "| TASK-003 | Integrated outcome | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Integrated flow works. | PENDING |",
+      "| TASK-003 | Verify isolation end to end, then run the full task lifecycle as one regression pass | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Create -> transition -> complete -> delete works on both desktop and mobile viewports. | PENDING |",
+    );
+    const result = run(bad);
+    assert.ok(result.findings.some((f) => /full product\/task lifecycle regression belongs to lifecycle phase E2E/.test(f.message)));
+    assert.ok(result.findings.some((f) => /all-viewports whole-product verification belongs to lifecycle phase E2E/.test(f.message)));
+  });
+
+  test("rejects a known human-only Auth control-plane mutation assigned to Builder", () => {
+    const bad = validTasks.replace(
+      "| TASK-002 | Feature outcome | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Feature works. | PENDING |",
+      "| TASK-002 | Build Auth and set Confirm email to disabled in Supabase | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Signup establishes a session immediately. | PENDING |",
+    );
+    const result = run(bad, "supabase");
+    assert.ok(result.findings.some((f) => /assigns a human-only platform\/control-plane mutation to Builder/.test(f.message)));
+  });
+
+  test("accepts a human platform action recorded outside Builder tasks", () => {
+    const dir = makeSpecs(validTasks, "supabase");
+    try {
+      const designPath = path.join(dir, "design.md");
+      fs.writeFileSync(designPath, fs.readFileSync(designPath, "utf8").replace(
+        "| — | None | — | — |",
+        "| HPA-001 | Disable Confirm email in Supabase Auth dashboard | BUILD-01 | Human confirms; signup behaviour is verified later |",
+      ));
+      assert.equal(runSpecGate(dir).pass, true);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  test("rejects disposable test users without cleanup and final absence verification", () => {
+    const bad = validTasks.replace(
+      "| TASK-002 | Feature outcome | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Feature works. | PENDING |",
+      "| TASK-002 | Prove isolation with two test users | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Two test users are created and cross-user reads return zero rows. | PENDING |",
+    );
+    const result = run(bad, "supabase");
+    assert.ok(result.findings.some((f) => /disposable test fixtures without explicit cleanup/.test(f.message)));
+  });
+
+  test("accepts disposable test users with cleanup and no-residue verification", () => {
+    const good = validTasks.replace(
+      "| TASK-002 | Feature outcome | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Feature works. | PENDING |",
+      "| TASK-002 | Prove isolation with two disposable test users | REQ-001 | TASK-001 | BUILD-01 | MEDIUM | Create two test users, run isolation, delete both, and verify no residue remains. | PENDING |",
+    );
+    assert.equal(run(good, "supabase").pass, true);
+  });
+
   test("allows Playwright spec authoring without a global E2E pass inside the task", () => {
     const good = validTasks.replace(
       "| TASK-003 | Integrated outcome | REQ-001 | TASK-002 | INTEGRATION | MEDIUM | Integrated flow works. | PENDING |",
@@ -314,7 +362,8 @@ describe("generated project starting state", () => {
     assert.deepEqual(state.active_tasks, []);
     assert.equal(state.review_round, 0);
     assert.equal(state.global_round, 0);
-    assert.equal(state.schema_version, 3);
+    assert.deepEqual(state.completed_human_actions, []);
+    assert.equal(state.schema_version, 4);
   });
 });
 
@@ -1187,6 +1236,24 @@ describe("generated build groups replace per-task agent cycles", () => {
     assert.match(harness, /Maximum \*\*two Reviewer runs per group\*\*/i);
     assert.match(harness, /ROUND 2.*correction diff.*minimum affected regression/i);
     assert.match(harness, /no third automatic review/i);
+  });
+
+  test("human-only platform actions stop the Orchestrator instead of becoming Builder work", () => {
+    const design = flat("templates/common/specs/design.md");
+    assert.match(design, /## Human platform actions/i);
+    assert.match(harness, /HUMAN ACTION REQUIRED/i);
+    assert.match(harness, /completed_human_actions/i);
+    assert.match(harness, /Never attempt that action/i);
+    assert.match(builder, /perform an `HPA-nnn` human-only platform action/i);
+  });
+
+  test("temporary fixtures have a create-test-cleanup-verify contract", () => {
+    const capability = flat("templates/capabilities/supabase/.claude/capabilities/supabase.md");
+    assert.match(harness, /create only new scratch fixtures/i);
+    assert.match(harness, /delete\/clean them.*verify absence\/no residue/i);
+    assert.match(builder, /clean them up.*verify absence\/no residue/i);
+    assert.match(capability, /newly created disposable identities\/data/i);
+    assert.match(capability, /STOP for the human/i);
   });
 
   test("E2E is a single final-candidate whole-product phase, not a task loop", () => {

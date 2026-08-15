@@ -21,7 +21,7 @@ import { paths, SPEC_FILES, ui, parseArgs, parseBackendMode } from "./common.mjs
 const REQUIRED_SECTIONS = {
   "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions in force"],
   "requirements.md": ["## Functional requirements", "## Non-functional requirements"],
-  "design.md": ["## Architecture", "## Routes", "## Backend", "## Security"],
+  "design.md": ["## Architecture", "## Routes", "## Backend", "## Human platform actions", "## Security"],
   "design-system.md": ["## Approval", "## Color", "## Typography", "## Interaction states"],
   "tasks.md": ["## Dependency order", "## Build groups", "### Fixed phase ownership"],
 };
@@ -52,6 +52,9 @@ const GLOBAL_LIFECYCLE_TASK_PATTERNS = [
   { re: /\bquality\s+gate\b/i, label: "Quality Gate is a whole-product lifecycle phase, not a task" },
   { re: /\bpost[- ]deploy\b/i, label: "Post-deploy is a lifecycle phase, not a task" },
   { re: /\bbreak(?:ing)?\s+(?:it|the\s+test|a\s+test)\s+once\b/i, label: "deliberately breaking a test is not task acceptance" },
+  { re: /\bfull\s+(?:task\s+)?lifecycle\b/i, label: "full product/task lifecycle regression belongs to lifecycle phase E2E" },
+  { re: /\b(?:whole|full|complete|product[- ]wide)\s+(?:product\s+)?regression\s+pass\b/i, label: "product-wide regression pass belongs to lifecycle phase E2E" },
+  { re: /\b(?:both|all)\s+(?:desktop\s+and\s+mobile|mobile\s+and\s+desktop)\s+viewports?\b/i, label: "all-viewports whole-product verification belongs to lifecycle phase E2E" },
 ];
 
 const DB_REVIEW_CONTROL_PLANE_PATTERNS = [
@@ -65,6 +68,13 @@ const DB_REVIEW_CONTROL_PLANE_PATTERNS = [
   /\bstorage\s+(?:configuration|settings?)\b/i,
   /\bedge\s+function\s+(?:deploy|deployment)\b/i,
 ];
+
+const HUMAN_ONLY_CONTROL_PLANE_TASK_PATTERNS = [
+  /\b(?:set|change|toggle|disable|enable|configure)\b[\s\S]{0,80}\b(?:confirm\s+email|email\s+confirmation|smtp|auth\s+provider|provider\s+settings?|password\s+policy|project\s+settings?)\b/i,
+  /\b(?:confirm\s+email|email\s+confirmation|smtp|auth\s+provider|provider\s+settings?|password\s+policy|project\s+settings?)\b[\s\S]{0,80}\b(?:set|changed?|toggled?|disabled?|enabled?|configured?)\b/i,
+];
+const DISPOSABLE_FIXTURE_PATTERN = /\b(?:test|scratch|temporary|temp|disposable)\s+(?:auth\s+)?(?:users?|accounts?|rows?|records?|data|fixtures?)\b/i;
+const FIXTURE_CLEANUP_PATTERN = /\b(?:delete|remove|clean(?:up|ed)?|purge)\b[\s\S]{0,120}\b(?:verify|confirm|absence|absent|zero|no\s+residue|no\s+rows?)\b|\b(?:verify|confirm)\b[\s\S]{0,120}\b(?:deleted|removed|clean(?:up|ed)?|absence|absent|zero|no\s+residue|no\s+rows?)\b/i;
 
 const tableRows = (text) =>
   text
@@ -187,6 +197,21 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
   }
 
+  /* Human-owned platform actions are durable preconditions, not Builder tasks. */
+  const humanActionsSection = sectionBody(designText, "## Human platform actions");
+  for (const line of tableRows(humanActionsSection)) {
+    const cells = cellsOf(line);
+    if (cells[0] === "ID" || cells[0] === "—") continue;
+    if (cells.length < 4) {
+      add("design.md", `human-platform-action row has ${cells.length} columns; expected ID, Human-only action, Before group, Completion proof`);
+      continue;
+    }
+    const [id, action, beforeGroup, proof] = cells;
+    if (!/^HPA-\d{3}$/.test(id)) add("design.md", `invalid Human platform action ID ${id || "(empty)"}; use HPA-nnn or the explicit None row`);
+    if (!groups.has(beforeGroup)) add("design.md", `${id} waits for undeclared build group ${beforeGroup || "(empty)"}`);
+    if (!action || !proof) add("design.md", `${id} must name both the human-only action and its completion proof`);
+  }
+
   /* 7 — task declarations and requirement links.
      Only table rows are declarations; dependency diagrams may repeat IDs. */
   const taskRows = tableRows(tasksText).filter((line) => line.match(TASK_ID));
@@ -229,6 +254,12 @@ export function runSpecGate(dir = paths.builderCurrent) {
     const lifecycleText = `${name} ${acceptance}`;
     for (const rule of GLOBAL_LIFECYCLE_TASK_PATTERNS) {
       if (rule.re.test(lifecycleText)) add("tasks.md", `${id}: ${rule.label}`);
+    }
+    if (HUMAN_ONLY_CONTROL_PLANE_TASK_PATTERNS.some((re) => re.test(lifecycleText))) {
+      add("tasks.md", `${id} assigns a human-only platform/control-plane mutation to Builder; record it as design.md HPA-nnn and let the task verify resulting behaviour instead`);
+    }
+    if (DISPOSABLE_FIXTURE_PATTERN.test(lifecycleText) && !FIXTURE_CLEANUP_PATTERN.test(lifecycleText)) {
+      add("tasks.md", `${id} uses disposable test fixtures without explicit cleanup plus final absence/no-residue verification`);
     }
     if (groups.has(group)) groups.get(group).risks.push(risk);
   }

@@ -129,6 +129,15 @@ These hold for this project. Violations are review findings, not style opinions:
 |---|---|---|---|
 | [TBD] | [TBD] | [TBD] | no |
 
+## Human platform actions
+
+<!-- SLOT: Human-only external actions current tools must not perform: HPA-nnn + blocked group + completion proof.
+     Use `— | None | — | —` when absent. No secrets. -->
+
+| ID | Human-only action | Before group | Completion proof |
+|---|---|---|---|
+| [TBD: HPA-001 or —] | [TBD: action or None] | [TBD: group or —] | [TBD: confirmation/observable proof] |
+
 ## Security
 
 <!-- SLOT: The decisions, not a checklist recital: where secrets live and must never reach, what runs

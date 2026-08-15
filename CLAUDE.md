@@ -87,11 +87,11 @@ is a traceability/acceptance outcome, not a file, component, route or one requir
 and touch many files. Every group declares `Capability = BASE | SUPABASE`, `Gate = AUTO | REVIEW | DB_REVIEW` and
 `Clear after = YES | NO`; every task declares `Risk`. At most one BUILD_TASKS group may request an extra `/clear`. A
 DB_REVIEW group is restricted to surfaces the generated read-only DB Reviewer can actually observe from versioned SQL plus
-Supabase database/debugging/docs tools; Auth/project settings, email confirmation/SMTP and other control-plane settings must
-be separated into `SUPABASE + REVIEW` with observable behaviour or an explicit human precondition; when they belong to an
-Auth flow, prefer the existing Auth feature group rather than creating a database-only or one-task group just for configuration. Global lifecycle work
-(VISUAL_QA, full E2E, QUALITY_GATE, DEPLOY/POST_DEPLOY) never becomes a Task; Playwright specs may be authored earlier, but
-the full suite executes only in the generated project's E2E phase.
+Supabase database/debugging/docs tools; control-plane settings stay outside DB_REVIEW. Human-owned ones are `HPA-nnn` in
+`design.md` with blocked group + completion proof, never Builder mutations; automatable ones use `SUPABASE + REVIEW` with
+observable behaviour. Prefer the existing Auth group over configuration-only fragmentation. Global lifecycle work
+(VISUAL_QA, full E2E, QUALITY_GATE, DEPLOY/POST_DEPLOY) never becomes a Task; INTEGRATION gets focused seam checks, never a
+full lifecycle/product-wide/multi-viewport pass. Disposable fixtures require scratch create → test → cleanup → no-residue proof; cleanup failure → STOP.
 **Transversal change:** detect scope → modify only affected sections → preserve unrelated approved decisions → revalidate.
 Broad re-review only for structural change.
 
@@ -106,8 +106,8 @@ cause to the human. There is no third automatic pass.
 ```
 
 **Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, ID hygiene, requirement↔task references,
-orphan MUSTs, fixed phase coverage, group capability/gate/clear rules, obvious DB-reviewability violations, global-gate/E2E
-ceremony leaked into tasks, initial task status, dependency direction and cycles.
+orphan MUSTs, fixed phase coverage, group capability/gate/clear rules, DB-reviewability, global-gate/E2E leaks, human-only
+platform work assigned to Builder, fixture cleanup, initial task status, dependency direction and cycles.
 Deterministic, and it does not judge visual literals or whether a group is semantically well-sized. **Spec Reviewer:** the `spec-reviewer` subagent,
 which owns its own criteria; it reviews and reports, never fixing specs, writing code or changing phase. Its second run
 checks the earlier findings, the regressions the corrections introduced and any obvious BLOCKER/MAJOR missed first time —
@@ -119,9 +119,8 @@ las especificaciones? [ Aprobar ] [ Revisar ]` — then persist `READY_TO_CREATE
 
 ## Fixed Next platform, optional Supabase, skills, and the three mechanical scripts
 `builder.config.json` fixes `stack_profile = next-standard-v1`. There is one supported application framework: Next.js.
-`config/stack-profiles/next-standard-v1.json` is the **single owner** of the validated Next baseline, its source roots and Next-specific skills.
-`design.md` never restates or selects the framework; it records only justified implementation deviations from that baseline.
-Versions are frozen in the template lockfile; evolution creates `next-standard-v2` and never mutates v1.
+`config/stack-profiles/next-standard-v1.json` is the **single owner** of the validated Next baseline, source roots and Next-specific skills;
+`design.md` records only justified deviations. Versions are frozen; evolution creates `next-standard-v2`, never mutating v1.
 The Next template sets `agentRules: false`: this repository's generated `CLAUDE.md` is authoritative and `next dev` must
 not upsert framework agent rules into it. For version-specific Next details, agents read the installed
 `node_modules/next/dist/docs/` selectively on demand.

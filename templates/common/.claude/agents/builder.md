@@ -107,7 +107,12 @@ OUT OF SCOPE
 Do not write a narrative of every command or investigation. Git contains the diff; this file exists to let the next agent
 recover without rereading the whole conversation.
 
+**Disposable fixtures.** If acceptance genuinely needs temporary users/rows/data, create only new scratch fixtures, record
+their identifiers in evidence, test, clean them up, and verify absence/no residue before returning COMPLETE. Never alter a
+pre-existing identity to manufacture a test. If cleanup cannot be completed/proven, return PARTIAL with blocking evidence;
+do not try alternate credentials, weaken DB invariants, or route around a guard.
+
 ## Boundaries
 
-You do **not** modify specifications, lifecycle state or git history; call a Reviewer/Planner; review your own work as a
-separate role; or expand the assigned group. Return to the Orchestrator. Always.
+You do **not** modify specifications, lifecycle state or git history; perform an `HPA-nnn` human-only platform action; call
+a Reviewer/Planner; review your own work as a separate role; or expand the assigned group. Return to the Orchestrator. Always.

@@ -50,9 +50,8 @@ standalone product flows here.
 **BUILD_TASKS** — the product itself: pages, feature flows, CRUD, forms, dashboards, Auth UI and business logic. Related
 work stays together so the Builder can reuse context and patterns.
 
-**INTEGRATION** — connect and verify already-built features: navigation, protected-route/session boundaries, loading/
-empty/error states, cross-feature behaviour, frontend/backend wiring and regression. It is **not** a second feature-build
-phase; a feature missing from BUILD_TASKS is a planning gap, not Integration work.
+**INTEGRATION** — connect built features and check seams only. Full lifecycle/product-wide/multi-viewport regression belongs
+to `E2E`; missing features are Planning gaps.
 
 ---
 
@@ -91,9 +90,7 @@ group is accepted.
 - `DB_REVIEW` → only for a `SUPABASE` group containing CRITICAL schema/RLS/authorization/data-integrity work whose final
   state is independently inspectable from versioned SQL plus the DB Reviewer's read-only `database`, `debugging` and `docs`
   tools. Mutation tests remain Builder work.
-- Supabase project/Auth settings (email confirmation, SMTP, password/provider/project settings), Storage configuration and
-  other control-plane configuration are **not DB_REVIEW surfaces**. Keep them in a `SUPABASE + REVIEW` group and make their
-  acceptance observable through code/public application behaviour, or record an explicit human/platform precondition.
+- Control-plane settings are not DB_REVIEW. Human-owned → `HPA-nnn`, not Builder work; automatable → `SUPABASE + REVIEW`.
 - A DB_REVIEW group must not also contain work its Reviewer cannot independently observe; split when one gate cannot
   competently review the full group.
 - One correction round maximum: findings → targeted Builder correction → targeted re-review. No third automatic pass.
@@ -105,9 +102,11 @@ not spend turns discovering substitute CLIs or bypasses.
 
 `VISUAL_QA`, `E2E`, `QUALITY_GATE`, `DEPLOY` and `POST_DEPLOY` are whole-product lifecycle phases. There is no `TASK-9xx`
 quality block and no standalone task whose outcome is "the E2E suite passes". A task carries local acceptance; global
-accessibility/performance/security belongs to the later gate. Persistent Playwright specs are authored alongside the
-feature/integration behaviour they cover and may be discovered or run narrowly during build; the **full suite executes only
-in lifecycle phase E2E**. Never require "break the test once to prove it fails" as acceptance.
+accessibility/performance/security belongs to the later gate. Persistent Playwright specs may run narrowly with their feature; the **full suite runs only in E2E**. INTEGRATION cannot
+disguise it as full lifecycle/regression/all-viewports work.
+
+`HPA-nnn` gets no task: Orchestrator pauses before its group; Tasks only verify results. Disposable fixtures require scratch
+create → test → cleanup → no-residue proof. Never mutate existing identities; cleanup failure → STOP.
 
 ## Acceptance criteria
 

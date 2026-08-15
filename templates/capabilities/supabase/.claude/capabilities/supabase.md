@@ -37,13 +37,17 @@ Migrations are code: create a versioned local SQL migration first and apply that
 MCP. The remote database is deployed state, never the only source copy. For ordinary per-user RLS predicates whose auth
 identity is statement-stable, use the Supabase/Postgres init-plan form `(select auth.uid())` rather than a bare `auth.uid()`
 when it preserves the approved predicate; keep the same optimized form in `design.md` so spec and deployed policy cannot
-drift. Scratch rows/users are allowed only when acceptance genuinely needs them and they can be cleaned safely. Never drop
-constraints, disable RLS, remove triggers or weaken a production invariant merely to make a test easier. A blocked optional
-check gets at most one reasonable alternative.
+drift. Scratch rows/users are allowed only when acceptance genuinely needs them and they can be cleaned safely. Use only newly
+created disposable identities/data; record what was created, test, delete/cleanup it, then verify absence/no residue. Never
+modify an existing account to manufacture a test. If cleanup cannot be completed or proven, STOP for the human instead of
+trying another credential path or weakening constraints/RLS/triggers. Never drop constraints, disable RLS, remove triggers
+or weaken a production invariant merely to make a test easier. A blocked optional check gets at most one reasonable alternative.
 
 ## Database source and review
 
 `DB_REVIEW` uses the dedicated `db-reviewer`, whose own MCP is project-scoped and `read_only=true`; mutation-based
 verification stays with Builder. Its enabled feature groups are `database,debugging,docs`, so Auth/project settings, SMTP,
 email-confirmation settings, Storage configuration and other remote control-plane configuration must be planned outside
-DB_REVIEW and verified through observable application/public behaviour or an explicit human/platform precondition.
+DB_REVIEW. If `design.md` marks the action `HPA-nnn`, the Orchestrator pauses for the human and Builder must never attempt
+the setting; subsequent REVIEW/application behaviour may verify the result. Automatable control-plane work that is not HPA
+stays outside DB_REVIEW and must have an observable acceptance path.

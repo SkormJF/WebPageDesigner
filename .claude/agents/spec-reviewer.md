@@ -97,12 +97,18 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
   `database`, `debugging`, `docs` tools. Builder-owned mutation tests may supplement that final-state review. Other critical
   surfaces use `REVIEW` unless a dedicated capability gate is explicitly defined.
 - A DB_REVIEW group does not contain Supabase Auth/project settings, email-confirmation/SMTP settings, Storage configuration,
-  Edge Function deployment or any other control-plane/app behaviour its declared Reviewer cannot observe. Those belong in
-  a separate `SUPABASE + REVIEW` group with observable behaviour or an explicit human/platform precondition. A group whose
-  acceptance requires a tool/credential its Reviewer does not have is a **MAJOR reviewability defect**.
+  Edge Function deployment or any other control-plane/app behaviour its declared Reviewer cannot observe. Automatable work
+  belongs in `SUPABASE + REVIEW`; an action explicitly owned by the human belongs in `design.md` as a stable `HPA-nnn` with
+  `Before group` and completion proof, never as Builder work. A group whose acceptance requires a tool/credential its Reviewer
+  does not have is a **MAJOR reviewability defect**.
 - Global lifecycle gates do not leak into tasks: there is no standalone E2E-suite-pass task, Visual QA task, Quality Gate
   task or deploy task. Playwright specs may be authored with the behaviour they cover; the full suite executes only after
-  Human Preview in lifecycle phase E2E. Deliberately breaking a test once is not an acceptance criterion.
+  Human Preview in lifecycle phase E2E. An INTEGRATION task asking for a full lifecycle/product-wide regression pass or a
+  desktop+mobile whole-product run is the same duplicate E2E under another name and is a **MAJOR efficiency defect**.
+  Deliberately breaking a test once is not an acceptance criterion.
+- Any task relying on disposable test users/rows/data states the scratch-only source plus cleanup and a final absence/no-residue
+  verification. Reusing/mutating a pre-existing identity, or creating a fixture the harness cannot clean safely, is a **MAJOR**
+  test-strategy defect. Cleanup failure must stop rather than trigger workaround exploration.
 - Derived and calculated values have a stated mechanism, not just a stated result.
 - Security-relevant requirements (access control, role separation, data isolation) have an enforcement point
   named in `design.md`, not left implied by the UI.

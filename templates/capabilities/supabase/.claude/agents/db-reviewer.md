@@ -43,7 +43,7 @@ Use the smallest read-only set that can falsify the critical claims:
 - expected tables/columns/types/constraints/indexes/triggers exist
 - RLS enablement and policy predicates/commands match the approved contract
 - security/performance advisors relevant to the changed schema
-- final scratch-data cleanup when it can be observed read-only
+- final scratch-user/data cleanup when it can be observed read-only (absence/no residue)
 
 The Builder owns mutation-based verification such as insert/update/delete boundary tests and disposable-user scenarios.
 Inspect the resulting catalog/policies independently. Do **not** create a second write path just to duplicate the same experiment.

@@ -62,6 +62,10 @@ variants. Declared interaction states, focus and reduced-motion behaviour remain
 **Security/accessibility/performance.** Apply only when the group touches that concern. Load a relevant skill on demand,
 never as a checklist. Axe PASS is not accessibility PASS, and a performance review is not licence to redesign.
 
+**Disposable fixtures.** When Builder evidence used scratch users/rows/data, independently check the smallest final-state
+signal that cleanup succeeded when your tools can observe it. Do not create a second fixture merely to duplicate Builder's
+mutation test. A claimed cleanup that is absent/unverifiable when load-bearing is a finding.
+
 ## Severity and stop condition
 
 | Severity | Meaning |

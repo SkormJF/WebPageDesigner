@@ -66,23 +66,24 @@ inside DB_REVIEW.
   risk-bearing **final-state** claims must be independently observable by the declared read-only tools; mutation-only
   boundary evidence may remain Builder-owned as long as the Reviewer can independently inspect the resulting DB contract.
 Missing capability → fail fast before spending an agent turn. Do not discover substitute CLIs or bypasses.
+**Human platform actions.** Before a group blocked by incomplete `HPA-nnn`, persist
+`pending_action = { type: "HUMAN_PLATFORM_ACTION", id, action }`, print `HUMAN ACTION REQUIRED — <HPA-ID>: <action>.
+Cuando termines, escribe continúa.` and **STOP**. Never attempt that action or a workaround. On `continúa`, use declared proof
+or explicit human confirmation, append the ID to `completed_human_actions`, clear `pending_action`, continue; HPA is not a Task/phase.
 Finish all groups in the current fixed phase before advancing. Dependencies may point within the same phase or to an
 earlier phase, never to a later one. `HEAD` is the last approved committed group; unapproved work stays in the working diff.
-Durable task status (`PENDING`/`ACTIVE`/`DONE`) lives in `tasks.md`. In-flight state lives in `.workflow/state.json` as
-`current_group`, `group_stage`, `active_tasks`, `review_round`, `global_round`, `pending_action`, `external_operation`.
-`.workflow/current/{implementation.md,review.md}` holds compact evidence only for the current group.
+Durable task status lives in `tasks.md`; `.workflow/state.json` holds `current_group`, `group_stage`, `active_tasks`,
+`review_round`, `global_round`, `completed_human_actions`, `pending_action`, `external_operation`. Current evidence stays in `.workflow/current/`.
 ## Roles and automatic routing
 **The user never selects an internal agent.** You choose the declared role automatically from the group/gate.
-**Planner — dormant during the initial build.** It exists for significant future work, material spec gaps,
-scope/architecture changes or material visual changes. It plans; it does not implement.
+**Planner — dormant during initial build.** It exists for future work, material spec gaps, scope/architecture or visual changes; it plans, never implements.
 **Builder — one assigned build group.** Assignment includes Phase, Capability, Gate and task IDs. It loads only governing
 spec slices and skills needed now, implements the full group, verifies after cleanup, and returns compact evidence.
 Temporary probes removed after a check invalidate any evidence they were sustaining. Keep harmless inspectable build
 output through the gate when useful.
 **Reviewer — REVIEW gate only.** Read-only by contract. It finds the smallest independent evidence capable of falsifying
 the risk-bearing claims. Acceptance covered + no BLOCKER/MAJOR = immediate `REVIEW_PASS`. No extra "final look".
-**DB Reviewer — DB_REVIEW gate only.** Uses versioned local migrations plus a dedicated project-scoped Supabase MCP with
-`read_only=true`. Mutation-based verification remains Builder work.
+**DB Reviewer — DB_REVIEW gate only.** Uses versioned local migrations plus project-scoped Supabase MCP `read_only=true`; mutation verification remains Builder work.
 **Orchestrator — coordination during build groups; owner of global lifecycle gates.** During FOUNDATION, BUILD_TASKS and
 INTEGRATION you validate routing, persist state/results, commit approved groups and handle checkpoints. You do **not**
 rerun Builder commands or inspect code as a substitute Reviewer. After INTEGRATION is approved and committed, no build
@@ -115,15 +116,15 @@ per-user RLS predicates, use the approved optimized `(select auth.uid())` form w
 Use targeted checks while implementing and final checks for the whole group, **not E2E after every task**. Final evidence
 is collected on the final cleaned state. A blocked optional check gets at most one reasonable alternative; permission
 denials and rate limits are not invitations to search for bypasses. Persistent Playwright specs may be authored or updated
-inside the build groups that own the behaviour, but no task may require the whole E2E suite to pass, a deliberate test
-break, Visual QA, Quality Gate or deploy. The full Playwright suite runs only in lifecycle phase `E2E`, after Human Preview,
-for the current final candidate. There is no planned duplicate full-suite run.
+inside owning groups, but no task may require the whole E2E suite, deliberate test break, Visual QA, Quality Gate or deploy.
+INTEGRATION gets focused seam checks only — no full lifecycle/product-wide/multi-viewport pass. The full Playwright suite runs only
+in lifecycle phase `E2E` after Human Preview for the current candidate. There is no planned duplicate full-suite run.
+Disposable fixtures: create only new scratch fixtures, record IDs, test, delete/clean them, then verify absence/no residue.
+Never mutate existing identities. Unproven cleanup leaves the group unapproved → **STOP for the human**; no security/credential bypasses.
 ## Global lifecycle ownership, QA and deploy
-After P3 (`INTEGRATION` approved and committed), the Orchestrator owns the fixed whole-product phases without spawning a
-Reviewer for them:
-- `LOCAL_PREVIEW` — start the integrated app and prove the approved local entry points are reachable.
-- `VISUAL_QA` — inspect the real product against `design-system.md`; load `playwright-cli` and visual guidance on demand,
-  not the whole skill catalogue. Fixable implementation findings go to Builder; a new visual/product decision goes to the human.
+After P3 (`INTEGRATION` approved/committed), the Orchestrator owns whole-product phases without spawning a Reviewer:
+- `LOCAL_PREVIEW` — start the integrated app; prove approved local entry points reachable.
+- `VISUAL_QA` — inspect real product vs `design-system.md`; load only needed browser/visual skills. Fixes → Builder; new visual/product decisions → human.
 - `HUMAN_PREVIEW` — mandatory explicit human approval. No implementation continues past it silently.
 - `E2E` — load `playwright-cli` and run the persistent full critical-path suite **once for the unchanged candidate**; the suite was authored earlier and this phase executes it globally.
 - `QUALITY_GATE` — consume the recorded E2E PASS rather than rerunning the full suite, then run the remaining whole-product
@@ -143,10 +144,9 @@ set `global_round = 0`. This is a correction budget, not a new lifecycle phase o
 Ready to deploy requires Visual QA PASS + Human Preview approved + current-candidate E2E PASS + Quality Gate PASS + no
 blockers + `phase = READY_TO_DEPLOY`.
 ## Recovery
-For an interrupted group, `HEAD` is the last approved group and the working diff is unapproved work. Read state, then only
-the evidence required by `group_stage`; do not replay completed groups. During a global-gate correction, `global_round > 0`
-means read the compact global findings and resume only that correction/gate. Non-null `external_operation` means observe
-remote truth before retry; non-null `pending_action` means remain blocked until that named condition is proven.
+For interruption, `HEAD` is the last approved group and the working diff is unapproved. Resume state-required evidence only;
+never replay completed groups. `global_round > 0` resumes its correction/gate; `external_operation` requires remote truth before retry.
+`pending_action` stays blocked until proven; `HUMAN_PLATFORM_ACTION` resumes through HPA only, never as Builder work.
 ## Safe `/clear` checkpoints
 A normal context checkpoint is legal only when **all** are true:
 ```
