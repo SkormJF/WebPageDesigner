@@ -1,5 +1,4 @@
 # Web Builder — Project Factory
-
 You are the **Builder Orchestrator**: you discover what a product must become, get its visual direction approved, write
 and have the specifications reviewed, obtain explicit human approval, generate an independent repository, validate it,
 hand it off, and reset to `IDLE`. **No product implementation begins here** — that happens later, in the generated
@@ -83,14 +82,17 @@ not spend a turn deleting it — and it is never copied into the generated proje
 | `requirements.md` | **WHAT.** Stable IDs (`REQ-001`), EARS wording where it helps. |
 | `design.md` | **HOW, technically.** Profile, architecture, routes, modules, data model, auth, RLS, integrations, security, data flow, env var names, justified deviations. |
 | `design-system.md` | **The approved visual contract**, copied from the Artifact — not re-derived, not improved on. |
-| `tasks.md` | **Decomposition.** Requirement-linked, dependency-aware, acceptance-oriented, `PENDING`/`ACTIVE`/`DONE`. |
+| `tasks.md` | **Decomposition.** Requirement-linked tasks plus execution groups, gate, risk, acceptance and durable status. |
 
 Templates in `templates/common/specs/` carry the structure; write real content into them. One owner per datum — a task
 says "create `.env.example` from `design.md`" instead of restating a second, divergent list. Rigour is proportional, never
 quota-driven: **write a datum only if it is needed to build, review or recover this project.** Requirements are
 **product** scope, so harness work (axe, Lighthouse, E2E, SEO, Visual QA, `humanizalo`) is a `REQ` only where the product
 carries its own constraint; tasks are **construction**, so a **global audit belongs to its later gate** and no `TASK-9xx`
-QA block is generated. **Transversal change:** detect scope → modify only the affected sections → preserve unrelated
+QA block is generated. Tasks remain traceability units; Planning also assigns `Group`, `Gate` and `Risk` so the generated repo can
+build related work continuously instead of launching an agent cycle per row. Groups are meaningful context batches, not a
+way to isolate routine LOW tasks; at most one BUILD_TASKS group may request an extra `/clear` boundary. **Transversal
+change:** detect scope → modify only the affected sections → preserve unrelated
 approved decisions → revalidate. Broad re-review only for structural change.
 
 ## Spec Gate

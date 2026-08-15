@@ -19,9 +19,11 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 
 import { parseApprovedProfile, expectedSkills } from "../scripts/lib/common.mjs";
+import { runSpecGate } from "../scripts/lib/spec-gate.mjs";
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
@@ -172,6 +174,118 @@ describe("skill distribution", () => {
 
 /* ------------------------------------------------------------------ */
 
+describe("Spec Gate understands build groups and risk", () => {
+  const makeSpecs = (tasksText) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wpd-spec-groups-"));
+    const files = {
+      "PROJECT.md": "# Project\n\n## Identity\nX\n\n## What this is\nX\n\n## Scope\nX\n\n## Decisions in force\nX\n",
+      "requirements.md": "# Requirements\n\n## Functional requirements\n| ID | Priority | Requirement |\n|---|---|---|\n| REQ-001 | MUST | The system shall work. |\n\n## Non-functional requirements\nNone.\n",
+      "design.md": "# Design\n\n## Stack profile\n- **Profile:** next-standard-v1\n\n## Architecture\nX\n\n## Routes\nX\n\n## Security\nX\n",
+      "design-system.md": "# DS\n\n## Approval\nX\n\n## Color\nX\n\n## Typography\nX\n\n## Interaction states\nX\n",
+      "tasks.md": tasksText,
+    };
+    for (const [name, value] of Object.entries(files)) fs.writeFileSync(path.join(dir, name), value);
+    return dir;
+  };
+
+  const validTasks = `# Tasks
+
+## Dependency order
+TASK-001
+
+## Build groups
+| Group | Phase | Purpose | Gate | Clear after |
+|---|---|---|---|---|
+| FOUNDATION | FOUNDATION | baseline | AUTO | NO |
+
+## Foundation
+| ID | Task | Requirements | Depends on | Group | Risk | Acceptance | Status |
+|---|---|---|---|---|---|---|---|
+| TASK-001 | Baseline | REQ-001 | — | FOUNDATION | LOW | Build succeeds. | PENDING |
+`;
+
+  test("accepts a task with one declared group and valid risk", () => {
+    const dir = makeSpecs(validTasks);
+    try {
+      assert.equal(runSpecGate(dir).pass, true);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("rejects undeclared groups and invalid risk", () => {
+    const bad = validTasks.replace("| FOUNDATION | LOW |", "| MISSING | EXTREME |");
+    const dir = makeSpecs(bad);
+    try {
+      const result = runSpecGate(dir);
+      assert.equal(result.pass, false);
+      assert.ok(result.findings.some((f) => /undeclared build group MISSING/.test(f.message)));
+      assert.ok(result.findings.some((f) => /invalid Risk EXTREME/.test(f.message)));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+
+  test("rejects an unknown build-group Gate", () => {
+    const bad = validTasks.replace("| FOUNDATION | FOUNDATION | baseline | AUTO | NO |", "| FOUNDATION | FOUNDATION | baseline | SURPRISE | NO |");
+    const dir = makeSpecs(bad);
+    try {
+      const result = runSpecGate(dir);
+      assert.equal(result.pass, false);
+      assert.ok(result.findings.some((f) => /invalid Gate SURPRISE/.test(f.message)));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("rejects an AUTO gate for non-LOW work", () => {
+    const bad = validTasks.replace("| FOUNDATION | LOW |", "| FOUNDATION | HIGH |");
+    const dir = makeSpecs(bad);
+    try {
+      const result = runSpecGate(dir);
+      assert.equal(result.pass, false);
+      assert.ok(result.findings.some((f) => /contains non-LOW work and cannot use Gate AUTO/.test(f.message)));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("rejects DB_REVIEW without a CRITICAL task", () => {
+    const bad = validTasks.replace("| FOUNDATION | FOUNDATION | baseline | AUTO | NO |", "| FOUNDATION | FOUNDATION | baseline | DB_REVIEW | NO |");
+    const dir = makeSpecs(bad);
+    try {
+      const result = runSpecGate(dir);
+      assert.equal(result.pass, false);
+      assert.ok(result.findings.some((f) => /uses Gate DB_REVIEW but contains no CRITICAL task/.test(f.message)));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("allows at most one optional clear boundary inside BUILD_TASKS", () => {
+    const bad = validTasks
+      .replace(
+        "| FOUNDATION | FOUNDATION | baseline | AUTO | NO |",
+        "| FOUNDATION | FOUNDATION | baseline | AUTO | NO |\n| BUILD-01 | BUILD_TASKS | one | AUTO | YES |\n| BUILD-02 | BUILD_TASKS | two | AUTO | YES |",
+      )
+      .replace(
+        "| TASK-001 | Baseline | REQ-001 | — | FOUNDATION | LOW | Build succeeds. | PENDING |",
+        "| TASK-001 | Baseline | REQ-001 | — | FOUNDATION | LOW | Build succeeds. | PENDING |\n| TASK-002 | Feature | REQ-001 | TASK-001 | BUILD-01 | LOW | Works. | PENDING |\n| TASK-003 | Feature 2 | REQ-001 | TASK-002 | BUILD-02 | LOW | Works. | PENDING |",
+      );
+    const dir = makeSpecs(bad);
+    try {
+      const result = runSpecGate(dir);
+      assert.equal(result.pass, false);
+      assert.ok(result.findings.some((f) => /more than one BUILD_TASKS group requests Clear after = YES/.test(f.message)));
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
 describe("generated project starting state", () => {
   const state = readJson("templates/common/.workflow/state.json");
 
@@ -180,10 +294,13 @@ describe("generated project starting state", () => {
   });
 
   test("nothing is in flight", () => {
-    for (const field of ["current_task", "task_stage", "pending_action", "external_operation"]) {
+    for (const field of ["current_group", "group_stage", "pending_action", "external_operation"]) {
       assert.ok(field in state, `${field} is missing from the schema`);
       assert.equal(state[field], null, `${field} must start null`);
     }
+    assert.deepEqual(state.active_tasks, []);
+    assert.equal(state.review_round, 0);
+    assert.equal(state.schema_version, 2);
   });
 });
 
@@ -689,7 +806,7 @@ describe("context checkpoints", () => {
 
   for (const [label, text, count] of [
     ["Builder", harness, 2],
-    ["generated project", projectHarness, 4],
+    ["generated project", projectHarness, 5],
   ]) {
     const prose = text.replace(/\s+/g, " ");
 
@@ -711,7 +828,7 @@ describe("context checkpoints", () => {
     });
 
     test(`the ${label} declares ${count} fixed stops`, () => {
-      assert.match(prose, count === 2 ? /Two fixed stops/ : /Four fixed stops/);
+      assert.match(prose, count === 2 ? /Two fixed stops/ : /Five fixed stops/);
     });
   }
 
@@ -723,12 +840,13 @@ describe("context checkpoints", () => {
     assert.match(prose, /re-read(ing)? the Artifact's HTML/);
   });
 
-  test("P1 through P4 are where they belong", () => {
+  test("P1 through P5 are where they belong", () => {
     for (const [id, phase] of [
       ["P1", "BUILD_TASKS"],
-      ["P2", "LOCAL_PREVIEW"],
-      ["P3", "E2E"],
-      ["P4", "READY_TO_DEPLOY"],
+      ["P2", "INTEGRATION"],
+      ["P3", "LOCAL_PREVIEW"],
+      ["P4", "E2E"],
+      ["P5", "READY_TO_DEPLOY"],
     ]) {
       assert.match(
         projectHarness,
@@ -736,8 +854,9 @@ describe("context checkpoints", () => {
         `${id} must persist ${phase}`,
       );
     }
-    /* P2 leaves no task in flight across the /clear. */
-    assert.match(projectHarness, /current_task = null, task_stage = null/);
+    /* Every generated-project checkpoint leaves no build group in flight across /clear. */
+    assert.match(projectHarness, /current_group = null.*group_stage = null/);
+    assert.match(projectHarness, /active_tasks = \[\].*review_round = 0/);
   });
 });
 
@@ -861,6 +980,42 @@ describe("Reviewer contract", () => {
     assert.match(reviewer, /read-only by contract/);
     assert.match(reviewer, /not a technical sandbox/);
   });
+
+  test("independence means minimum falsifying evidence, not Builder duplication", () => {
+    assert.match(reviewer, /not to reproduce the Builder's investigation/);
+    assert.match(reviewer, /smallest independent check that could falsify/i);
+    assert.match(reviewer, /STOP RULE/);
+    assert.match(reviewer, /Do not start an extra "final look"/);
+  });
+
+  test("round two is finding-driven and there is no third automatic review", () => {
+    assert.match(reviewer, /at most two automatic review runs/i);
+    assert.match(reviewer, /prior BLOCKER\/MAJOR/);
+    assert.match(reviewer, /minimum regression/i);
+    assert.match(reviewer, /stops automatic cycling/i);
+  });
+
+  test("Reviewer returns evidence instead of writing the review file", () => {
+    assert.match(reviewer, /Return exactly this structured verdict/);
+    assert.match(reviewer, /Orchestrator persists it verbatim/);
+    assert.match(reviewer, /do not fix code, write project files/i);
+  });
+});
+
+describe("DB Reviewer capability is live but read-only", () => {
+  const reviewer = read("templates/common/.claude/agents/db-reviewer.md");
+
+  test("scopes its own Supabase MCP to the generated project's ref", () => {
+    assert.match(reviewer, /project_ref=\$\{SUPABASE_PROJECT_REF\}/);
+    assert.match(reviewer, /read_only=true/);
+    assert.match(reviewer, /features=database,debugging,docs/);
+  });
+
+  test("does not recreate write-based Builder verification", () => {
+    assert.match(reviewer, /Builder owns mutation-based verification/i);
+    assert.match(reviewer, /do \*\*not\*\* create a second write path/i);
+    assert.match(reviewer, /return `REVIEW_CONFLICT` immediately/i);
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -879,6 +1034,80 @@ const instructionDocs = () => {
   walk(".claude");
   return ["CLAUDE.md", ...found];
 };
+
+describe("generated build groups replace per-task agent cycles", () => {
+  const harness = flat("templates/common/CLAUDE.md");
+  const builder = flat("templates/common/.claude/agents/builder.md");
+  const tasks = flat("templates/common/specs/tasks.md");
+
+  test("tasks stay traceable without becoming agent cycles", () => {
+    assert.match(harness, /a task is not an agent cycle/i);
+    assert.match(builder, /\*\*one build group\*\*, not one task/i);
+    assert.match(tasks, /Task != agent cycle/i);
+  });
+
+  test("declared gates control review cost and capability", () => {
+    assert.match(harness, /Gate AUTO\s+→ mechanical evidence gate, no Reviewer/);
+    assert.match(harness, /Gate REVIEW\s+→ generic Reviewer once/);
+    assert.match(harness, /Gate DB_REVIEW\s+→ db-reviewer once/);
+    assert.match(harness, /Capability gate before dispatch/i);
+  });
+
+  test("Orchestrator coordinates but does not perform a third technical review", () => {
+    assert.match(harness, /Orchestrator does not perform technical review/i);
+  });
+
+  test("the task template carries Group/Risk and build groups carry Gate explicitly", () => {
+    const taskDoc = read("templates/common/specs/tasks.md");
+    assert.match(taskDoc, /\| ID \| Task \| Requirements \| Depends on \| Group \| Risk \| Acceptance \| Status \|/);
+    assert.match(taskDoc, /\| Group \| Phase \| Purpose \| Gate \| Clear after \|/);
+    assert.match(tasks, /LOW.*MEDIUM.*HIGH.*CRITICAL/i);
+    assert.match(tasks, /AUTO.*REVIEW.*DB_REVIEW/i);
+  });
+});
+
+describe("generated project model routing is mechanical by default", () => {
+  const settings = readJson("templates/common/.claude/settings.json");
+
+  test("main session starts on Sonnet/high", () => {
+    assert.equal(settings.model, "sonnet");
+    assert.equal(settings.effortLevel, "high");
+  });
+
+  test("DB review scope starts empty until Foundation knows the project ref", () => {
+    assert.equal(settings.env.SUPABASE_PROJECT_REF, "");
+  });
+});
+
+describe("Tailwind source roots exclude harness and specifications", () => {
+  const cases = [
+    { id: "next-standard-v1", css: "templates/stacks/next-standard-v1/src/app/globals.css", roots: ["src"] },
+    { id: "react-vite-standard-v1", css: "templates/stacks/react-vite-standard-v1/src/index.css", roots: ["src", "index.html"] },
+  ];
+
+  for (const item of cases) {
+    test(`${item.id} disables repository-wide source discovery`, () => {
+      const css = read(item.css);
+      assert.match(css, /@import "tailwindcss" source\(none\);/);
+      assert.match(css, /@source/);
+      assert.doesNotMatch(css, /@source[^;]*(?:\.claude|\.workflow|PROJECT\.md|requirements\.md|design\.md|tasks\.md)/);
+    });
+
+    test(`${item.id} profile declares the same application source roots`, () => {
+      const profile = readJson(`config/stack-profiles/${item.id}.json`);
+      assert.equal(profile.styling.engine, "tailwind-v4");
+      assert.deepEqual(profile.styling.source_roots, item.roots);
+    });
+  }
+
+  test("the token skill teaches static emission without making docs a source", () => {
+    const tokens = flat(".claude/skills/building-components/references/design-tokens.mdx");
+    assert.match(tokens, /source\(none\).*@source/);
+    assert.match(tokens, /@theme static/);
+    assert.match(tokens, /@theme inline/);
+    assert.match(tokens, /specs and reference Markdown must never become production CSS inputs/i);
+  });
+});
 
 describe("Supabase SSR session contract", () => {
   /* Two defects, one produced by the fix for the other.

@@ -39,7 +39,7 @@ Reference for the `shadcn-ui` skill. The installed files in the project outrank 
 
 ### Tailwind & theme tokens — read the project, don't copy from here
 
-This section is deliberately not a config template. the stack template ships **Tailwind v4**, where the theme is declared in CSS via `@theme` and there is no `tailwind.config.ts` by default. Any config block written into a document like this one goes stale as soon as the tooling moves — and a stale config that looks authoritative is worse than none, because it gets copied before it gets questioned.
+This section is deliberately not a config template. The stack template ships **Tailwind v4**, where the theme is declared in CSS via `@theme` and there is no `tailwind.config.ts` by default. The generated stylesheet also disables repository-wide auto-discovery with `source(none)` and declares the profile's real application roots with `@source`. Any config block written into a document like this one goes stale as soon as the tooling moves — and a stale config that looks authoritative is worse than none, because it gets copied before it gets questioned.
 
 The authoritative sources for this project, in order:
 
@@ -134,7 +134,7 @@ npx shadcn@latest update --dry-run
 }
 ```
 
-**Tailwind classes not applying**: on **Tailwind v4** (what the stack template ships) there is no `content` array to fix — v4 discovers sources automatically, and the usual culprit is instead a class built by string concatenation (`` `text-${color}-500` ``), which nothing can detect statically. Write complete class names and select between them:
+**Tailwind classes not applying**: on **Tailwind v4** (what the stack template ships) there is no `content` array to fix. This project intentionally **does not** scan the whole repository: read the global stylesheet's `source(none)` / `@source` declarations and confirm the real application file is inside one of those profile-owned roots. Do not add `.claude/`, `.workflow/` or specification folders as sources. If the file is already in scope, the usual culprit is a class built by string concatenation (`` `text-${color}-500` ``), which nothing can detect statically. Write complete class names and select between them:
 
 ```tsx
 // ❌ never produced in the output

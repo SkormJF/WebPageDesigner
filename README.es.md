@@ -104,10 +104,11 @@ proyecto/
 ├── CLAUDE.md              su propio contrato de harness
 ├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
-│   ├── agents/            planner · builder · reviewer
+│   ├── agents/            planner · builder · reviewer · db-reviewer
 │   └── skills/            17 estándar + lo que agregue el perfil (19 hoy)
-├── .workflow/             state.json + current/
-├── .mcp.json              Vercel + Supabase
+├── .workflow/             state.json por grupos + evidencia compacta en current/
+├── .mcp.json              Vercel + Supabase (se acota a este proyecto durante Foundation)
+├── .claude/settings.json  Sonnet/high por defecto + scope DB no secreto
 ├── src/  public/
 └── package.json  package-lock.json
 ```
@@ -118,11 +119,14 @@ elegido — 19 en ambos perfiles hoy. El catálogo del Builder es de 20, y la di
 convertiría "requiere una decisión explícita" en una frase de un documento, con la skill ya instalada en el
 repositorio.
 
-Su propio ciclo de vida corre de `READY_TO_BUILD` a `DONE`, de a una tarea por vez: cada una la implementa
-un agente Builder y la aprueba un Reviewer independiente antes de que se comitee nada. `HEAD` es siempre el
-último estado aprobado.
+Su propio ciclo de vida corre de `READY_TO_BUILD` a `DONE` por **grupos de construcción**. Las Tasks siguen siendo
+unidades de trazabilidad y aceptación, pero las relacionadas se implementan de corrido con un Builder en vez de pagar un
+ciclo de agentes por cada fila. Los grupos declaran el gate desde Planning: AUTO para trabajo totalmente LOW, REVIEW para el Reviewer genérico de solo
+lectura y DB_REVIEW para trabajo CRITICAL de Supabase/datos mediante un MCP dedicado, acotado y de solo lectura. Una corrección recibe
+una sola re-revisión dirigida, nunca una auditoría completa nueva. `HEAD` es siempre el último grupo aprobado.
 
-Los agentes cargan skills con la herramienta `Skill` cuando la tarea lo pide. Nada se precarga.
+La biblioteca de skills heredada permanece disponible para features y rediseños futuros. Los agentes cargan el cuerpo
+completo de una skill bajo demanda para el scope actual, en vez de recorrer el catálogo antes de trabajar.
 
 ---
 

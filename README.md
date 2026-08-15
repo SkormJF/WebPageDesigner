@@ -102,10 +102,11 @@ project/
 ├── CLAUDE.md              its own harness contract
 ├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
-│   ├── agents/            planner · builder · reviewer
+│   ├── agents/            planner · builder · reviewer · db-reviewer
 │   └── skills/            17 standard + the profile's additions (19 today)
-├── .workflow/             state.json + current/
-├── .mcp.json              Vercel + Supabase
+├── .workflow/             group-centric state.json + compact current evidence
+├── .mcp.json              Vercel + Supabase (scoped to this project during Foundation)
+├── .claude/settings.json  Sonnet/high default + non-secret DB review scope
 ├── src/  public/
 └── package.json  package-lock.json
 ```
@@ -115,11 +116,14 @@ The skill set is deterministic: the 17 marked `inherited-standard` plus whatever
 classified `optional`. It is **never** copied automatically. Shipping it by default would turn "requires an
 explicit decision" into a sentence in a document, with the skill already sitting in the repository.
 
-Its own lifecycle runs from `READY_TO_BUILD` to `DONE`, one task at a time, each implemented by a Builder
-agent and gated by an independent Reviewer before anything is committed. `HEAD` is always the last approved
-state.
+Its own lifecycle runs from `READY_TO_BUILD` to `DONE` in **build groups**. Tasks remain the traceability and
+acceptance units, but related tasks are implemented continuously by one Builder instead of paying for an agent cycle per
+row. Build groups declare the gate up front: AUTO for all-LOW work, REVIEW for the generic read-only Reviewer, and DB_REVIEW
+for CRITICAL Supabase/data work through a dedicated project-scoped read-only MCP. A correction gets one targeted re-review, never a fresh audit.
+`HEAD` is always the last approved group.
 
-Agents load skills through the `Skill` tool when a task needs one. Nothing is preloaded.
+The inherited skill library stays available for future features and redesigns. Agents load the full body of a skill on
+demand for the current scope rather than walking the catalogue before they work.
 
 ---
 

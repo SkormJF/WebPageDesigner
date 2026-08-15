@@ -1,17 +1,17 @@
 ---
 name: redesign-existing-projects
-description: Audit an interface that already exists and improve it inside the approved contract — separate what is broken from what merely differs from your taste, then fix the first kind within the task you were given. Use when a task calls for improving something that already exists, never as licence to modernize the rest of the product.
+description: Audit an interface that already exists and improve it inside the approved contract — separate what is broken from what merely differs from your taste, then fix the first kind within the assigned scope. Use when current work calls for improving something that already exists, never as licence to modernize the rest of the product.
 ---
 
 # Redesign
 
 ## Scope, before anything else
 
-This skill improves **the surface in front of you**, inside the task you were given and the contract that
+This skill improves **the surface in front of you**, inside the assigned scope/build group and the contract that
 was approved. It is not a mandate to modernize a product.
 
 ```
-local redesign, inside the current task
+local redesign, inside the assigned scope
   → allowed, within the approved contract
 
 material or global redesign
@@ -39,8 +39,8 @@ which one it is.
 
 | | What it is | What you do |
 |---|---|---|
-| **Broken** | It fails at its job: unreachable by keyboard, invisible focus, unreadable contrast, a dead link, a state that was never built, a layout that breaks at 375px. | Fix it inside the task. |
-| **Drifted** | It contradicts `design-system.md`: a literal hex where a token belongs, a one-off control height, a missing declared state. | Fix it inside the task. The contract already decided. |
+| **Broken** | It fails at its job: unreachable by keyboard, invisible focus, unreadable contrast, a dead link, a state that was never built, a layout that breaks at 375px. | Fix it inside the assigned scope. |
+| **Drifted** | It contradicts `design-system.md`: a literal hex where a token belongs, a one-off control height, a missing declared state. | Fix it inside the assigned scope. The contract already decided. |
 | **Different** | It works, it honours the contract, and you would have done it another way. | **Leave it.** Say so if it is worth saying, once, and move on. |
 
 The third row is where this skill used to do damage. An interface being generic is not the same as an
@@ -50,9 +50,9 @@ about a decision a human already made from a real artifact.
 ## How this works
 
 1. **Scan** — read the code. Identify the framework, the styling method, and the patterns already in use.
-2. **Read the contract** — `design-system.md` for what was approved, the task for what you were asked to do.
+2. **Read the contract** — `design-system.md` for what was approved, the assigned scope for what you were asked to do.
 3. **Sort what you find** into broken / drifted / different, with locations.
-4. **Check scope** — anything material or beyond the current task stops here and goes to the Orchestrator.
+4. **Check scope** — anything material or beyond the assigned scope stops here and goes to the Orchestrator.
 5. **Fix the first two buckets** with targeted changes working inside the existing stack. Never a rewrite.
 
 ## Where weaknesses actually cluster
@@ -105,7 +105,7 @@ subordinate to `requirements.md` as always.
 
 ## Fix priority
 
-Where several genuine findings compete for one task's attention, this order gives the highest payoff at the
+Where several genuine findings compete for one assigned scope's attention, this order gives the highest payoff at the
 lowest risk. It is a triage aid, not a checklist to execute.
 
 1. **Missing interaction states** — almost always the largest real improvement.

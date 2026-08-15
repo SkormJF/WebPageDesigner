@@ -1,0 +1,7 @@
+{
+  "model": "sonnet",
+  "effortLevel": "high",
+  "env": {
+    "SUPABASE_PROJECT_REF": ""
+  }
+}

@@ -87,8 +87,7 @@ questions are answered by looking at the bundle output, the router's code-splitt
 ## This skill diagnoses. It does not implement.
 
 Measure, interpret, locate the cause, and propose the correction with enough precision that someone else can
-apply it. The Builder implements, under a task, and the Reviewer gates the result. That separation is what
-keeps a performance pass from quietly becoming an unreviewed refactor.
+apply it. The Builder implements inside its assigned build group; review is invoked only when that group's risk policy requires it. That separation keeps a performance pass from quietly becoming an unreviewed refactor without turning every routine change into a separate agent cycle.
 
 It also does not change the architecture, redesign anything, or touch `design-system.md`.
 
@@ -110,7 +109,7 @@ It also does not change the architecture, redesign anything, or touch `design-sy
 
 ## What not to do
 
-- **Do not run Lighthouse on every task.** It is evidence to gather when performance is the question, not a
+- **Do not run Lighthouse on every task or build group.** It is evidence to gather when performance is the question, not a
   ritual attached to unrelated work.
 - **Do not chase a perfect score.** The number is a proxy. A design the human approved is not.
 - **Do not trade away the approved design** to win a metric. If the two genuinely conflict, that is a

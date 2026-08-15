@@ -1,21 +1,28 @@
-# Implementation — current task
+# Implementation — current build group
 
-No task has been implemented yet. This project is at `READY_TO_BUILD`.
+No build group has been implemented yet. This project is at `READY_TO_BUILD`.
 
-The Builder overwrites this file each task. It holds the current operational moment only — not a history.
-Durable task status lives in `tasks.md`; code history lives in git.
+The Builder overwrites this file per build group. It is compact recovery evidence, not a progress diary. Durable task
+status lives in `tasks.md`; code history lives in git.
 
 ---
 
 <!-- The Builder writes this shape:
 
-TASK: <id> — <name>
+GROUP: <id> — <name>
+TASKS: TASK-xxx, TASK-yyy
 STATUS: COMPLETE | PARTIAL
 
-WHAT CHANGED
-WHAT WAS REUSED
-CHECKS RUN          command -> actual result, not "passed"
-NOTES FOR THE REVIEWER
-OUT OF SCOPE, FOUND ANYWAY
+CHANGED
+<short file/surface summary>
+
+CHECKS
+<check -> actual result; final cleaned state only>
+
+CRITICAL EVIDENCE
+<only the risk-specific evidence that matters, or "none">
+
+OUT OF SCOPE
+<finding -> routed task/group, or "none">
 
 -->

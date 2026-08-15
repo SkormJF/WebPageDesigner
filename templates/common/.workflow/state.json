@@ -1,9 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "phase": "READY_TO_BUILD",
   "project": "[PROJECT_NAME]",
-  "current_task": null,
-  "task_stage": null,
+  "current_group": null,
+  "group_stage": null,
+  "active_tasks": [],
+  "review_round": 0,
   "pending_action": null,
   "external_operation": null
 }

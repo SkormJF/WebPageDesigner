@@ -2,7 +2,7 @@
   "schema_version": 1,
   "_doc": {
     "purpose": "Single source of truth for which skills are physically copied into a generated project. create-project copies from it; validate-project computes the same expected set and fails on a missing required skill or an unexpected extra one.",
-    "not_this": "It does not control when a skill loads into context. On disk is not in context.",
+    "not_this": "It does not control when a skill body loads into context. Physical inheritance keeps the capability available; agents still load skill content on demand rather than walking every skill.",
     "inherited_set": "generated project skills = INHERITED-STANDARD + the selected profile's profile_skills. Nothing else. This file classifies a skill; the stack profile decides which profile-inherited skills it takes -- one owner per decision.",
     "distribution": {
       "builder-only": "Stays in the Builder. Never copied.",

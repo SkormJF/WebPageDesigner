@@ -1,6 +1,6 @@
 ---
 name: accessibility-audit
-description: Audit a built interface for accessibility — axe plus the keyboard, focus, form, dialog, navigation, dynamic-state and reflow behaviour automated tools cannot see. Use at the Quality Gate, when reviewing a task with a visual surface, and whenever someone asks whether something is accessible.
+description: Audit a built interface for accessibility — axe plus the keyboard, focus, form, dialog, navigation, dynamic-state and reflow behaviour automated tools cannot see. Use at the Quality Gate, when reviewing an assigned visual scope/group, and whenever someone asks whether something is accessible.
 ---
 
 # Accessibility Audit

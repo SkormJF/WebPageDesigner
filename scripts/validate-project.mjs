@@ -206,7 +206,7 @@ if (fs.existsSync(activeStateFile)) {
 ui.step("Harness");
 
 check("CLAUDE.md present", exists("CLAUDE.md"));
-for (const agent of ["planner", "builder", "reviewer"]) {
+for (const agent of ["planner", "builder", "reviewer", "db-reviewer"]) {
   check(`.claude/agents/${agent}.md present`, exists(`.claude/agents/${agent}.md`));
 }
 
@@ -226,7 +226,7 @@ if (hasState) {
 
   /* A fresh repository has nothing in flight. A non-null field here would mean
      the template shipped a half-finished operation as someone's starting point. */
-  const idleFields = ["current_task", "task_stage", "pending_action", "external_operation"];
+  const idleFields = ["current_group", "group_stage", "pending_action", "external_operation"];
   const notIdle = idleFields.filter((f) => state[f] !== null);
   check(
     "Operational fields start null",
@@ -239,6 +239,21 @@ if (hasState) {
     "external_operation" in state,
     "Without it there is no record that a remote operation was in flight, and recovery cannot tell an interrupted deploy from one that never started.",
   );
+  check(
+    "No tasks are active in the fresh repository",
+    Array.isArray(state.active_tasks) && state.active_tasks.length === 0,
+    `active_tasks = ${JSON.stringify(state.active_tasks)}`,
+  );
+  check(
+    "Review round starts at zero",
+    state.review_round === 0,
+    `review_round = ${JSON.stringify(state.review_round)}`,
+  );
+  check(
+    "Workflow schema is group-centric v2",
+    state.schema_version === 2,
+    `schema_version = ${JSON.stringify(state.schema_version)}`,
+  );
 }
 
 check(".workflow/current/implementation.md present", exists(".workflow/current/implementation.md"));
@@ -249,6 +264,37 @@ check(
   !exists(".workflow/history"),
   "Current documents hold current truth; git holds the past.",
 );
+
+/* ---------- project settings ---------- */
+
+ui.step("Claude project settings");
+const hasClaudeSettings = check(".claude/settings.json present", exists(".claude/settings.json"));
+if (hasClaudeSettings) {
+  let settings = null;
+  try {
+    settings = JSON.parse(read(".claude/settings.json"));
+  } catch (error) {
+    check(".claude/settings.json is valid JSON", false, error.message);
+  }
+  if (settings) {
+    check(".claude/settings.json is valid JSON", true);
+    check(
+      "Main session defaults to Sonnet",
+      settings.model === "sonnet",
+      `model = ${JSON.stringify(settings.model)}`,
+    );
+    check(
+      "Main session defaults to high effort",
+      settings.effortLevel === "high",
+      `effortLevel = ${JSON.stringify(settings.effortLevel)}`,
+    );
+    check(
+      "Fresh Supabase reviewer scope is intentionally unset",
+      settings.env?.SUPABASE_PROJECT_REF === "",
+      `SUPABASE_PROJECT_REF = ${JSON.stringify(settings.env?.SUPABASE_PROJECT_REF)}`,
+    );
+  }
+}
 
 /* ---------- MCP ---------- */
 

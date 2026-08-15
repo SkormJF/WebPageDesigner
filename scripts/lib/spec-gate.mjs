@@ -37,7 +37,7 @@ const REQUIRED_SECTIONS = {
   "requirements.md": ["## Functional requirements", "## Non-functional requirements"],
   "design.md": ["## Stack profile", "## Architecture", "## Routes", "## Security"],
   "design-system.md": ["## Approval", "## Color", "## Typography", "## Interaction states"],
-  "tasks.md": ["## Dependency order"],
+  "tasks.md": ["## Build groups", "## Dependency order"],
 };
 
 /** Markers that mean a decision was never made. */
@@ -125,11 +125,75 @@ export function runSpecGate(dir = paths.builderCurrent) {
     if (!reqsCitedByTasks.has(id)) add("tasks.md", `no task covers ${id}, a MUST requirement`);
   }
 
-  /* 5 — every task links to at least one requirement */
-  for (const line of tableRows(contents["tasks.md"] ?? "")) {
+  /* 5 — every task links to at least one requirement, one build group and one risk. */
+  const tasksText = contents["tasks.md"] ?? "";
+  const taskRows = tableRows(tasksText).filter((line) => line.match(TASK_ID));
+
+  const groupsSection = tasksText.match(/## Build groups\s*([\s\S]*?)(?=\n---|\n## )/)?.[1] ?? "";
+  const groupRows = tableRows(groupsSection);
+  const groups = new Map();
+  let extraClearCount = 0;
+
+  for (const line of groupRows) {
+    const cells = line.split("|").slice(1, -1).map((cell) => cell.trim());
+    if (cells.length < 5 || cells[0] === "Group") continue;
+    const [group, phase, _purpose, gate, clearAfter] = cells;
+    if (!group) continue;
+    if (groups.has(group)) add("tasks.md", `build group ${group} is declared more than once`);
+    groups.set(group, { phase, gate, clearAfter, risks: [] });
+    if (!["FOUNDATION", "BUILD_TASKS", "INTEGRATION"].includes(phase)) {
+      add("tasks.md", `build group ${group} has invalid phase ${phase || "(empty)"}`);
+    }
+    if (!["AUTO", "REVIEW", "DB_REVIEW"].includes(gate)) {
+      add("tasks.md", `build group ${group} has invalid Gate ${gate || "(empty)"}`);
+    }
+    if (!["YES", "NO"].includes(clearAfter)) {
+      add("tasks.md", `build group ${group} has invalid Clear after value ${clearAfter || "(empty)"}`);
+    }
+    if (phase === "BUILD_TASKS" && clearAfter === "YES") extraClearCount += 1;
+  }
+
+  if (groups.size === 0) add("tasks.md", "no build groups declared");
+  if (extraClearCount > 1) add("tasks.md", "more than one BUILD_TASKS group requests Clear after = YES");
+
+  const taskCountByGroup = new Map();
+  for (const line of taskRows) {
     const task = line.match(TASK_ID);
     if (!task) continue;
     if (!line.match(REQ_ID)) add("tasks.md", `${task[0]} links to no requirement`);
+
+    const cells = line.split("|").slice(1, -1).map((cell) => cell.trim());
+    const group = cells[4];
+    const risk = cells[5];
+    if (!group || !groups.has(group)) {
+      add("tasks.md", `${task[0]} belongs to undeclared build group ${group || "(empty)"}`);
+    } else {
+      taskCountByGroup.set(group, (taskCountByGroup.get(group) ?? 0) + 1);
+      groups.get(group).risks.push(risk);
+    }
+    if (!["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(risk)) {
+      add("tasks.md", `${task[0]} has invalid Risk ${risk || "(empty)"}`);
+    }
+  }
+
+  for (const [group, meta] of groups.entries()) {
+    if (!taskCountByGroup.has(group)) {
+      add("tasks.md", `build group ${group} contains no task`);
+      continue;
+    }
+    const validRisks = meta.risks.filter((risk) => ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(risk));
+    const allLow = validRisks.length > 0 && validRisks.every((risk) => risk === "LOW");
+    const hasNonLow = validRisks.some((risk) => risk !== "LOW");
+    const hasCritical = validRisks.includes("CRITICAL");
+    if (allLow && meta.gate !== "AUTO") {
+      add("tasks.md", `build group ${group} is all LOW and must use Gate AUTO`);
+    }
+    if (hasNonLow && meta.gate === "AUTO") {
+      add("tasks.md", `build group ${group} contains non-LOW work and cannot use Gate AUTO`);
+    }
+    if (meta.gate === "DB_REVIEW" && !hasCritical) {
+      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but contains no CRITICAL task`);
+    }
   }
 
   return { pass: findings.length === 0, findings, checked: Object.keys(contents).length };

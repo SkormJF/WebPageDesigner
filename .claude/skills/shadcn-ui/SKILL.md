@@ -24,7 +24,7 @@ does a component for this already exist in the project?
            product structure  → build it, in the feature that owns it
 ```
 
-**Add only what the current task needs.** Never `add --all`, and never add a component speculatively: every
+**Add only what the assigned scope/build group needs.** Never `add --all`, and never add a component speculatively: every
 one is source code that lands in the repository, gets reviewed, and has to be maintained whether or not
 anything imports it.
 
@@ -58,8 +58,9 @@ The generated project pins its own versions, and shadcn's own surface has moved 
 - **Base library.** Components generated against Radix expose `asChild`; those generated against Base UI
   expose `render`. Which one this project has is visible in `components.json` and in the component source.
   Assuming the wrong one produces code that typechecks against nothing.
-- **Tailwind version.** On Tailwind v4 the theme is declared in CSS via `@theme` and there is no
-  `tailwind.config.ts`. Do not write a config block for a file the project does not have.
+- **Tailwind version and sources.** On Tailwind v4 the theme is declared in CSS via `@theme` and there is no
+  `tailwind.config.ts`. Generated stack templates also scope detection explicitly with `source(none)` + `@source`; preserve
+  those application roots and never re-enable repository-wide scanning just to make a class appear.
 - **Form primitives are not guaranteed.** Some registry versions ship no `Form`/`FormField` wrapper. Check
   whether the file actually exists after adding it; if it does not, wire the form directly rather than
   importing something that was never generated.

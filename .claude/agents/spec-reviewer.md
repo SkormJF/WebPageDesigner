@@ -67,7 +67,7 @@ Do the specs agree with each other?
 
 Can every piece be traced to a reason, and every reason to a piece?
 
-- Every task links to at least one requirement.
+- Every task links to at least one requirement, has one valid `Risk`, and belongs to exactly one declared build group; every group declares a valid `Gate`.
 - Every requirement is covered by at least one task, or is explicitly and justifiably out of scope.
 - Requirements trace back to something in `discovery.md` — a requirement nobody asked for is scope the human
   never approved, and it is as much a finding as a missing one.
@@ -79,6 +79,13 @@ Can this be built as specified, on the declared stack profile?
 
 - No requirement that the chosen stack cannot satisfy without an undeclared dependency.
 - Dependencies between tasks form a workable order — no task needing the output of one scheduled after it.
+- Build groups preserve that order and are real context-sharing batches, not one routine LOW task per group. A one-task
+  group needs a dependency boundary or HIGH/CRITICAL risk. At most one BUILD_TASKS group may set `Clear after = YES`.
+- Gate/capability mapping is coherent before dispatch: all-LOW groups use `AUTO`; MEDIUM/HIGH groups do not use AUTO;
+  CRITICAL Supabase/schema/RLS/data-integrity uses `DB_REVIEW`; other critical surfaces use `REVIEW` unless a dedicated
+  capability gate is explicitly defined.
+- A CRITICAL Supabase/schema/RLS/data-integrity group does not also contain unrelated MEDIUM/HIGH non-DB work; split
+  the group when one gate could not competently review its full surface.
 - Derived and calculated values have a stated mechanism, not just a stated result.
 - Security-relevant requirements (access control, role separation, data isolation) have an enforcement point
   named in `design.md`, not left implied by the UI.

@@ -21,9 +21,10 @@ Traditional CSS approaches often couple color values directly to their usage con
 
 Let's examine how we can structure our CSS variables to create this flexible system:
 
-```css title="globals.css"
-@import "tailwindcss";
-@import "tw-animate-css";
+```css title="globals.css (token layer only)"
+/* Keep the stack template's existing Tailwind import and @source declarations.
+   Do not copy a new import from a reference file: each stack profile owns which
+   application roots Tailwind is allowed to scan. */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -48,6 +49,25 @@ Let's examine how we can structure our CSS variables to create this flexible sys
   --primary-foreground: oklch(0.205 0 0);
 }
 ```
+
+
+## Tailwind v4: tokens and source scope are different contracts
+
+The generated stack profile owns Tailwind's **source roots**. Its stylesheet deliberately limits scanning to application
+files; `.claude/`, `.workflow/`, specs and reference Markdown must never become production CSS inputs. Preserve the
+existing `source(none)` / `@source` declarations instead of re-enabling repository-wide discovery.
+
+Use the narrowest token mechanism that expresses the contract:
+
+- ordinary contractual CSS variables that do not need Tailwind utilities belong in `:root`;
+- variables that define Tailwind theme utilities belong in `@theme`;
+- a contractual theme variable that must exist in emitted CSS even before a class references it belongs in
+  `@theme static`;
+- a theme mapping whose value references another CSS variable belongs in `@theme inline` when inline resolution is
+  required.
+
+Do not use a documentation example as the only consumer that keeps a token alive. Final verification happens against the
+clean application state after temporary probes are removed.
 
 In the above example, we have four design tokens:
 

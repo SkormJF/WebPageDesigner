@@ -4,18 +4,15 @@
   "label": "Next.js App Router + Tailwind + TypeScript",
   "template": "templates/stacks/next-standard-v1",
   "status": "supported",
-
   "use_when": [
     "Server rendering, static generation or route-level data loading is wanted",
     "The product is public-facing and indexability matters",
     "Server actions or route handlers are the natural place for backend logic"
   ],
-
   "profile_skills": [
     "shadcn-ui",
     "vercel-react-best-practices"
   ],
-
   "scripts": {
     "dev": "npm run dev",
     "build": "npm run build",
@@ -24,14 +21,19 @@
     "typecheck": "npm run typecheck",
     "e2e": "npm run test:e2e"
   },
-
+  "styling": {
+    "engine": "tailwind-v4",
+    "entry": "src/app/globals.css",
+    "source_roots": [
+      "src"
+    ]
+  },
   "smoke": {
     "command": "npm run start -- --port {port} --hostname 127.0.0.1",
     "url": "http://127.0.0.1:{port}/",
     "expect_status": 200,
     "note": "The hostname is pinned rather than left to default. A server that binds to `localhost` can end up on IPv6 ::1 only, answering on localhost and refusing 127.0.0.1 -- the probe then times out and reports a working server as dead. This validates the scaffold serves, nothing about the product."
   },
-
   "architecture": {
     "source_root": "src",
     "layout": [
@@ -45,7 +47,6 @@
     ],
     "note": "Conceptual layout. Create a directory when something needs it, in the right place -- do not precreate the tree."
   },
-
   "validated": {
     "date": "2026-08-13",
     "platform": "win32",
@@ -67,12 +68,22 @@
     },
     "note": "Exact resolved versions live in the template's package.json and package-lock.json, which are the authority. This block records what was actually run, not what is expected to work."
   },
-
   "notes": [
+    "Tailwind source discovery is explicit: the stylesheet disables automatic repository scanning and registers only the profile's application source roots. Harness/spec/docs files must never influence production CSS.",
     "Next 16 renamed middleware.ts to proxy.ts and the exported function middleware to proxy. Same mechanism, breaking change. Using the pre-16 filename compiles cleanly and the file is then never invoked -- there is no error to notice. Check node_modules/next/dist/docs before writing one.",
     "The stock scaffold hardcodes `font-family: Arial, Helvetica, sans-serif` on body in globals.css, which beats the theme regardless of how correctly the font tokens are wired. Both fonts download, neither is used, and the build reports no error. This template ships the fix (`font-family: var(--font-sans)`); do not reintroduce a literal family there.",
     "Every font token in @theme must name a variable that some next/font call actually declares. A token pointing at an undefined name resolves to nothing and the page silently falls back to the browser default -- matching names are fine, unmatched ones are the failure.",
     "Layout props are typed explicitly rather than via the generated LayoutProps global, so `tsc --noEmit` passes on a fresh clone before any build has generated .next/types.",
     "lucide-react ships no brand icons -- Instagram, Facebook, Twitter, Github, LinkedIn and YouTube were all removed. Importing one is a hard build failure. Use an inline SVG with the brand path, sized with the same classes as the surrounding icons."
-  ]
+  ],
+  "source_scope_validation": {
+    "date": "2026-08-15",
+    "tailwind": "4.3.3",
+    "checks": {
+      "source_none_parses": "pass",
+      "declared_source_roots_resolve": "pass",
+      "theme_static_emits_unused_contract_tokens": "pass"
+    },
+    "note": "Focused validation of the Tailwind source-boundary migration. The prior full Windows stack validation remains recorded above; package versions and runtime stack were not changed by this migration."
+  }
 }
