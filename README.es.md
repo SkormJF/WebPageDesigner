@@ -126,7 +126,7 @@ ejecución**. Planning crea el mínimo de grupos significativos dentro de esas f
 (`BASE` o `SUPABASE`) por separado de su `Gate` (`AUTO`, `REVIEW`, `DB_REVIEW`). Así las Tasks relacionadas se construyen
 de corrido con un Builder en vez de pagar un ciclo de agentes por cada fila. Una corrección recibe una sola re-revisión
 dirigida; si la segunda revisión sigue fallando, el harness se detiene para una decisión humana. DB_REVIEW queda reservado
-para estado que el DB Reviewer read-only realmente puede inspeccionar; configuración de Auth/control-plane queda fuera.
+para estado que el DB Reviewer puede inspeccionar sin mutar usando la misma conexión Supabase project-scoped; configuración de Auth/control-plane queda fuera.
 `HEAD` es siempre el último grupo aprobado. Después de INTEGRATION, el Orchestrator principal es dueño del ciclo global de
 preview/QA/E2E/deploy; se planifica una sola pasada E2E sobre el candidato final, no una suite duplicada dentro de una Task
 de Integration. Las correcciones de gates globales son dirigidas y tienen máximo dos intentos.

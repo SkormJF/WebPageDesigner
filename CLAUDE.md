@@ -86,8 +86,8 @@ Start from the smallest useful groups and split only for a real dependency, cont
 is a traceability/acceptance outcome, not a file, component, route or one requirement; one task may satisfy several REQs
 and touch many files. Every group declares `Capability = BASE | SUPABASE`, `Gate = AUTO | REVIEW | DB_REVIEW` and
 `Clear after = YES | NO`; every task declares `Risk`. At most one BUILD_TASKS group may request an extra `/clear`. A
-DB_REVIEW group is restricted to surfaces the generated read-only DB Reviewer can actually observe from versioned SQL plus
-Supabase database/debugging/docs tools; control-plane settings stay outside DB_REVIEW. Human-owned ones are `HPA-nnn` in
+DB_REVIEW group is restricted to surfaces the generated DB Reviewer can observe through versioned SQL plus non-mutating
+reads over the shared project-scoped Supabase MCP; control-plane settings stay outside DB_REVIEW. Human-owned ones are `HPA-nnn` in
 `design.md` with blocked group + completion proof, never Builder mutations; automatable ones use `SUPABASE + REVIEW` with
 observable behaviour. Prefer the existing Auth group over configuration-only fragmentation. Global lifecycle work
 (VISUAL_QA, full E2E, QUALITY_GATE, DEPLOY/POST_DEPLOY) never becomes a Task; INTEGRATION gets focused seam checks, never a
@@ -125,7 +125,7 @@ The Next template sets `agentRules: false`: this repository's generated `CLAUDE.
 not upsert framework agent rules into it. For version-specific Next details, agents read the installed
 `node_modules/next/dist/docs/` selectively on demand.
 `design.md` separately owns **Backend Mode**: exactly `none` or `supabase`. `none` generates Vercel-only MCP/configuration;
-`supabase` additionally generates the Supabase MCP and a fail-closed read-only DB reviewer capability. This keeps
+`supabase` additionally generates one shared Supabase MCP and a fail-closed read-only DB reviewer role. This keeps
 simple sites simple without making backend-capable applications change framework.
 `generated project skills = INHERITED-STANDARD + next-standard-v1.profile_skills`. `config/skill-manifest.json` classifies
 distribution, the fixed Next profile owns its Next-specific additions, and **`optional` is never inherited**. Today 17 + 2

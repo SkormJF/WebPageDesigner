@@ -88,8 +88,8 @@ group is accepted.
 - `AUTO` → no Reviewer; valid only when every task in the group is `LOW`. Builder final cleaned-state checks are the gate.
 - `REVIEW` → generic Reviewer for MEDIUM/HIGH work and CRITICAL work that is not a database-specific surface.
 - `DB_REVIEW` → only for a `SUPABASE` group containing CRITICAL schema/RLS/authorization/data-integrity work whose final
-  state is independently inspectable from versioned SQL plus the DB Reviewer's read-only `database`, `debugging` and `docs`
-  tools. Mutation tests remain Builder work.
+  state is independently inspectable from versioned SQL plus the DB Reviewer's non-mutating reads over the scoped
+  Supabase MCP. Mutation tests remain Builder work.
 - Control-plane settings are not DB_REVIEW. Human-owned → `HPA-nnn`, not Builder work; automatable → `SUPABASE + REVIEW`.
 - A DB_REVIEW group must not also contain work its Reviewer cannot independently observe; split when one gate cannot
   competently review the full group.

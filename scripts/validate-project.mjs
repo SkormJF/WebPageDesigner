@@ -245,10 +245,10 @@ if (exists(".claude/agents/builder.md")) {
   );
 }
 if (backendMode === "supabase" && exists(".claude/agents/db-reviewer.md")) {
-  check(
-    "Fresh DB reviewer is fail-closed until Foundation scopes it",
-    /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/.test(read(".claude/agents/db-reviewer.md")),
-  );
+  const dbReviewer = read(".claude/agents/db-reviewer.md");
+  check("DB reviewer reuses the project Supabase MCP", /mcp__supabase/.test(dbReviewer));
+  check("DB reviewer declares no second inline MCP", !/^mcpServers:/m.test(dbReviewer) && !/supabase_review/.test(dbReviewer));
+  check("DB reviewer has no file-write or shell tools", !/^tools:.*\b(?:Write|Edit|Bash|WebFetch)\b/m.test(dbReviewer));
 }
 
 const hasState = check(".workflow/state.json present", exists(".workflow/state.json"));

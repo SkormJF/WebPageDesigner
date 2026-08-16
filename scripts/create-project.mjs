@@ -174,7 +174,7 @@ ui.pass(`stack template (${profile.id})`);
 const backendCapability = composeBackendCapability(staging, backendMode);
 ui.pass(
   backendCapability.supabase
-    ? "Supabase capability layer enabled (writable Builder MCP + fail-closed read-only DB reviewer)"
+    ? "Supabase capability layer enabled (one shared project MCP + fail-closed read-only DB reviewer role)"
     : "Static/simple capability layer: no Supabase MCP or DB reviewer installed",
 );
 

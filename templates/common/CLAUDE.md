@@ -46,14 +46,14 @@ select declared GROUP in current phase whose dependencies are satisfied
 → persist READY_FOR_GATE
    AUTO      → Builder evidence is the LOW-risk gate; no Reviewer
    REVIEW    → generic Reviewer, one group, ROUND 1
-   DB_REVIEW → db-reviewer through project-scoped read-only Supabase MCP, ROUND 1
+   DB_REVIEW → db-reviewer through the same project-scoped Supabase MCP under a read-only role contract, ROUND 1
 → PASS       → APPROVED → tasks DONE → commit group → clear current-group state
 → FAIL       → findings → Builder targeted correction → one targeted ROUND 2
 → ROUND 2 still BLOCKER/MAJOR → STOP and ask the human; no third automatic review
 ```
 `AUTO` is valid only when every task is LOW. `DB_REVIEW` is valid only for a `SUPABASE` group with CRITICAL
 schema/RLS/authorization/data-integrity work whose acceptance can be independently inspected through versioned local SQL
-plus the read-only Supabase `database`, `debugging` and `docs` tool groups. Project/Auth settings, SMTP/email-confirmation
+plus non-mutating Supabase inspection of the scoped project. Project/Auth settings, SMTP/email-confirmation
 configuration, Storage configuration and other remote control-plane settings are **not** DB_REVIEW surfaces; keep them in a
 SUPABASE + REVIEW group whose behaviour can be observed without privileged mutation. Unrelated non-DB work does not ride
 inside DB_REVIEW.
@@ -62,8 +62,8 @@ inside DB_REVIEW.
 - `SUPABASE` is valid only when `design.md` says `Backend Mode: supabase`, the composed capability exists, and any required
   project scope is proven.
 - `REVIEW` requires the generic Reviewer.
-- `DB_REVIEW` requires `.claude/agents/db-reviewer.md` with a real project ref, never the unscoped sentinel. Its
-  risk-bearing **final-state** claims must be independently observable by the declared read-only tools; mutation-only
+- `DB_REVIEW` requires `.claude/agents/db-reviewer.md`, a proven project-scoped `supabase` MCP and independently
+  observable risk-bearing **final-state** claims; mutation-only
   boundary evidence may remain Builder-owned as long as the Reviewer can independently inspect the resulting DB contract.
 Missing capability → fail fast before spending an agent turn. Do not discover substitute CLIs or bypasses.
 **Human platform actions.** Before a group blocked by incomplete `HPA-nnn`, persist
@@ -83,7 +83,7 @@ Temporary probes removed after a check invalidate any evidence they were sustain
 output through the gate when useful.
 **Reviewer — REVIEW gate only.** Read-only by contract. It finds the smallest independent evidence capable of falsifying
 the risk-bearing claims. Acceptance covered + no BLOCKER/MAJOR = immediate `REVIEW_PASS`. No extra "final look".
-**DB Reviewer — DB_REVIEW gate only.** Uses versioned local migrations plus project-scoped Supabase MCP `read_only=true`; mutation verification remains Builder work.
+**DB Reviewer — DB_REVIEW gate only.** Reuses the project-scoped `supabase` MCP under a strict non-mutating role contract; mutation verification remains Builder work.
 **Orchestrator — coordination during build groups; owner of global lifecycle gates.** During FOUNDATION, BUILD_TASKS and
 INTEGRATION you validate routing, persist state/results, commit approved groups and handle checkpoints. You do **not**
 rerun Builder commands or inspect code as a substitute Reviewer. After INTEGRATION is approved and committed, no build
@@ -105,7 +105,7 @@ Backend Mode `supabase` additionally ships `.claude/capabilities/supabase.md`; r
 include it in any SUPABASE Builder assignment.
 Supabase scope changes use an operational restart, not `/clear`:
 `RESTART REQUIRED — Supabase MCP scope changed. Reinicia Claude Code y luego escribe continúa.` Persist the named
-`pending_action`, then STOP. After restart, prove identity from disk/live read before clearing it.
+`pending_action`, then STOP. This is not `/clear`. After restart, prove the single scoped MCP identity from disk/live read before clearing it.
 Record every consequential remote mutation before running it as
 `external_operation = { kind, target, started_at }`; observe the real result, record it, then clear to `null`.
 Never auto-retry an interrupted remote mutation and never persist a secret.

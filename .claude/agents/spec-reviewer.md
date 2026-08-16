@@ -93,8 +93,8 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
   `supabase`; DB-specific tasks do not exist with `none`.
 - Gate/capability mapping is coherent **and reviewable** before dispatch: all-LOW groups use `AUTO`; non-LOW groups do not;
   `DB_REVIEW` requires `Capability = SUPABASE` and CRITICAL Supabase/schema/RLS/data-integrity work whose risk-bearing
-  **final state** can be independently inspected through versioned SQL plus the generated DB Reviewer's read-only
-  `database`, `debugging`, `docs` tools. Builder-owned mutation tests may supplement that final-state review. Other critical
+  **final state** can be independently inspected through versioned SQL plus non-mutating reads over the project-scoped
+  Supabase MCP. Builder-owned mutation tests may supplement that final-state review. Other critical
   surfaces use `REVIEW` unless a dedicated capability gate is explicitly defined.
 - A DB_REVIEW group does not contain Supabase Auth/project settings, email-confirmation/SMTP settings, Storage configuration,
   Edge Function deployment or any other control-plane/app behaviour its declared Reviewer cannot observe. Automatable work

@@ -40,7 +40,7 @@ After that it follows the normal `INTEGRATION → preview → QA → deploy` lif
    - `SUPABASE` is valid only for a project whose `design.md` has `Backend Mode: supabase`.
    - `AUTO` is valid only for all-LOW groups.
    - `DB_REVIEW` is for CRITICAL Supabase/schema/RLS/authorization/data-integrity work whose final state is independently
-     observable with the read-only database/debugging/docs reviewer; it requires `SUPABASE`.
+     observable through versioned SQL plus non-mutating reads over the shared scoped Supabase MCP; it requires `SUPABASE`.
    - Supabase Auth/project settings, SMTP/email confirmation, Storage configuration and other control-plane settings are
      not DB_REVIEW surfaces; route them to `SUPABASE + REVIEW` with observable behaviour or an explicit human precondition,
      preferably inside the existing Auth feature group rather than a database-only or one-task configuration group.

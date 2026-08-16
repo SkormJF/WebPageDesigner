@@ -560,7 +560,7 @@ describe("Supabase MCP scoping", () => {
   });
 
   test("pending_action is not cleared before identity is verified", () => {
-    assert.match(projectHarness, /prove identity, not connectivity/);
+    assert.match(projectHarness, /prove identity,\s*not\s*connectivity/);
     assert.match(projectHarness, /PASS → pending_action = null/);
     assert.match(projectHarness, /never cleared on the way in/);
   });
@@ -1143,19 +1143,30 @@ describe("Reviewer contract", () => {
   });
 });
 
-describe("DB Reviewer capability is live but read-only", () => {
+describe("DB Reviewer reuses the single project Supabase MCP under a read-only role contract", () => {
   const reviewer = read("templates/capabilities/supabase/.claude/agents/db-reviewer.md");
+  const capability = read("templates/capabilities/supabase/.claude/capabilities/supabase.md");
 
-  test("scopes its own Supabase MCP to the generated project's ref", () => {
-    assert.match(reviewer, /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/);
-    assert.match(reviewer, /read_only=true/);
-    assert.match(reviewer, /features=database,debugging,docs/);
+  test("uses the parent project's Supabase MCP and declares no second connection", () => {
+    assert.match(reviewer, /^tools:.*mcp__supabase/m);
+    assert.doesNotMatch(reviewer, /^mcpServers:/m);
+    assert.doesNotMatch(reviewer, /supabase_review/);
+    assert.match(reviewer, /same project-scoped `supabase` MCP/i);
+  });
+
+  test("keeps the reviewer operationally non-mutating with a fail-closed boundary", () => {
+    assert.doesNotMatch(reviewer, /^tools:.*\b(?:Write|Edit|Bash|WebFetch)\b/m);
+    assert.match(reviewer, /read-only by contract, not a separate credential sandbox/i);
+    assert.match(reviewer, /Never call[\s\S]*`apply_migration`/i);
+    assert.match(reviewer, /execute_sql[\s\S]*only read-only `SELECT`/i);
+    assert.match(reviewer, /return `REVIEW_CONFLICT`/i);
+    assert.match(capability, /same project-scoped `supabase` MCP/i);
+    assert.doesNotMatch(capability, /supabase_review/);
   });
 
   test("does not recreate write-based Builder verification", () => {
     assert.match(reviewer, /Builder owns mutation-based verification/i);
     assert.match(reviewer, /do \*\*not\*\* create a second write path/i);
-    assert.match(reviewer, /return `REVIEW_CONFLICT` immediately/i);
   });
 });
 
@@ -1325,18 +1336,19 @@ describe("Supabase capability is composed only when Backend Mode requires it", (
     assert.ok(!fs.existsSync(path.join(ROOT, "templates/common/.claude/agents/db-reviewer.md")));
   });
 
-  test("the conditional capability carries the read-only DB reviewer", () => {
+  test("the conditional capability carries the shared-MCP DB reviewer", () => {
     const rel = "templates/capabilities/supabase/.claude/agents/db-reviewer.md";
     assert.ok(fs.existsSync(path.join(ROOT, rel)));
     assert.ok(fs.existsSync(path.join(ROOT, "templates/capabilities/supabase/.claude/capabilities/supabase.md")));
-    const body = flat(rel);
-    assert.match(body, /read_only=true/);
-    assert.match(body, /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/);
+    const body = read(rel);
+    assert.match(body, /^tools:.*mcp__supabase/m);
+    assert.doesNotMatch(body, /^mcpServers:/m);
+    assert.doesNotMatch(body, /supabase_review|__UNSCOPED_UNTIL_FOUNDATION__|read_only=true/);
   });
 
   test("the DB reviewer explicitly rejects Auth/control-plane work", () => {
     const body = flat("templates/capabilities/supabase/.claude/agents/db-reviewer.md");
-    assert.match(body, /Auth\/project settings.*outside this reviewer's feature groups/i);
+    assert.match(body, /Auth\/project settings.*outside this reviewer's scope/i);
     assert.match(body, /return `REVIEW_CONFLICT` immediately/i);
   });
 
@@ -1354,7 +1366,7 @@ describe("Supabase capability is composed only when Backend Mode requires it", (
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   });
 
-  test("backend mode supabase composes MCP, reviewer scope and DB reviewer", () => {
+  test("backend mode supabase composes one MCP shared by Builder and DB reviewer", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wpd-backend-supabase-"));
     try {
       fs.mkdirSync(path.join(dir, ".claude", "agents"), { recursive: true });
@@ -1369,7 +1381,9 @@ describe("Supabase capability is composed only when Backend Mode requires it", (
       assert.equal(mcp.mcpServers.supabase.url, "https://mcp.supabase.com/mcp");
       assert.ok(!("SUPABASE_PROJECT_REF" in (settings.env ?? {})));
       assert.match(builder, /^tools:.*mcp__supabase/m);
-      assert.match(dbReviewer, /project_ref=__UNSCOPED_UNTIL_FOUNDATION__/);
+      assert.match(dbReviewer, /^tools:.*mcp__supabase/m);
+      assert.doesNotMatch(dbReviewer, /^mcpServers:/m);
+      assert.doesNotMatch(dbReviewer, /supabase_review|__UNSCOPED_UNTIL_FOUNDATION__/);
       assert.ok(fs.existsSync(path.join(dir, ".claude", "agents", "db-reviewer.md")));
       assert.ok(fs.existsSync(path.join(dir, ".claude", "capabilities", "supabase.md")));
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
@@ -1384,6 +1398,8 @@ describe("Supabase capability is composed only when Backend Mode requires it", (
     assert.match(validator, /Supabase capability contract present/);
     assert.match(validator, /Backend-less Builder carries no Supabase MCP tool/);
     assert.match(validator, /Builder receives the writable Supabase MCP tool only for this backend/);
+    assert.match(validator, /DB reviewer reuses the project Supabase MCP/);
+    assert.match(validator, /DB reviewer declares no second inline MCP/);
   });
 });
 
