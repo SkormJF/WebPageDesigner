@@ -49,6 +49,7 @@ import {
   resolveProjectTarget,
   readBackendMode,
   parseAuthenticationMode,
+  normalizeProse,
 } from "./lib/common.mjs";
 
 const args = parseArgs(process.argv.slice(2));
@@ -233,9 +234,10 @@ ui.step("Harness");
 const hasHarness = check("CLAUDE.md present", exists("CLAUDE.md"));
 if (hasHarness) {
   const harness = read("CLAUDE.md");
-  check("Generated harness carries blocking HPA recovery", /HUMAN_PLATFORM_ACTION/.test(harness) && /completed_human_actions/.test(harness) && /resume the same phase/i.test(harness));
-  check("Generated harness carries durable interruption recovery", /## Recovery/.test(harness) && /never conversational memory/i.test(harness) && /never replayed/i.test(harness));
-  check("Generated harness keeps phase-wide context loading", /all five approved specs/i.test(harness) && /tasks\.md.*execution map/i.test(harness));
+  const harnessProse = normalizeProse(harness);
+  check("Generated harness carries blocking HPA recovery", /HUMAN_PLATFORM_ACTION/.test(harness) && /completed_human_actions/.test(harness) && /resume the same phase/i.test(harnessProse));
+  check("Generated harness carries durable interruption recovery", /## Recovery/.test(harness) && /never conversational memory/i.test(harnessProse) && /never replayed/i.test(harnessProse));
+  check("Generated harness keeps phase-wide context loading", /all five approved specs/i.test(harnessProse) && /tasks\.md.*execution map/i.test(harnessProse));
 }
 for (const agent of ["planner", "builder", "reviewer"]) {
   check(`.claude/agents/${agent}.md present`, exists(`.claude/agents/${agent}.md`));
@@ -260,8 +262,9 @@ if (backendMode === "supabase" && exists(".claude/capabilities/supabase.md")) {
 }
 if (exists(".claude/agents/builder.md")) {
   const builderAgent = read(".claude/agents/builder.md");
-  check("Builder reads the five frozen specs once per full build phase", /all five approved[\s\S]{0,120}specs once/i.test(builderAgent));
-  check("Builder does not depend on Factory-only context", /Never load Discovery, the visual Artifact, Factory templates or Factory history/i.test(builderAgent));
+  const builderProse = normalizeProse(builderAgent);
+  check("Builder reads the five frozen specs once per full build phase", /all five approved specs once/i.test(builderProse));
+  check("Builder does not depend on Factory-only context", /Never load Discovery, the visual Artifact, Factory templates or Factory history/i.test(builderProse));
   check(
     backendMode === "supabase"
       ? "Builder receives the writable Supabase MCP tool only for this backend"

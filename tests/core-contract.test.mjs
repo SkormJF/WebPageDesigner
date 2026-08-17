@@ -11,6 +11,7 @@ import {
   expectedSkills,
   computeSpecDigest,
   factoryApprovalFindings,
+  normalizeProse,
 } from "../scripts/lib/common.mjs";
 import { runSpecGate } from "../scripts/lib/spec-gate.mjs";
 
@@ -448,6 +449,18 @@ test("create-project copies the versioned Stack Profile into generated repositor
   const script = read("scripts/create-project.mjs");
   assert.match(script, /\.workflow.*stack-profile\.json/s);
   assert.match(script, /fs\.copyFileSync\(path\.join\(paths\.stackProfiles/);
+});
+
+test("validate-project prose contracts survive Markdown line wrapping", () => {
+  const validator = read("scripts/validate-project.mjs");
+  const harness = normalizeProse(read("templates/common/CLAUDE.md"));
+  const builder = normalizeProse(read("templates/common/.claude/agents/builder.md"));
+
+  assert.match(validator, /normalizeProse\(harness\)/);
+  assert.match(validator, /normalizeProse\(builderAgent\)/);
+  assert.match(harness, /resume the same phase/i);
+  assert.match(harness, /never replayed/i);
+  assert.match(builder, /Never load Discovery, the visual Artifact, Factory templates or Factory history/i);
 });
 
 test("validate-project enforces V9 composition and no model pin", () => {

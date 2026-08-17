@@ -389,6 +389,11 @@ export function parseArgs(argv) {
   return args;
 }
 
+/** Normalize prose-only contract checks so Markdown line wrapping is not semantic. */
+export function normalizeProse(text) {
+  return String(text).replace(/\s+/g, " ").trim();
+}
+
 export function isValidSlug(slug) {
   return typeof slug === "string" && /^[a-z][a-z0-9-]{1,63}$/.test(slug);
 }
