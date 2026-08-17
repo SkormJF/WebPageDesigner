@@ -46,6 +46,8 @@ import {
   readBackendMode,
   composeBackendCapability,
   resolveProjectTarget,
+  computeSpecDigest,
+  factoryApprovalFindings,
 } from "./lib/common.mjs";
 import { runSpecGate, reportSpecGate } from "./lib/spec-gate.mjs";
 
@@ -87,6 +89,16 @@ if (state.phase !== "CREATING_PROJECT") {
   );
 }
 ui.pass(`Phase is CREATING_PROJECT (project "${state.project_name ?? slug}")`);
+
+const currentSpecDigest = computeSpecDigest();
+const approvalFindings = factoryApprovalFindings(state, currentSpecDigest);
+if (approvalFindings.length > 0) {
+  abort(
+    "The current specifications do not have a valid SPEC_PASS + human-approval proof.",
+    approvalFindings.join("\n"),
+  );
+}
+ui.pass(`Reviewed + human-approved spec digest ${currentSpecDigest.slice(0, 12)}…`);
 
 if (state.slug && state.slug !== slug) {
   abort(
@@ -130,6 +142,12 @@ const gate = runSpecGate();
 reportSpecGate(gate);
 if (!gate.pass) {
   abort("Mechanical Spec Gate failed.", "Fix the findings above; creation does not proceed past it.");
+}
+if (gate.digest !== currentSpecDigest) {
+  abort(
+    "Specifications changed while creation preconditions were being verified.",
+    "Return to SPEC_REVIEW; creation only accepts the exact reviewed and human-approved five-spec digest.",
+  );
 }
 
 /* The single most destructive thing this script could do is write over

@@ -90,8 +90,9 @@ These hold for this project. Violations are review findings, not style opinions:
 ### Auth and roles
 
 <!-- SLOT: Authentication is `supabase` only when this product uses Supabase Auth. In this harness every Supabase login
-     is intentionally **without email confirmation**. Because Confirm Email is a human-owned dashboard setting, include an
-     HPA before FOUNDATION that disables Confirm Email; do not ask Builder to discover or mutate it. -->
+     is intentionally **without email confirmation**. Because Confirm Email is a human-owned dashboard setting, declare
+     the canonical platform contract `SUPABASE_CONFIRM_EMAIL_OFF` below and include an HPA before FOUNDATION that asks the
+     human to disable Confirm Email; do not ask Builder to discover or mutate it. -->
 
 | Role | May see | May do | May not |
 |---|---|---|---|
@@ -138,7 +139,11 @@ These hold for this project. Violations are review findings, not style opinions:
 ## Human platform actions
 
 <!-- SLOT: Human-only external actions current tools must not perform: HPA-nnn + blocked phase + completion proof.
+     `Known platform contracts` is machine-readable and language-independent: use `SUPABASE_CONFIRM_EMAIL_OFF` whenever
+     Authentication is `supabase`, otherwise `none`. The HPA action itself remains natural human-readable language.
      Use `— | None | — | —` when absent. No secrets. -->
+
+**Known platform contracts:** [TBD: `SUPABASE_CONFIRM_EMAIL_OFF` | `none`]
 
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|

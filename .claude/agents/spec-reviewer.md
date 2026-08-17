@@ -125,8 +125,9 @@ This is the check nobody else performs, and the one most worth your attention.
 | `MINOR` | Worth fixing, does not endanger the build. Wording, a clarification, a non-load-bearing inconsistency. | Reported, does not fail |
 
 **Any BLOCKER or any MAJOR means `SPEC_FAIL`.** There is no aggregate score and no "mostly fine". One MAJOR
-is a fail. **MINOR findings alone never fail the specs** — report them and return `SPEC_PASS`. The
-Orchestrator may fix a trivial one before the human gate; a MINOR does not start another review chain.
+is a fail. **MINOR findings alone never fail the specs** — report them and return `SPEC_PASS`. During the initial Factory
+gate they are not auto-fixed and never start another review chain; if the human explicitly requests one changed, that edit
+invalidates the frozen pass and returns through the normal gates.
 
 Classify by consequence, not by how much text the fix needs. A visual rule that contradicts the approved `design-system.md` is MAJOR — it may be small to fix and still means the human approved something they will not get.
 

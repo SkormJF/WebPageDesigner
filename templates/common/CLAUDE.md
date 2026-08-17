@@ -120,7 +120,7 @@ When request interception/session refresh/route protection is required, obey `re
 
 Backend Mode is `none` or `supabase`, but lifecycle is identical. Supabase adds one shared project-scoped MCP and
 `.claude/capabilities/supabase.md`; it does not add a DB Reviewer agent. When `design.md` declares Supabase Authentication,
-the capability contract requires the predeclared human HPA **Confirm Email = OFF** before FOUNDATION; do not rediscover it
+the capability contract requires `design.md` to declare `SUPABASE_CONFIRM_EMAIL_OFF` plus the predeclared human HPA **Confirm Email = OFF** before FOUNDATION; do not rediscover it
 during implementation. Builder owns migrations, remote mutations and safe
 scratch-test cleanup. Reviewer uses the same connection read-only. Record remote mutations in `external_operation` before
 execution and never auto-retry an interrupted mutation. Never persist secrets.

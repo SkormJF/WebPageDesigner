@@ -4,7 +4,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseBackendMode, parseAuthenticationMode, composeBackendCapability, expectedSkills } from "../scripts/lib/common.mjs";
+import {
+  parseBackendMode,
+  parseAuthenticationMode,
+  composeBackendCapability,
+  expectedSkills,
+  computeSpecDigest,
+  factoryApprovalFindings,
+} from "../scripts/lib/common.mjs";
 import { runSpecGate } from "../scripts/lib/spec-gate.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -25,6 +32,7 @@ No deviations.
 **Mode:** ${backend}
 **Authentication:** ${auth}
 ## Human platform actions
+**Known platform contracts:** none
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
 | — | None | — | — |
@@ -93,7 +101,7 @@ test("V9 keeps one fixed versioned stack profile", () => {
 test("Planning and Spec Review must consume the Stack Profile", () => {
   const harness = flat("CLAUDE.md");
   const reviewer = flat(".claude/agents/spec-reviewer.md");
-  assert.match(harness, /PLANNING.*fixed Stack Profile/i);
+  assert.match(harness, /PLANNING.*Stack Profile/i);
   assert.match(harness, /SPEC_REVIEW.*Stack Profile/i);
   assert.match(reviewer, /configured Stack Profile named by `builder\.config\.json`/i);
   assert.match(reviewer, /src\/proxy\.ts.*exporting `proxy`/i);
@@ -115,6 +123,7 @@ Do not use middleware.ts; request-boundary work follows the Stack Profile.
 **Mode:** none
 **Authentication:** none
 ## Human platform actions
+**Known platform contracts:** none
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
 | — | None | — | — |
@@ -136,6 +145,7 @@ No deviations.
 **Mode:** none
 **Authentication:** none
 ## Human platform actions
+**Known platform contracts:** none
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
 | — | None | — | — |
@@ -170,7 +180,7 @@ FOUNDATION then PRODUCT_BUILD.
   assert.ok(result.findings.some((f) => /fixed phase PRODUCT_BUILD has no task/.test(f.message)));
 });
 
-test("Spec Gate rejects lifecycle gates disguised as tasks", () => {
+test("Spec Gate does not parse natural-language lifecycle intent; Reviewer owns that semantic check", () => {
   const tasks = `# Tasks
 ## Dependency order
 TASK-001 -> TASK-002
@@ -180,12 +190,10 @@ FOUNDATION then PRODUCT_BUILD.
 | ID | Task | Requirements | Depends on | Phase | Risk | Acceptance | Status |
 |---|---|---|---|---|---|---|---|
 | TASK-001 | Establish baseline | REQ-001 | — | FOUNDATION | HIGH | Build succeeds. | PENDING |
-| TASK-002 | Run Visual QA and full E2E suite | REQ-001 | TASK-001 | PRODUCT_BUILD | HIGH | Quality Gate passes. | PENDING |
+| TASK-002 | Ejecutar QA visual y una suite E2E completa | REQ-001 | TASK-001 | PRODUCT_BUILD | HIGH | El Quality Gate pasa. | PENDING |
 `;
-  const result = gate({ tasks });
-  assert.ok(result.findings.some((f) => /Visual QA is a whole-product lifecycle phase/.test(f.message)));
-  assert.ok(result.findings.some((f) => /standalone E2E-suite work/.test(f.message)));
-  assert.ok(result.findings.some((f) => /Quality Gate is a whole-product lifecycle phase/.test(f.message)));
+  assert.equal(gate({ tasks }).pass, true);
+  assert.match(flat(".claude/agents/spec-reviewer.md"), /Global lifecycle gates do not leak into tasks/i);
 });
 
 test("Spec Gate enforces initial status, real dependencies and acyclic direction", () => {
@@ -206,7 +214,7 @@ FOUNDATION then PRODUCT_BUILD.
   assert.ok(result.findings.some((f) => /dependency cycle/.test(f.message)));
 });
 
-test("Spec Gate requires scratch cleanup with no-residue proof", () => {
+test("fixture cleanup is semantic Reviewer work, not an English-regex mechanical check", () => {
   const tasks = `# Tasks
 ## Dependency order
 TASK-001 -> TASK-002
@@ -216,12 +224,13 @@ FOUNDATION then PRODUCT_BUILD.
 | ID | Task | Requirements | Depends on | Phase | Risk | Acceptance | Status |
 |---|---|---|---|---|---|---|---|
 | TASK-001 | Establish baseline | REQ-001 | — | FOUNDATION | HIGH | Build succeeds. | PENDING |
-| TASK-002 | Test with two disposable users | REQ-001 | TASK-001 | PRODUCT_BUILD | HIGH | Create two test users and check isolation. | PENDING |
+| TASK-002 | Probar con dos cuentas temporales | REQ-001 | TASK-001 | PRODUCT_BUILD | HIGH | Crear dos cuentas y comprobar aislamiento. | PENDING |
 `;
-  assert.ok(gate({ tasks, backend: "supabase" }).findings.some((f) => /without explicit cleanup/.test(f.message)));
+  assert.equal(gate({ tasks }).pass, true);
+  assert.match(flat(".claude/agents/spec-reviewer.md"), /scratch-only source plus cleanup and a final absence\/no-residue verification/i);
 });
 
-test("human-only actions block a fixed phase, not a build group", () => {
+test("Supabase Confirm Email prerequisite is machine-readable and language-independent", () => {
   const design = `# Design
 ## Architecture
 No deviations.
@@ -233,9 +242,10 @@ No deviations.
 **Mode:** supabase
 **Authentication:** supabase
 ## Human platform actions
+**Known platform contracts:** \`SUPABASE_CONFIRM_EMAIL_OFF\`
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
-| HPA-001 | Disable Confirm Email in Supabase Auth | FOUNDATION | Human confirmation |
+| HPA-001 | Deshabilitar Confirm Email en el panel de Supabase Auth | FOUNDATION | Confirmación humana |
 ## Security
 Server enforcement.
 `;
@@ -288,9 +298,26 @@ X
   assert.equal(gate({ discovery, requirements }).pass, true);
 });
 
+test("FocoV5 regression: every must-not requirement needs forward task coverage", () => {
+  const requirements = `# Requirements
+## Functional requirements
+| ID | Requirement | Priority | Source |
+|---|---|---|---|
+| REQ-001 | The product MUST have an entry flow. | MUST | DISC-001 |
+## Non-functional requirements
+X
+## What must NOT be possible
+| ID | Must not be possible | Source | Enforcement point (design.md) |
+|---|---|---|---|
+| REQ-901 | Access another user's rows. | DISC-001 | RLS |
+`;
+  const result = gate({ requirements });
+  assert.ok(result.findings.some((f) => /REQ-901.*must-not requirement/.test(f.message)));
+});
+
 test("Supabase Auth requires the known Confirm Email OFF human prerequisite", () => {
   const result = gate({ backend: "supabase", auth: "supabase" });
-  assert.ok(result.findings.some((f) => /Confirm Email/.test(f.message)));
+  assert.ok(result.findings.some((f) => /SUPABASE_CONFIRM_EMAIL_OFF/.test(f.message)));
 });
 
 test("Supabase without Auth does not invent the Confirm Email prerequisite", () => {
@@ -323,10 +350,35 @@ test("review loops are capped at one correction and one targeted recheck", () =>
   assert.match(reviewer, /MINOR alone does not trigger correction/i);
 });
 
+test("Spec Gate exposes a stable digest and changes it when any frozen spec changes", () => {
+  const dir = makeSpecs();
+  try {
+    const first = runSpecGate(dir);
+    assert.match(first.digest, /^[a-f0-9]{64}$/);
+    assert.equal(first.digest, computeSpecDigest(dir));
+    fs.appendFileSync(path.join(dir, "PROJECT.md"), "\nMaterial approved change.\n");
+    assert.notEqual(computeSpecDigest(dir), first.digest);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("create approval evidence rejects R2 FAIL and stale or unapproved spec versions", () => {
+  const digest = "a".repeat(64);
+  const good = {
+    spec_review_round: 2,
+    spec_review_verdict: "PASS",
+    spec_review_digest: digest,
+    human_approved_digest: digest,
+  };
+  assert.deepEqual(factoryApprovalFindings(good, digest), []);
+  assert.ok(factoryApprovalFindings({ ...good, spec_review_verdict: "FAIL" }, digest).some((x) => /not PASS/.test(x)));
+  assert.ok(factoryApprovalFindings({ ...good, human_approved_digest: null }, digest).some((x) => /human_approved_digest/.test(x)));
+  assert.ok(factoryApprovalFindings(good, "b".repeat(64)).some((x) => /current specs differ/.test(x)));
+});
+
 test("Spec PASS freezes specifications", () => {
   const harness = flat("CLAUDE.md");
-  assert.match(harness, /After `SPEC_PASS`, specs are frozen/i);
-  assert.match(harness, /Never apply MINOR edits silently/i);
+  assert.match(harness, /After `SPEC_PASS`, specs freeze/i);
+  assert.match(harness, /MINOR only.*does not trigger correction/i);
 });
 
 test("generated roles are Builder, Reviewer and dormant Planner only", () => {
@@ -452,6 +504,50 @@ test("skill distribution remains slim and deterministic", () => {
   assert.deepEqual(profile.profile_skills, ["shadcn-ui", "vercel-react-best-practices"]);
 });
 
+test("Discovery closes product rules before R4 instead of merely touching categories", () => {
+  const factory = flat("CLAUDE.md");
+  assert.match(factory, /R3 is not closed merely because each category was mentioned/i);
+  assert.match(factory, /required\/optional and allowed values/i);
+  assert.match(factory, /proposed as a default and explicitly accepted/i);
+  assert.match(factory, /Mentioned-but-undefined is still unknown/i);
+});
+
+test("R4 materializes the canonical design-system template and Planning cannot restructure it", () => {
+  const factory = flat("CLAUDE.md");
+  const artifact = flat(".claude/skills/artifact-design/SKILL.md");
+  assert.match(factory, /DISCOVERY.*R4.*canonical.*templates\/common\/specs\/design-system\.md/i);
+  assert.match(factory, /fill `templates\/common\/specs\/design-system\.md` into `design-system\.md` exactly/i);
+  assert.match(factory, /Planning reads only the four templates it writes/i);
+  assert.match(factory, /do not read the design-system template.*rewrite approved `design-system\.md`/i);
+  assert.match(artifact, /canonical shape.*templates\/common\/specs\/design-system\.md/i);
+});
+
+test("Planning treats the Mechanical Gate as a black box instead of reading regex implementation", () => {
+  const factory = flat("CLAUDE.md");
+  assert.match(factory, /Run the Mechanical Spec Gate as a black box/i);
+  assert.match(factory, /do not read `scripts\/lib\/spec-gate\.mjs` or `scripts\/lib\/common\.mjs`/i);
+});
+
+test("Factory review proof makes Round-2 failure terminal and creation mechanically impossible", () => {
+  const factory = flat("CLAUDE.md");
+  const create = flat("scripts/create-project.mjs");
+  assert.match(factory, /spec_review_round.*spec_review_verdict.*spec_review_digest.*human_approved_digest/i);
+  assert.match(factory, /R2 FAIL is terminal for automation/i);
+  assert.match(factory, /perform no Write\/Edit or corrective Bash/i);
+  assert.match(factory, /do not rerun Gate.*do not recommend creation/i);
+  assert.match(factory, /only explicit approval copies `spec_review_digest` to `human_approved_digest`/i);
+  assert.match(create, /factoryApprovalFindings/);
+  assert.match(create, /valid SPEC_PASS \+ human-approval proof/i);
+  assert.match(create, /gate\.digest !== currentSpecDigest/);
+});
+
+test("cross-file correction must update every derived consumer before Round 2", () => {
+  const factory = flat("CLAUDE.md");
+  assert.match(factory, /Grep all five specs for derived restatements/i);
+  assert.match(factory, /same consolidated correction/i);
+  assert.match(factory, /Never leave stale acceptance text/i);
+});
+
 test("always-on harness files keep explicit context budgets", () => {
   const budgets = new Map([
     ["CLAUDE.md", 3000],
@@ -480,7 +576,7 @@ test("active V9 contracts contain no retired build-group execution language", ()
 test("B1 freezes design-system and Spec Review never reopens the Artifact", () => {
   const factory = flat("CLAUDE.md");
   const reviewer = flat(".claude/agents/spec-reviewer.md");
-  assert.match(factory, /Planning writes real content into `PROJECT\.md`.*`requirements\.md`.*`design\.md`.*`tasks\.md`.*do not rewrite `design-system\.md`/i);
+  assert.match(factory, /Planning reads only the four templates it writes.*`PROJECT\.md`.*`requirements\.md`.*`design\.md`.*`tasks\.md`.*do not read the design-system template.*rewrite approved `design-system\.md`/i);
   assert.match(factory, /never reopens the Artifact HTML/i);
   assert.match(reviewer, /do not read the Artifact/i);
   assert.match(reviewer, /`design-system\.md`.*approved visual contract after B1/i);
@@ -488,9 +584,9 @@ test("B1 freezes design-system and Spec Review never reopens the Artifact", () =
 
 test("Factory persists SPEC_REVIEW before gates and AWAITING_APPROVAL before the human question", () => {
   const factory = flat("CLAUDE.md");
-  assert.match(factory, /persist `SPEC_REVIEW` before the Mechanical Gate or Reviewer/i);
-  assert.match(factory, /Immediately after `SPEC_PASS`, persist `AWAITING_APPROVAL` before asking the human/i);
-  assert.match(factory, /recovery from either phase.*never returns to `PLANNING`/i);
+  assert.match(factory, /persist `SPEC_REVIEW`.*run Mechanical Gate/i);
+  assert.match(factory, /After `SPEC_PASS`, persist `AWAITING_APPROVAL` before asking approval/i);
+  assert.match(factory, /Recovery never returns these phases to PLANNING/i);
 });
 
 test("Spec Reviewer treats lost approved product behaviour as at least MAJOR", () => {
@@ -498,6 +594,12 @@ test("Spec Reviewer treats lost approved product behaviour as at least MAJOR", (
   assert.match(reviewer, /Severity floor for lost product behaviour/i);
   assert.match(reviewer, /never MINOR.*at least MAJOR/i);
   assert.match(reviewer, /Source tag pasted onto an unrelated requirement is not traceability/i);
+});
+
+test("Spec Reviewer MINORs never create a hidden third correction path", () => {
+  const reviewer = flat(".claude/agents/spec-reviewer.md");
+  assert.match(reviewer, /MINOR findings alone never fail the specs/i);
+  assert.match(reviewer, /not auto-fixed and never start another review chain/i);
 });
 
 test("generated Builder loads the complete frozen contract once per build phase", () => {
@@ -523,9 +625,11 @@ test("Supabase Auth contract fixes Confirm Email OFF as a known human prerequisi
   const design = flat("templates/common/specs/design.md");
   const harness = flat("templates/common/CLAUDE.md");
   assert.match(capability, /email confirmation.*always disabled/i);
-  assert.match(capability, /Planning records an `HPA-nnn` before `FOUNDATION`/i);
+  assert.match(capability, /Planning declares.*`SUPABASE_CONFIRM_EMAIL_OFF`.*records an `HPA-nnn` before `FOUNDATION`/i);
   assert.match(design, /without email confirmation/i);
-  assert.match(harness, /Confirm Email = OFF.*before FOUNDATION/i);
+  assert.match(harness, /SUPABASE_CONFIRM_EMAIL_OFF.*Confirm Email = OFF.*before FOUNDATION/i);
+  const validator = flat("scripts/validate-project.mjs");
+  assert.match(validator, /SUPABASE_CONFIRM_EMAIL_OFF/);
 });
 
 test("generated recovery resumes durable work instead of replaying accepted phases", () => {

@@ -30,18 +30,17 @@ IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_
 `PROJECT.md`/`requirements.md`/`design.md`/`tasks.md` from PLANNING, and a
 temporary `artifact/`.
 ```json
-{ "schema_version": 1, "phase": "DISCOVERY", "project_name": "Example", "slug": "example",
-  "discovery_round": 2, "pending_action": null }
+{ "schema_version": 2, "phase": "DISCOVERY", "project_name": "Example", "slug": "example",
+  "discovery_round": 2, "pending_action": null, "spec_review_round": 0,
+  "spec_review_verdict": null, "spec_review_digest": null, "human_approved_digest": null }
 ```
 
-**`phase` holds a value from the state machine and nothing else** — never `"DISCOVERY — round 2 done"`: every recovery
-path branches on it. With `pending_action` that is the whole of state, where we are and what I was about to do: no
-requirements, no architecture, no visual decisions, no review history, and the target derived from `projects_root + slug`
-rather than stored. `discovery.md` holds **current approved truth only**, replaced when a decision changes. Load per phase
-and no more — `DISCOVERY`: state and discovery · `PLANNING`: state, discovery, templates, approved design system and
-fixed Stack Profile (and `templates/capabilities/supabase/.claude/capabilities/supabase.md` after Backend Mode becomes `supabase`) ·
-`SPEC_REVIEW`/`AWAITING_APPROVAL`: state, discovery, five specs and Stack Profile ·
-`CREATING_PROJECT`/`VALIDATING_PROJECT`: state, config, Stack Profile and approved backend mode.
+**`phase` is only the enum value.** State carries lifecycle position, `pending_action`, and current spec proof
+(`spec_review_round`, `spec_review_verdict`, `spec_review_digest`, `human_approved_digest`) — never requirements, design or
+review transcript. Derive the target from `projects_root + slug`. `discovery.md` is current approved truth. Load only:
+R1–R3 state+discovery · R4 + `artifact-design` + canonical `templates/common/specs/design-system.md` · PLANNING + four
+writable spec templates + approved design system + Stack Profile (+ Supabase capability when applicable) · SPEC_REVIEW/
+AWAITING_APPROVAL + discovery + five specs + Stack Profile · creation/validation + state + config + Stack Profile + backend.
 ## Discovery
 Conversational, not a form: infer what you can, ask only what is unknown, ambiguous or contradictory, and write
 `discovery.md` from the moment the project has a name, updating it and `discovery_round` every round. **R1 product and
@@ -49,7 +48,11 @@ context** — purpose, users, type, business context, objective, constraints. **
 language, tone, factual and claim limits, and whether they must **receive files**, asked separately. **R3 functional
 direction**, *only if R1 found real functionality* — the flow narrated end to end first, then entities and relations,
 roles, the states a record moves through, derived values, one concrete case, and **what must NOT be possible**; summarize
-back. Keep a compact `## Product decision ledger` in `discovery.md`: stable `DISC-nnn` IDs for approved **requirements-owned product decisions** — capabilities, user-visible behaviour,
+back. **R3 is not closed merely because each category was mentioned.** Continue until every load-bearing field rule
+(required/optional and allowed values where relevant), transition, permission, interaction and must-not rule is stated by the
+human or proposed as a default and explicitly accepted. Mentioned-but-undefined is still unknown. Before R4, ask one compact
+follow-up for remaining ambiguities; Artifact/Planning never silently choose a product rule. Keep a compact
+`## Product decision ledger` in `discovery.md`: stable `DISC-nnn` IDs for approved **requirements-owned product decisions** — capabilities, user-visible behaviour,
 business rules, permissions, state transitions, product-specific constraints and explicit "must not" decisions. Do not put
 identity/scope, visual tokens, stack choices or implementation in that ledger. Update the same ID when a
 decision is refined; never reuse an ID for a different decision. **R4 visual direction** — reference site (`web-reader`), colour, light or dark, feeling, then assets, then approval.
@@ -69,8 +72,8 @@ palette, typography, buttons, layout, backgrounds and tone, plus the sign-in and
 once: `[ Aprobar dirección visual ] [ Quiero cambios ]`. Naming them is what separates one honest question from a bare
 "¿te gusta?", and a genuinely ambiguous element still earns its own. Changes are resolved specifically, republished to the
 same URL, and approved on the next turn. What gets approved is a **named visual system — tokens, roles, tiers, rhythm,
-states — not every CSS literal**, and no accessibility claim is made without a real measurement. `design-system.md` copies
-those values and becomes their durable authority after approval. The Artifact is transient: it stays in `.builder/current/artifact/` until `reset-builder` removes it, so do
+states — not every CSS literal**, and no accessibility claim is made without a real measurement. **On approval fill `templates/common/specs/design-system.md` into `design-system.md` exactly:** keep required headings,
+remove SLOT/TBD guidance, record only approved values. That file is the durable visual authority after B1. The Artifact is transient: it stays in `.builder/current/artifact/` until `reset-builder` removes it, so do
 not spend a turn deleting it — and it is never copied into the generated project.
 ## Planning — five specifications, one owner each
 | File | Owns |
@@ -80,8 +83,11 @@ not spend a turn deleting it — and it is never copied into the generated proje
 | `design.md` | **HOW, technically.** Backend mode; architecture, routes, data, auth, RLS, integrations, security, env names and justified baseline deviations. The Factory already owns Next. |
 | `design-system.md` | **The approved visual contract**, already persisted at B1 from the Artifact — Planning consumes it unchanged. |
 | `tasks.md` | **Decomposition.** Requirement-linked outcomes, phase, dependencies, risk, acceptance and durable status. |
-Templates in `templates/common/specs/` carry the structure. Planning writes real content into `PROJECT.md`,
-`requirements.md`, `design.md` and `tasks.md`; **do not rewrite `design-system.md`** after B1. Design closes load-bearing architecture and enforcement, not routine coding choices the generated Builder can safely
+Templates carry structure. Planning reads only the four templates it writes, producing `PROJECT.md`, `requirements.md`,
+`design.md`, `tasks.md`; **do not read the design-system template or rewrite approved `design-system.md` after B1.** Run the
+Mechanical Spec Gate as a black box; do not read `scripts/lib/spec-gate.mjs` or `scripts/lib/common.mjs` to tailor prose. A
+Gate result contradicting a higher contract is a harness defect, not a reason to rewrite valid content. Design closes
+load-bearing architecture and enforcement, not routine coding choices the generated Builder can safely
 resolve inside the approved contracts. One owner per datum — a task
 says "create `.env.example` from `design.md`" instead of restating a second, divergent list. Rigour is proportional, never
 quota-driven: **write a datum only if it is needed to build, review or recover this project.** Requirements are
@@ -98,32 +104,36 @@ or deployment. Human-only platform actions are `HPA-nnn` in `design.md`, blocked
 and Authentication is `supabase`, the Supabase capability contract makes **Confirm Email = OFF** a known human-owned
 prerequisite: Planning records that HPA before `FOUNDATION`; it is never left for Builder to discover. Disposable fixtures
 require scratch create → test → cleanup → no-residue proof; cleanup failure → STOP.
-**Transversal change:** detect scope → modify only affected sections → preserve unrelated approved decisions → revalidate.
-Broad re-review only for structural change.
+**Transversal correction:** find the owner, Grep all five specs for derived restatements, update every affected consumer in
+the **same consolidated correction**, preserve unrelated decisions, revalidate. Never leave stale acceptance text. If a
+finding exposes an unapproved product/material visual decision, STOP, ask the smallest human question, persist it in R3/R4,
+invalidate review proof and re-enter Planning. Broad re-review only after such an authority change.
 
 ## Spec Gate
 
 ```
 Mechanical Spec Gate PASS + Spec Reviewer PASS + explicit Human Approval = READY_TO_CREATE
 BLOCKER or MAJOR → SPEC_FAIL │ MINOR only → record for the human; it does not trigger correction.
-Maximum 2 automatic Spec Reviewer runs; if the second still fails → STOP and bring the consolidated
-cause to the human. There is no third automatic pass.
+Maximum 2 automatic Spec Reviewer runs; if the second still fails → **hard STOP** and bring the consolidated
+cause to the human. There is no third automatic pass, no post-R2 auto-fix, and no Mechanical Gate PASS may substitute for
+a Reviewer PASS.
 ```
 
-**Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, Discovery-decision↔requirement
-source coverage, ID hygiene, requirement↔task references, orphan MUSTs, fixed phase coverage, machine-readable stack
-invariants, global-gate/E2E leaks, human-only platform work assigned to Builder, fixture cleanup, initial task status,
-dependency direction and cycles. Deterministic; it does not judge whether requirement wording faithfully preserves a
-Discovery decision, visual quality, or task sizing. **Spec Reviewer:** the `spec-reviewer` subagent,
+**Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, Discovery-decision↔requirement source
+coverage, ID hygiene, requirement↔task references, orphan MUSTs **and must-not requirements**, fixed phase coverage,
+machine-readable backend/Auth/HPA contracts, responsive range coverage, initial task status, dependency direction and
+cycles. It validates structure and canonical markers only; it does **not** parse natural-language intent such as fixture
+cleanup, lifecycle-work wording, human-only mutations, requirement fidelity, visual quality or task sizing — those belong to
+the Spec Reviewer. **Spec Reviewer:** the `spec-reviewer` subagent,
 which owns its own criteria; it reviews and reports, never fixing specs, writing code or changing phase. Its second run
 checks the earlier findings, the regressions the corrections introduced and any obvious BLOCKER/MAJOR missed first time —
 it does not raise the standard, reinterpret the approved visual contract, widen scope, hunt unrelated new MINORs or invent design
-rules. After `SPEC_PASS`, specs are frozen. Never apply MINOR edits silently; an accepted edit invalidates the pass and
-returns through both gates. Never call a third Spec Reviewer. **Dispatch order is durable:** when Planning finishes its four
-specs, persist `SPEC_REVIEW` before the Mechanical Gate or Reviewer. Failures/corrections stay there. Immediately after
-`SPEC_PASS`, persist `AWAITING_APPROVAL` before asking the human; recovery from either phase uses disk and never returns to
-`PLANNING`. **Human approval is a real gate**: ask `SPEC_PASS — 0 BLOCKER, 0 MAJOR. ¿Apruebas las especificaciones?
-[ Aprobar ] [ Revisar ]`; only explicit approval persists `READY_TO_CREATE` and stops at checkpoint **B2**.
+rules. After `SPEC_PASS`, specs freeze; any accepted edit clears proof and reruns both gates. **Durable dispatch:** after Planning,
+persist `SPEC_REVIEW`, reset proof, run Mechanical Gate and keep its `SPEC_DIGEST`. Persist round=1 before R1, round=2 before
+targeted R2. PASS stores verdict PASS + that digest; FAIL stores verdict FAIL. **R2 FAIL is terminal for automation:** after
+FAIL perform no Write/Edit or corrective Bash, do not rerun Gate, do not recommend creation — STOP for the human. After
+`SPEC_PASS`, persist `AWAITING_APPROVAL` before asking approval. Only explicit approval copies `spec_review_digest` to
+`human_approved_digest`, persists `READY_TO_CREATE`, then B2. Recovery never returns these phases to PLANNING.
 
 ## Fixed Next platform, optional Supabase, skills, and the three mechanical scripts
 `builder.config.json` fixes `stack_profile = next-standard-v1`. There is one supported application framework: Next.js.

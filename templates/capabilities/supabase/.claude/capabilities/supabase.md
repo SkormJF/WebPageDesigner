@@ -19,8 +19,9 @@ proof.
 ## Fixed Auth prerequisite
 
 When `design.md` declares `**Authentication:** supabase`, email confirmation is **always disabled** for projects generated
-by this harness. This is not a product decision and Builder must not rediscover it. Planning records an `HPA-nnn` before
-`FOUNDATION`: the human disables **Confirm Email** in the Supabase Auth dashboard, then confirms completion. Do not spend a
+by this harness. This is not a product decision and Builder must not rediscover it. Planning declares the machine-readable
+platform contract `SUPABASE_CONFIRM_EMAIL_OFF` in `design.md` and records an `HPA-nnn` before `FOUNDATION`: the human
+disables **Confirm Email** in the Supabase Auth dashboard, then confirms completion. Do not spend a
 Builder correction attempt on this control-plane setting and do not continue Auth-dependent work while that HPA is pending.
 
 ## Builder mutation contract

@@ -25,6 +25,10 @@ not re-derive it and it does not quietly improve on it. That makes this the one 
 visual decision is genuinely made — and the reason everything downstream, this skill included, defers to the
 contract once it exists.
 
+The durable handoff has one canonical shape: `templates/common/specs/design-system.md`. After human approval,
+the Orchestrator fills that template with the approved values **without renaming/reordering its required top-level
+headings**. This skill never invents a parallel Spanish/English heading scheme and Planning never restructures the file.
+
 ## The one thing this is for
 
 **Discovery Round 4: propose a visual direction, iterate on it, get it approved by a human.** It may be

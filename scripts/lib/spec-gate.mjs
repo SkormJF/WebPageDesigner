@@ -16,7 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { paths, SPEC_FILES, ui, parseArgs, parseBackendMode, parseAuthenticationMode } from "./common.mjs";
+import { paths, SPEC_FILES, ui, parseArgs, parseBackendMode, parseAuthenticationMode, computeSpecDigest } from "./common.mjs";
 
 const REQUIRED_SECTIONS = {
   "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions in force"],
@@ -40,29 +40,8 @@ const PHASES = ["FOUNDATION", "PRODUCT_BUILD"];
 const PHASE_ORDER = new Map(PHASES.map((phase, index) => [phase, index]));
 const RISKS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
-/* Obvious planning mistakes that are deterministic enough to reject before the
-   semantic Spec Reviewer. These are deliberately narrow: the gate catches the
-   exact lifecycle/capability leaks the harness can prove mechanically, while
-   sizing and nuanced reviewability remain reviewer judgement. */
-const GLOBAL_LIFECYCLE_TASK_PATTERNS = [
-  { re: /\b(?:e2e|end[- ]to[- ]end)\s+suite\b/i, label: "standalone E2E-suite work belongs to lifecycle phase E2E" },
-  { re: /\b(?:full|whole|global|serious|persistent)\s+(?:playwright\s+)?(?:e2e|end[- ]to[- ]end)\b/i, label: "full E2E execution belongs to lifecycle phase E2E" },
-  { re: /\bvisual\s+qa\b/i, label: "Visual QA is a whole-product lifecycle phase, not a task" },
-  { re: /\bquality\s+gate\b/i, label: "Quality Gate is a whole-product lifecycle phase, not a task" },
-  { re: /\bpost[- ]deploy\b/i, label: "Post-deploy is a lifecycle phase, not a task" },
-  { re: /\bbreak(?:ing)?\s+(?:it|the\s+test|a\s+test)\s+once\b/i, label: "deliberately breaking a test is not task acceptance" },
-  { re: /\bfull\s+(?:task\s+)?lifecycle\b/i, label: "full product/task lifecycle regression belongs to lifecycle phase E2E" },
-  { re: /\b(?:whole|full|complete|product[- ]wide)\s+(?:product\s+)?regression\s+pass\b/i, label: "product-wide regression pass belongs to lifecycle phase E2E" },
-  { re: /\b(?:both|all)\s+(?:desktop\s+and\s+mobile|mobile\s+and\s+desktop)\s+viewports?\b/i, label: "all-viewports whole-product verification belongs to lifecycle phase E2E" },
-];
-
-const HUMAN_ONLY_CONTROL_PLANE_TASK_PATTERNS = [
-  /\b(?:set|change|toggle|disable|enable|configure)\b[\s\S]{0,80}\b(?:confirm\s+email|email\s+confirmation|smtp|auth\s+provider|provider\s+settings?|password\s+policy|project\s+settings?)\b/i,
-  /\b(?:confirm\s+email|email\s+confirmation|smtp|auth\s+provider|provider\s+settings?|password\s+policy|project\s+settings?)\b[\s\S]{0,80}\b(?:set|changed?|toggled?|disabled?|enabled?|configured?)\b/i,
-];
-const DISPOSABLE_FIXTURE_PATTERN = /\b(?:test|scratch|temporary|temp|disposable)\s+(?:auth\s+)?(?:users?|accounts?|rows?|records?|data|fixtures?)\b/i;
-const FIXTURE_CLEANUP_PATTERN = /\b(?:delete|remove|clean(?:up|ed)?|purge)\b[\s\S]{0,120}\b(?:verify|confirm|absence|absent|zero|no\s+residue|no\s+rows?)\b|\b(?:verify|confirm)\b[\s\S]{0,120}\b(?:deleted|removed|clean(?:up|ed)?|absence|absent|zero|no\s+residue|no\s+rows?)\b/i;
-
+/* Natural-language semantics stay with the Spec Reviewer. This gate intentionally
+   avoids language-dependent regexes for intent, fixtures or lifecycle prose. */
 const tableRows = (text) =>
   text
     .split(/\r?\n/)
@@ -82,7 +61,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
   /* 1 — required files. */
   const missing = SPEC_FILES.filter((f) => !fs.existsSync(path.join(dir, f)));
   for (const f of missing) add(f, "required specification is missing");
-  if (missing.length === SPEC_FILES.length) return { pass: false, findings, checked: 0 };
+  if (missing.length === SPEC_FILES.length) return { pass: false, findings, checked: 0, digest: null };
 
   const contents = {};
   for (const f of SPEC_FILES) {
@@ -207,6 +186,8 @@ export function runSpecGate(dir = paths.builderCurrent) {
 
   /* 7 — human-owned platform actions are durable preconditions, not Builder tasks. */
   const humanActionsSection = sectionBody(designText, "## Human platform actions");
+  const knownContractsLine = humanActionsSection.match(/^\s*\*\*Known platform contracts:\*\*\s*(.+?)\s*$/m)?.[1] ?? "";
+  const knownContracts = new Set([...knownContractsLine.matchAll(/\b[A-Z][A-Z0-9_]+\b/g)].map((m) => m[0]));
   const humanActions = [];
   for (const line of tableRows(humanActionsSection)) {
     const cells = cellsOf(line);
@@ -222,11 +203,14 @@ export function runSpecGate(dir = paths.builderCurrent) {
     humanActions.push({ id, action, beforePhase, proof });
   }
   if (authenticationMode === "supabase") {
-    const confirmEmailHpa = humanActions.find(({ action, beforePhase }) =>
-      beforePhase === "FOUNDATION" && /confirm\s+email/i.test(action) && /(?:disable|disabled|off)/i.test(action));
-    if (!confirmEmailHpa) {
-      add("design.md", "Supabase Authentication requires a FOUNDATION HPA that disables Confirm Email before Auth work");
+    if (!knownContracts.has("SUPABASE_CONFIRM_EMAIL_OFF")) {
+      add("design.md", "Supabase Authentication requires known platform contract SUPABASE_CONFIRM_EMAIL_OFF");
     }
+    if (!humanActions.some(({ beforePhase }) => beforePhase === "FOUNDATION")) {
+      add("design.md", "Supabase Authentication requires at least one human platform action before FOUNDATION");
+    }
+  } else if (knownContracts.has("SUPABASE_CONFIRM_EMAIL_OFF")) {
+    add("design.md", "SUPABASE_CONFIRM_EMAIL_OFF is only valid when Authentication is supabase");
   }
 
   /* 8 — task declarations and requirement links.
@@ -268,27 +252,22 @@ export function runSpecGate(dir = paths.builderCurrent) {
 
     tasks.set(id, { phase, risk, deps, name, acceptance });
 
-    const lifecycleText = `${name} ${acceptance}`;
-    for (const rule of GLOBAL_LIFECYCLE_TASK_PATTERNS) {
-      if (rule.re.test(lifecycleText)) add("tasks.md", `${id}: ${rule.label}`);
-    }
-    if (HUMAN_ONLY_CONTROL_PLANE_TASK_PATTERNS.some((re) => re.test(lifecycleText))) {
-      add("tasks.md", `${id} assigns a human-only platform/control-plane mutation to Builder; record it as design.md HPA-nnn and let the task verify resulting behaviour instead`);
-    }
-    if (DISPOSABLE_FIXTURE_PATTERN.test(lifecycleText) && !FIXTURE_CLEANUP_PATTERN.test(lifecycleText)) {
-      add("tasks.md", `${id} uses disposable test fixtures without explicit cleanup plus final absence/no-residue verification`);
-    }
   }
 
   if (tasks.size === 0) add("tasks.md", "no TASK-nnn declarations found");
 
-  /* MUST coverage. */
+  /* Required forward coverage. Functional/NFR rows marked MUST and every explicit must-not rule need an owning task. */
   for (const line of tableRows(requirementsText)) {
     const found = line.match(REQ_ID);
     if (!found) continue;
     const id = found[0];
     if (withdrawn.has(id) || !/\bMUST\b/.test(line)) continue;
     if (!reqsCitedByTasks.has(id)) add("tasks.md", `no task covers ${id}, a MUST requirement`);
+  }
+  for (const line of tableRows(sectionBody(requirementsText, "## What must NOT be possible"))) {
+    const id = line.match(REQ_ID)?.[0];
+    if (!id || withdrawn.has(id)) continue;
+    if (!reqsCitedByTasks.has(id)) add("tasks.md", `no task covers ${id}, a must-not requirement`);
   }
 
   for (const phase of PHASES) {
@@ -339,12 +318,18 @@ export function runSpecGate(dir = paths.builderCurrent) {
 
   for (const id of tasks.keys()) visit(id, []);
 
-  return { pass: findings.length === 0, findings, checked: Object.keys(contents).length };
+  return {
+    pass: findings.length === 0,
+    findings,
+    checked: Object.keys(contents).length,
+    digest: computeSpecDigest(dir),
+  };
 }
 
 export function reportSpecGate(result) {
   if (result.pass) {
     ui.pass(`Mechanical Spec Gate: ${result.checked} specifications, no findings`);
+    if (result.digest) ui.info(`SPEC_DIGEST ${result.digest}`);
     return;
   }
   ui.fail(`Mechanical Spec Gate: ${result.findings.length} finding(s)`);

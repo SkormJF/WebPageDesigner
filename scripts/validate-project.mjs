@@ -249,9 +249,13 @@ check(
 );
 if (backendMode === "supabase" && exists(".claude/capabilities/supabase.md")) {
   const capability = read(".claude/capabilities/supabase.md");
-  check("Supabase capability fixes Confirm Email OFF for Auth", authenticationMode !== "supabase" || (/Confirm Email/.test(capability) && /always disabled/i.test(capability.replace(/\*/g, ""))));
+  check("Supabase capability fixes Confirm Email OFF for Auth", authenticationMode !== "supabase" || /SUPABASE_CONFIRM_EMAIL_OFF/.test(capability));
   if (authenticationMode === "supabase") {
-    check("Supabase Auth design carries the pre-Foundation Confirm Email HPA", /HPA-\d{3}[^\n]*disable[^\n]*Confirm Email[^\n]*FOUNDATION/i.test(designText));
+    check(
+      "Supabase Auth design carries the pre-Foundation Confirm Email HPA",
+      /\*\*Known platform contracts:\*\*[^\n]*SUPABASE_CONFIRM_EMAIL_OFF/.test(designText)
+        && /HPA-\d{3}[^\n]*FOUNDATION/.test(designText),
+    );
   }
 }
 if (exists(".claude/agents/builder.md")) {

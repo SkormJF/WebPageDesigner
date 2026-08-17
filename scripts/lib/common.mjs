@@ -8,6 +8,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 export const BUILDER_ROOT = path.resolve(fileURLToPath(import.meta.url), "../../..");
@@ -83,6 +84,43 @@ export function loadProfile(id) {
     abort(`Unknown stack profile "${id}".`, `Available: ${available.join(", ")}`);
   }
   return readJson(file);
+}
+
+
+/** Stable digest of the five approved specs, in canonical SPEC_FILES order. */
+export function computeSpecDigest(dir = paths.builderCurrent) {
+  const hash = crypto.createHash("sha256");
+  for (const spec of SPEC_FILES) {
+    const file = path.join(dir, spec);
+    if (!fs.existsSync(file)) return null;
+    hash.update(spec, "utf8");
+    hash.update("\0", "utf8");
+    hash.update(fs.readFileSync(file));
+    hash.update("\0", "utf8");
+  }
+  return hash.digest("hex");
+}
+
+/**
+ * Mechanical proof that the current five specs are the exact version that both
+ * Spec Reviewer and the human approved. No lifecycle script may infer this from phase alone.
+ */
+export function factoryApprovalFindings(state, currentDigest) {
+  const findings = [];
+  const sha = /^[a-f0-9]{64}$/;
+  if (![1, 2].includes(state?.spec_review_round)) findings.push("spec_review_round must be 1 or 2");
+  if (state?.spec_review_verdict !== "PASS") findings.push("latest Spec Reviewer verdict is not PASS");
+  if (!sha.test(state?.spec_review_digest ?? "")) findings.push("spec_review_digest is missing or invalid");
+  if (!sha.test(state?.human_approved_digest ?? "")) findings.push("human_approved_digest is missing or invalid");
+  if (state?.spec_review_digest && state?.human_approved_digest && state.spec_review_digest !== state.human_approved_digest) {
+    findings.push("human approval does not match the reviewed spec version");
+  }
+  if (!currentDigest) findings.push("current five-spec digest cannot be computed");
+  else {
+    if (state?.spec_review_digest && state.spec_review_digest !== currentDigest) findings.push("current specs differ from the reviewed spec version");
+    if (state?.human_approved_digest && state.human_approved_digest !== currentDigest) findings.push("current specs differ from the human-approved spec version");
+  }
+  return findings;
 }
 
 /* ---------- application backend decision in design.md ---------- */
