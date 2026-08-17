@@ -214,7 +214,7 @@ FOUNDATION then PRODUCT_BUILD.
   assert.ok(result.findings.some((f) => /dependency cycle/.test(f.message)));
 });
 
-test("fixture cleanup is semantic Reviewer work, not an English-regex mechanical check", () => {
+test("fixture execution policy belongs downstream, not in Planning task prose", () => {
   const tasks = `# Tasks
 ## Dependency order
 TASK-001 -> TASK-002
@@ -223,11 +223,14 @@ FOUNDATION then PRODUCT_BUILD.
 ## Implementation tasks
 | ID | Task | Requirements | Depends on | Phase | Risk | Acceptance | Status |
 |---|---|---|---|---|---|---|---|
-| TASK-001 | Establish baseline | REQ-001 | — | FOUNDATION | HIGH | Build succeeds. | PENDING |
-| TASK-002 | Probar con dos cuentas temporales | REQ-001 | TASK-001 | PRODUCT_BUILD | HIGH | Crear dos cuentas y comprobar aislamiento. | PENDING |
+| TASK-001 | Establish baseline | REQ-001 | — | FOUNDATION | HIGH | Isolation is enforceable. | PENDING |
+| TASK-002 | Deliver product | REQ-001 | TASK-001 | PRODUCT_BUILD | HIGH | Entry flow works. | PENDING |
 `;
   assert.equal(gate({ tasks }).pass, true);
-  assert.match(flat(".claude/agents/spec-reviewer.md"), /scratch-only source plus cleanup and a final absence\/no-residue verification/i);
+  assert.doesNotMatch(flat("templates/common/specs/tasks.md"), /Disposable fixtures require scratch creation/i);
+  assert.doesNotMatch(flat(".claude/agents/spec-reviewer.md"), /task relying on disposable test users.*cleanup/i);
+  assert.match(flat("templates/common/.claude/agents/builder.md"), /clean scratch fixtures with no-residue proof/i);
+  assert.match(flat("templates/capabilities/supabase/.claude/capabilities/supabase.md"), /Scratch users\/rows are newly created, recorded, tested, deleted and verified absent/i);
 });
 
 test("Supabase Confirm Email prerequisite is machine-readable and language-independent", () => {
@@ -683,4 +686,48 @@ test("V9.3 semantic hardening stays generic and does not encode the FocoV6 incid
     const text = read(rel);
     assert.doesNotMatch(text, /FocoV6|por_hacer|en_proceso|hechas|StatusAdvanceControl/i, rel);
   }
+});
+
+test("V9.4 Planning writes specifications sequentially inside one PLANNING phase", () => {
+  const factory = flat("CLAUDE.md");
+  assert.match(factory, /Within PLANNING write sequentially.*PROJECT\.md.*requirements\.md.*design\.md.*tasks\.md/i);
+  assert.match(factory, /Discovery decisions → PROJECT\/REQ\/EARS → Design\/Stack constraints → outcome-based Tasks/i);
+  assert.doesNotMatch(factory, /PLANNING_REQUIREMENTS|PLANNING_DESIGN|PLANNING_TASKS/i);
+});
+
+test("V9.4 Planning inputs are closed to authoritative sources", () => {
+  const factory = flat("CLAUDE.md");
+  assert.match(factory, /Authoritative inputs are exhaustive.*discovery\.md.*design-system\.md.*templates.*Stack Profile.*backend capability/i);
+  assert.match(factory, /Do not inspect prior generated projects, unrelated repository examples, historical specs or other files for conventions/i);
+  assert.match(factory, /Mechanical Spec Gate as a black box.*use its findings only/i);
+  assert.match(factory, /Do not read `scripts\/lib\/spec-gate\.mjs` or `scripts\/lib\/common\.mjs`.*even after Gate failure/i);
+});
+
+test("V9.4 Discovery ledger has one canonical table format", () => {
+  const factory = flat("CLAUDE.md");
+  assert.match(factory, /Product decision ledger.*canonical table `\| ID \| Decisión \|`/i);
+  assert.match(factory, /Never use list\/prose/i);
+});
+
+test("V9.4 keeps task outcomes in Planning and fixture procedure in the generated Builder", () => {
+  const factory = flat("CLAUDE.md");
+  const tasks = flat("templates/common/specs/tasks.md");
+  const reviewer = flat(".claude/agents/spec-reviewer.md");
+  const builder = flat("templates/common/.claude/agents/builder.md");
+  const capability = flat("templates/capabilities/supabase/.claude/capabilities/supabase.md");
+  assert.match(tasks, /Acceptance states the observable finished result, not a test procedure/i);
+  assert.match(tasks, /commands, fixture lifecycle and cleanup belong downstream/i);
+  assert.match(factory, /Runtime fixture lifecycle belongs to the generated harness\/capability, not Planning or Spec Review/i);
+  assert.match(reviewer, /Acceptance must state a concrete finished result.*does not need to restate runtime fixture\/cleanup procedure/i);
+  assert.match(builder, /clean scratch fixtures with no-residue proof/i);
+  assert.match(capability, /Scratch users\/rows are newly created, recorded, tested, deleted and verified absent/i);
+});
+
+test("V9.4 stays a responsibility reduction, not a lifecycle expansion", () => {
+  const factory = flat("CLAUDE.md");
+  const generated = flat("templates/common/CLAUDE.md");
+  assert.match(factory, /IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL/i);
+  assert.match(generated, /FOUNDATION → FOUNDATION_REVIEW → PRODUCT_BUILD → BUILD_REVIEW/i);
+  assert.doesNotMatch(factory, /TASK_REVIEW|PLANNING_REVIEW|REQUIREMENTS_REVIEW|DESIGN_REVIEW/i);
+  assert.doesNotMatch(generated, /TASK_REVIEW|PLANNING_REVIEW|REQUIREMENTS_REVIEW|DESIGN_REVIEW/i);
 });

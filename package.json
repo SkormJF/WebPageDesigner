@@ -1,6 +1,6 @@
 {
   "name": "web-builder",
-  "version": "9.3.0",
+  "version": "9.4.0",
   "description": "Project factory: discovers a product, gets its visual direction approved, writes and reviews complete specifications, generates an independent repository, validates it, and hands it off.",
   "author": "SkormJF",
   "license": "UNLICENSED",

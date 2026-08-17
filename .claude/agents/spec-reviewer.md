@@ -88,8 +88,10 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
   FOUNDATION contains shared prerequisites and PRODUCT_BUILD delivers the complete integrated product.
 - Dependencies form an acyclic workable order. A task may depend within its phase or on an earlier phase, never a later one;
   `Depends on` is a real prerequisite, not merely probable implementation order.
-- Tasks are outcome-based, not one per component/file/route/REQ. Decomposition that recreates per-task agent cycles is a
-  **MAJOR efficiency defect**. Lifecycle gates, reviewers and `/clear` checkpoints never appear as tasks.
+- Tasks are outcome-based, not one per component/file/route/REQ. Acceptance must state a concrete finished result, but does
+  not need to restate runtime fixture/cleanup procedure already owned by the generated Builder/harness and backend capability.
+  Decomposition that recreates per-task agent cycles is a **MAJOR efficiency defect**. Lifecycle gates, reviewers and `/clear`
+  checkpoints never appear as tasks.
 - `design.md` declares Backend Mode exactly `none` or `supabase`; DB-specific tasks do not exist with `none`. Supabase
   Foundation must be independently reviewable through versioned SQL and non-mutating reads over the one scoped MCP.
   Human-only control-plane work is an `HPA-nnn` blocked on `FOUNDATION` or `PRODUCT_BUILD`, never a Builder task.
@@ -98,9 +100,6 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
   Human Preview in lifecycle phase E2E. A Product Build task asking for a full lifecycle/product-wide regression pass is
   the same duplicate E2E under another name and is a **MAJOR efficiency defect**.
   Deliberately breaking a test once is not an acceptance criterion.
-- Any task relying on disposable test users/rows/data states the scratch-only source plus cleanup and a final absence/no-residue
-  verification. Reusing/mutating a pre-existing identity, or creating a fixture the harness cannot clean safely, is a **MAJOR**
-  test-strategy defect. Cleanup failure must stop rather than trigger workaround exploration.
 - Derived and calculated values have a stated mechanism, not just a stated result.
 - Security-relevant requirements (access control, role separation, data isolation) have an enforcement point
   named in `design.md`, not left implied by the UI. For each enforcement point, reason through at least one forbidden path

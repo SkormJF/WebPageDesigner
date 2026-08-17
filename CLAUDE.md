@@ -51,11 +51,10 @@ roles, the states a record moves through, derived values, one concrete case, and
 back. **R3 is not closed merely because each category was mentioned.** Continue until every load-bearing field rule
 (required/optional and allowed values where relevant), transition, permission, interaction and must-not rule is stated by the
 human or proposed as a default and explicitly accepted. Mentioned-but-undefined is still unknown. Before R4, ask one compact
-follow-up for remaining ambiguities; Artifact/Planning never silently choose a product rule. Keep a compact
-`## Product decision ledger` in `discovery.md`: stable `DISC-nnn` IDs for approved **requirements-owned product decisions** — capabilities, user-visible behaviour,
-business rules, permissions, state transitions, product-specific constraints and explicit "must not" decisions. Do not put
-identity/scope, visual tokens, stack choices or implementation in that ledger. Update the same ID when a
-decision is refined; never reuse an ID for a different decision. **R4 visual direction** — reference site (`web-reader`), colour, light or dark, feeling, then assets, then approval.
+follow-up for remaining ambiguities; Artifact/Planning never silently choose a product rule. Keep `## Product decision ledger`
+as canonical table `| ID | Decisión |`: stable `DISC-nnn` for approved **requirements-owned product decisions** — capabilities,
+user-visible behaviour, rules, permissions, transitions, product constraints and explicit must-not decisions. Never use list/prose.
+Exclude identity/scope, visual tokens, stack and implementation. Refine the same ID; never reuse it. **R4 visual direction** — reference site (`web-reader`), colour, light or dark, feeling, then assets, then approval.
 Four answers decide more than they look. **Real functionality or a presentation?** decides whether R3 runs at all — never
 infer it later. **"¿Qué parte de esto va a cambiar, cada cuánto, y quién lo va a cambiar?"**, in those words: nothing →
 static; a weekly list → decide **now** between a data file, a light CMS, a backend, or leaving it off the page; a
@@ -83,10 +82,13 @@ not spend a turn deleting it — and it is never copied into the generated proje
 | `design.md` | **HOW, technically.** Backend mode; architecture, routes, data, auth, RLS, integrations, security, env names and justified baseline deviations. The Factory already owns Next. |
 | `design-system.md` | **The approved visual contract**, already persisted at B1 from the Artifact — Planning consumes it unchanged. |
 | `tasks.md` | **Decomposition.** Requirement-linked outcomes, phase, dependencies, risk, acceptance and durable status. |
-Templates carry structure. Planning reads only the four templates it writes, producing `PROJECT.md`, `requirements.md`,
-`design.md`, `tasks.md`; **do not read the design-system template or rewrite approved `design-system.md` after B1.** Run the
-Mechanical Spec Gate as a black box; do not read `scripts/lib/spec-gate.mjs` or `scripts/lib/common.mjs` to tailor prose. A
-Gate result contradicting a higher contract is a harness defect, not a reason to rewrite valid content. Design closes
+Planning reads only the four templates it writes (`PROJECT.md`, `requirements.md`, `design.md`, `tasks.md`). Authoritative
+inputs are exhaustive: `discovery.md`, approved `design-system.md`, those templates, Stack Profile and backend capability. Do not inspect prior generated projects, unrelated repository
+examples, historical specs or other files for conventions. Within PLANNING write sequentially: **(1) `PROJECT.md` + `requirements.md`; (2) read them and write `design.md`;
+(3) read requirements/design and write `tasks.md`.** Do not read the design-system template or rewrite approved
+`design-system.md` after B1. Run the Mechanical Spec Gate as a black box; use its findings only. Do not read
+`scripts/lib/spec-gate.mjs` or `scripts/lib/common.mjs`, even after Gate failure. A conflict with a higher contract is a harness
+defect, not permission to rewrite valid content. Design closes
 load-bearing architecture and enforcement, not routine coding choices the generated Builder can safely
 resolve inside the approved contracts. **Enforcement is bidirectional:** every mechanism that blocks a forbidden operation must
 also preserve every operation Requirements explicitly allow; do not make a MUST behaviour impossible while hardening a must-not.
@@ -99,14 +101,13 @@ carries its own constraint; a **global audit belongs to its later gate** and no 
 Every active `DISC-nnn` in the Discovery product-decision ledger must be represented by at least one requirement and
 listed in that requirement's `Source`; one requirement may cover several decisions and one decision may need several
 requirements. This is traceability, **not** a one-REQ-per-decision or one-TASK-per-REQ quota.
-**Planning order is fixed:** `Discovery decisions → REQ/EARS → Stack Profile constraints → fixed phase → outcome-based Tasks`. The harness owns
-exactly `FOUNDATION` and `PRODUCT_BUILD`; Planning never invents lifecycle phases. Foundation owns shared stack/database/
-Auth prerequisites; Product Build owns the complete integrated product. A task is an acceptance outcome, not a file,
-component, route, requirement or agent cycle. Tasks never encode reviewers, checkpoints, Visual QA, full E2E, Quality Gate
-or deployment. Human-only platform actions are `HPA-nnn` in `design.md`, blocked on one fixed phase. When Backend Mode is `supabase`
-and Authentication is `supabase`, the Supabase capability contract makes **Confirm Email = OFF** a known human-owned
-prerequisite: Planning records that HPA before `FOUNDATION`; it is never left for Builder to discover. Disposable fixtures
-require scratch create → test → cleanup → no-residue proof; cleanup failure → STOP.
+**Planning order is fixed:** `Discovery decisions → PROJECT/REQ/EARS → Design/Stack constraints → outcome-based Tasks`. The harness owns exactly `FOUNDATION` and `PRODUCT_BUILD`; Planning never invents lifecycle phases. Foundation owns shared
+stack/database/Auth prerequisites; Product Build owns the integrated product. A task is a build outcome, not a file, component,
+route, requirement, test script or agent cycle. Acceptance states the observable result, not fixture lifecycle, commands or test
+procedure owned downstream. Tasks never encode reviewers, checkpoints, Visual QA, full E2E, Quality Gate or deployment. Human-only platform actions are
+`HPA-nnn` in `design.md`, blocked on one fixed phase. When Backend Mode is `supabase` and Authentication is `supabase`, the
+Supabase capability contract makes **Confirm Email = OFF** a known human-owned prerequisite: Planning records that HPA before
+`FOUNDATION`; it is never left for Builder to discover.
 **Transversal correction:** find the owner, Grep all five specs for derived restatements, update every affected consumer in
 the **same consolidated correction**, preserve unrelated decisions, revalidate. Never leave stale acceptance text. If a
 finding exposes an unapproved product/material visual decision, STOP, ask the smallest human question, persist it in R3/R4,
@@ -125,9 +126,9 @@ a Reviewer PASS.
 **Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, Discovery-decision↔requirement source
 coverage, ID hygiene, requirement↔task references, orphan MUSTs **and must-not requirements**, fixed phase coverage,
 machine-readable backend/Auth/HPA contracts, responsive range coverage, initial task status, dependency direction and
-cycles. It validates structure and canonical markers only; it does **not** parse natural-language intent such as fixture
-cleanup, lifecycle-work wording, human-only mutations, requirement fidelity, visual quality or task sizing — those belong to
-the Spec Reviewer. **Spec Reviewer:** the `spec-reviewer` subagent,
+cycles. It validates structure and canonical markers only; it does **not** parse natural-language intent such as
+lifecycle-work wording, human-only mutations, requirement fidelity, visual quality or task sizing — those belong to the Spec
+Reviewer. Runtime fixture lifecycle belongs to the generated harness/capability, not Planning or Spec Review. **Spec Reviewer:** the `spec-reviewer` subagent,
 which owns its own criteria; it reviews and reports, never fixing specs, writing code or changing phase. Its second run
 checks the earlier findings, the regressions the corrections introduced and any obvious BLOCKER/MAJOR missed first time —
 it does not raise the standard, reinterpret the approved visual contract, widen scope, hunt unrelated new MINORs or invent design

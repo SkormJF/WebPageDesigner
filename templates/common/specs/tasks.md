@@ -45,7 +45,6 @@ It does not stop for task-by-task reviews. Integration is part of building the p
   `QUALITY_GATE`, deployment or `/clear`; the harness owns those gates.
 - Persistent Playwright specs may be authored by Product Build, but the complete suite runs only in lifecycle phase `E2E`.
 - Human-only platform actions are `HPA-nnn` in `design.md`, not tasks.
-- Disposable fixtures require scratch creation, cleanup and final no-residue proof. Never mutate an existing identity.
 - Supabase work uses the composed Supabase capability automatically when `design.md` declares `Backend Mode: supabase`.
-- Acceptance must be independently falsifiable. `Auth works correctly` is not acceptance; describe the observable result
-  for an allowed and a forbidden path.
+- Acceptance states the observable finished result, not a test procedure. Keep it concrete (`una edición permitida
+  persiste`, `una transición prohibida sigue rechazada`); commands, fixture lifecycle and cleanup belong downstream.
