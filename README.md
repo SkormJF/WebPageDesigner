@@ -14,7 +14,7 @@ You open that repository in a fresh Claude Code session, say `inicia`, and imple
 
 ```
 WEB BUILDER          discovery · visual direction · specifications · generation · validation
-GENERATED PROJECT    implementation · review · integration · QA · deploy · maintenance
+GENERATED PROJECT    foundation · complete product build · focused reviews · QA · deploy · maintenance
 ```
 
 The boundary is the point. A factory that also builds the product ends up with neither job done properly.
@@ -104,11 +104,11 @@ project/
 ├── CLAUDE.md              its own harness contract
 ├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
-│   ├── agents/            planner · builder · reviewer (+ db-reviewer only with Supabase)
+│   ├── agents/            planner · builder · reviewer
 │   └── skills/            17 standard + 2 Next additions (19 today)
-├── .workflow/             group-centric state.json + compact current evidence
+├── .workflow/             phase state + stack-profile.json + compact current evidence
 ├── .mcp.json              Vercel always; Supabase only when Backend Mode = supabase
-├── .claude/settings.json  Sonnet/high default
+├── .claude/settings.json  no automatic model pin
 ├── src/  public/
 └── package.json  package-lock.json
 ```
@@ -117,15 +117,11 @@ The skill set is deterministic: the 17 marked `inherited-standard` plus the fixe
 classified `optional`. It is **never** copied automatically. Shipping it by default would turn "requires an
 explicit decision" into a sentence in a document, with the skill already sitting in the repository.
 
-Its lifecycle uses the fixed implementation phases `FOUNDATION → BUILD_TASKS → INTEGRATION`, followed by
-preview/QA/deploy. Tasks remain traceability and acceptance units; **build groups are the execution units**. Planning
-creates the minimum meaningful groups inside those fixed phases, and every group declares `Capability` (`BASE` or
-`SUPABASE`) separately from its `Gate` (`AUTO`, `REVIEW`, `DB_REVIEW`). Related tasks therefore run continuously through
-one Builder instead of paying for an agent cycle per row. A correction gets one targeted re-review, never a fresh audit;
-after the second failed review the harness stops for a human decision. DB_REVIEW is reserved for state the DB Reviewer can
-inspect non-mutatingly through the same project-scoped Supabase connection; Auth/control-plane settings stay outside it. `HEAD` is always the last approved group.
-After INTEGRATION, the main Orchestrator owns the global preview/QA/E2E/deploy lifecycle; one final-candidate E2E pass is
-planned, not a duplicate suite inside an Integration task. Global-gate corrections are targeted and capped at two attempts.
+Its implementation runs `FOUNDATION → FOUNDATION_REVIEW → PRODUCT_BUILD → BUILD_REVIEW`. Product Build constructs the
+complete integrated product without per-task review cycles. The later `LOCAL_PREVIEW`, `VISUAL_QA`, `HUMAN_PREVIEW`, one
+final-candidate `E2E`, and `QUALITY_GATE` each own a different question. A failed review receives one targeted correction
+and one targeted recheck; a second failure stops for the human. Supabase uses the same scoped MCP for Builder mutations and
+generic Reviewer read-only inspection—there is no second DB Reviewer or connection.
 
 The inherited skill library stays available for future features and redesigns. Agents load the full body of a skill on
 demand for the current scope rather than walking the catalogue before they work.

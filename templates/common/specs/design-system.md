@@ -109,10 +109,12 @@ with the reason recorded here.
 
 | Breakpoint | Width | What changes |
 |---|---|---|
-| Mobile | [TBD] | [TBD] |
-| Tablet | [TBD] | [TBD] |
-| Desktop | [TBD] | [TBD] |
-| Wide | [TBD] | [TBD] |
+| Mobile | [TBD: canonical `0-639`] | [TBD] |
+| Tablet | [TBD: canonical `640-1023`] | [TBD] |
+| Desktop | [TBD: canonical `1024-1439`] | [TBD] |
+| Wide | [TBD: canonical `1440+`] | [TBD] |
+
+Ranges must be contiguous from `0` through the final `N+` interval. No width may be uncovered or overlap another range.
 
 ## Motion
 

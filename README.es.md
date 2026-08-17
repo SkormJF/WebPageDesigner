@@ -15,7 +15,7 @@ implementación.
 
 ```
 WEB BUILDER          descubrimiento · dirección visual · especificaciones · generación · validación
-PROYECTO GENERADO    implementación · revisión · integración · QA · deploy · mantenimiento
+PROYECTO GENERADO    foundation · construcción completa · revisiones focalizadas · QA · deploy · mantenimiento
 ```
 
 La frontera es el punto. Una fábrica que además construye el producto termina haciendo mal las dos cosas.
@@ -106,11 +106,11 @@ proyecto/
 ├── CLAUDE.md              su propio contrato de harness
 ├── PROJECT.md  requirements.md  design.md  design-system.md  tasks.md
 ├── .claude/
-│   ├── agents/            planner · builder · reviewer (+ db-reviewer solo con Supabase)
+│   ├── agents/            planner · builder · reviewer
 │   └── skills/            17 estándar + 2 de Next (19 hoy)
-├── .workflow/             state.json por grupos + evidencia compacta en current/
+├── .workflow/             estado por fases + stack-profile.json + evidencia compacta
 ├── .mcp.json              Vercel siempre; Supabase solo si Backend Mode = supabase
-├── .claude/settings.json  Sonnet/high por defecto
+├── .claude/settings.json  sin modelo fijado automáticamente
 ├── src/  public/
 └── package.json  package-lock.json
 ```
@@ -120,16 +120,11 @@ El conjunto de skills es determinista: las 17 marcadas `inherited-standard` más
 convertiría "requiere una decisión explícita" en una frase de un documento, con la skill ya instalada en el
 repositorio.
 
-Su ciclo de vida usa las fases fijas de implementación `FOUNDATION → BUILD_TASKS → INTEGRATION`, y después
-preview/QA/deploy. Las Tasks siguen siendo unidades de trazabilidad y aceptación; **los Build Groups son las unidades de
-ejecución**. Planning crea el mínimo de grupos significativos dentro de esas fases y cada grupo declara `Capability`
-(`BASE` o `SUPABASE`) por separado de su `Gate` (`AUTO`, `REVIEW`, `DB_REVIEW`). Así las Tasks relacionadas se construyen
-de corrido con un Builder en vez de pagar un ciclo de agentes por cada fila. Una corrección recibe una sola re-revisión
-dirigida; si la segunda revisión sigue fallando, el harness se detiene para una decisión humana. DB_REVIEW queda reservado
-para estado que el DB Reviewer puede inspeccionar sin mutar usando la misma conexión Supabase project-scoped; configuración de Auth/control-plane queda fuera.
-`HEAD` es siempre el último grupo aprobado. Después de INTEGRATION, el Orchestrator principal es dueño del ciclo global de
-preview/QA/E2E/deploy; se planifica una sola pasada E2E sobre el candidato final, no una suite duplicada dentro de una Task
-de Integration. Las correcciones de gates globales son dirigidas y tienen máximo dos intentos.
+La implementación recorre `FOUNDATION → FOUNDATION_REVIEW → PRODUCT_BUILD → BUILD_REVIEW`. Product Build construye el
+producto completo e integrado sin revisiones por Task. Después, `LOCAL_PREVIEW`, `VISUAL_QA`, `HUMAN_PREVIEW`, una sola
+pasada `E2E` del candidato final y `QUALITY_GATE` responden preguntas diferentes. Un fallo recibe una corrección dirigida
+y una revisión focalizada; un segundo fallo detiene el flujo. Supabase reutiliza el mismo MCP acotado para las mutaciones
+del Builder y la inspección de solo lectura del Reviewer general; no hay otro DB Reviewer ni otra conexión.
 
 La biblioteca de skills heredada permanece disponible para features y rediseños futuros. Los agentes cargan el cuerpo
 completo de una skill bajo demanda para el scope actual, en vez de recorrer el catálogo antes de trabajar.

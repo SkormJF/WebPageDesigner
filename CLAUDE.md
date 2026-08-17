@@ -37,8 +37,9 @@ temporary `artifact/`.
 path branches on it. With `pending_action` that is the whole of state, where we are and what I was about to do: no
 requirements, no architecture, no visual decisions, no review history, and the target derived from `projects_root + slug`
 rather than stored. `discovery.md` holds **current approved truth only**, replaced when a decision changes. Load per phase
-and no more — `DISCOVERY`: state and `discovery.md` · `PLANNING`: both plus the specs · `SPEC_REVIEW`/`AWAITING_APPROVAL`:
-state and the five specs · `CREATING_PROJECT`/`VALIDATING_PROJECT`: state, `builder.config.json`, fixed Next profile and the approved backend mode.
+and no more — `DISCOVERY`: state and discovery · `PLANNING`: state, discovery, templates, approved design system and
+fixed Stack Profile · `SPEC_REVIEW`/`AWAITING_APPROVAL`: state, discovery, five specs and Stack Profile ·
+`CREATING_PROJECT`/`VALIDATING_PROJECT`: state, config, Stack Profile and approved backend mode.
 ## Discovery
 Conversational, not a form: infer what you can, ask only what is unknown, ambiguous or contradictory, and write
 `discovery.md` from the moment the project has a name, updating it and `discovery_round` every round. **R1 product and
@@ -73,25 +74,18 @@ not spend a turn deleting it — and it is never copied into the generated proje
 | `requirements.md` | **WHAT.** Stable IDs (`REQ-001`), EARS wording where it helps. |
 | `design.md` | **HOW, technically.** Backend mode; architecture, routes, data, auth, RLS, integrations, security, env names and justified baseline deviations. The Factory already owns Next. |
 | `design-system.md` | **The approved visual contract**, copied from the Artifact — not re-derived, not improved on. |
-| `tasks.md` | **Decomposition.** Requirement-linked tasks plus execution groups, gate, risk, acceptance and durable status. |
+| `tasks.md` | **Decomposition.** Requirement-linked outcomes, phase, dependencies, risk, acceptance and durable status. |
 Templates in `templates/common/specs/` carry the structure; write real content into them. One owner per datum — a task
 says "create `.env.example` from `design.md`" instead of restating a second, divergent list. Rigour is proportional, never
 quota-driven: **write a datum only if it is needed to build, review or recover this project.** Requirements are
 **product** scope, so harness work (axe, Lighthouse, E2E, SEO, Visual QA, `humanizalo`) is a `REQ` only where the product
 carries its own constraint; a **global audit belongs to its later gate** and no `TASK-9xx` QA block is generated.
-**Planning order is fixed:** `REQ/EARS → fixed phase → minimum meaningful Build Groups → outcome-based Tasks`. The
-harness owns exactly `FOUNDATION`, `BUILD_TASKS`, `INTEGRATION`; Planning never invents lifecycle phases. FOUNDATION owns
-shared prerequisites, BUILD_TASKS owns product features/flows, and INTEGRATION only wires/verifies already-built features.
-Start from the smallest useful groups and split only for a real dependency, context, capability or review boundary. A task
-is a traceability/acceptance outcome, not a file, component, route or one requirement; one task may satisfy several REQs
-and touch many files. Every group declares `Capability = BASE | SUPABASE`, `Gate = AUTO | REVIEW | DB_REVIEW` and
-`Clear after = YES | NO`; every task declares `Risk`. At most one BUILD_TASKS group may request an extra `/clear`. A
-DB_REVIEW group is restricted to surfaces the generated DB Reviewer can observe through versioned SQL plus non-mutating
-reads over the shared project-scoped Supabase MCP; control-plane settings stay outside DB_REVIEW. Human-owned ones are `HPA-nnn` in
-`design.md` with blocked group + completion proof, never Builder mutations; automatable ones use `SUPABASE + REVIEW` with
-observable behaviour. Prefer the existing Auth group over configuration-only fragmentation. Global lifecycle work
-(VISUAL_QA, full E2E, QUALITY_GATE, DEPLOY/POST_DEPLOY) never becomes a Task; INTEGRATION gets focused seam checks, never a
-full lifecycle/product-wide/multi-viewport pass. Disposable fixtures require scratch create → test → cleanup → no-residue proof; cleanup failure → STOP.
+**Planning order is fixed:** `REQ/EARS → Stack Profile constraints → fixed phase → outcome-based Tasks`. The harness owns
+exactly `FOUNDATION` and `PRODUCT_BUILD`; Planning never invents lifecycle phases. Foundation owns shared stack/database/
+Auth prerequisites; Product Build owns the complete integrated product. A task is an acceptance outcome, not a file,
+component, route, requirement or agent cycle. Tasks never encode reviewers, checkpoints, Visual QA, full E2E, Quality Gate
+or deployment. Human-only platform actions are `HPA-nnn` in `design.md`, blocked on one fixed phase. Disposable fixtures
+require scratch create → test → cleanup → no-residue proof; cleanup failure → STOP.
 **Transversal change:** detect scope → modify only affected sections → preserve unrelated approved decisions → revalidate.
 Broad re-review only for structural change.
 
@@ -99,21 +93,20 @@ Broad re-review only for structural change.
 
 ```
 Mechanical Spec Gate PASS + Spec Reviewer PASS + explicit Human Approval = READY_TO_CREATE
-BLOCKER or MAJOR → SPEC_FAIL │ MINOR only → does not block, may be fixed before the human gate if it
-touches no approved decision, and it never triggers another review chain.
+BLOCKER or MAJOR → SPEC_FAIL │ MINOR only → record for the human; it does not trigger correction.
 Maximum 2 automatic Spec Reviewer runs; if the second still fails → STOP and bring the consolidated
 cause to the human. There is no third automatic pass.
 ```
 
 **Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, ID hygiene, requirement↔task references,
-orphan MUSTs, fixed phase coverage, group capability/gate/clear rules, DB-reviewability, global-gate/E2E leaks, human-only
+orphan MUSTs, fixed phase coverage, stack invariants, global-gate/E2E leaks, human-only
 platform work assigned to Builder, fixture cleanup, initial task status, dependency direction and cycles.
 Deterministic, and it does not judge visual literals or whether a group is semantically well-sized. **Spec Reviewer:** the `spec-reviewer` subagent,
 which owns its own criteria; it reviews and reports, never fixing specs, writing code or changing phase. Its second run
 checks the earlier findings, the regressions the corrections introduced and any obvious BLOCKER/MAJOR missed first time —
 it does not raise the standard, reinterpret the approved Artifact, widen scope, hunt unrelated new MINORs or invent design
-rules. If `SPEC_PASS` includes MINOR clarifications that touch no approved decision, you may apply them once, then rerun
-**only the mechanical Spec Gate plus an exact diff sanity check**; never call a third Spec Reviewer. **Human approval is a
+rules. After `SPEC_PASS`, specs are frozen. Never apply MINOR edits silently; an accepted edit invalidates the pass and
+returns through both gates. Never call a third Spec Reviewer. **Human approval is a
 real gate**, not "procedo entonces" while already proceeding: ask in chat — `SPEC_PASS — 0 BLOCKER, 0 MAJOR. ¿Apruebas
 las especificaciones? [ Aprobar ] [ Revisar ]` — then persist `READY_TO_CREATE` and stop at checkpoint **B2**.
 
@@ -124,9 +117,9 @@ las especificaciones? [ Aprobar ] [ Revisar ]` — then persist `READY_TO_CREATE
 The Next template sets `agentRules: false`: this repository's generated `CLAUDE.md` is authoritative and `next dev` must
 not upsert framework agent rules into it. For version-specific Next details, agents read the installed
 `node_modules/next/dist/docs/` selectively on demand.
-`design.md` separately owns **Backend Mode**: exactly `none` or `supabase`. `none` generates Vercel-only MCP/configuration;
-`supabase` additionally generates one shared Supabase MCP and a fail-closed read-only DB reviewer role. This keeps
-simple sites simple without making backend-capable applications change framework.
+`design.md` separately owns **Backend Mode**: exactly `none` or `supabase`; lifecycle never changes. `supabase` adds one
+shared scoped MCP and a capability guide. The generic generated Reviewer uses that connection read-only during Foundation
+Review; there is no DB Reviewer agent or second database connection.
 `generated project skills = INHERITED-STANDARD + next-standard-v1.profile_skills`. `config/skill-manifest.json` classifies
 distribution, the fixed Next profile owns its Next-specific additions, and **`optional` is never inherited**. Today 17 + 2
 = 19 skills per generated project, out of the Builder's own 20. The manifest controls physical distribution, not context loading.
@@ -194,5 +187,5 @@ code 0 is not proof** — a tool here can exit 0 having installed nothing, and a
 own, so redirect and inspect (`cmd > out.log 2>&1; echo $?`) or test for the artifact that should exist. **"Configured"
 and "working" are different claims**, and only the second is worth reporting. Windows: PowerShell is primary and the Bash
 tool takes POSIX syntax — different shells, not two spellings — and **no scratch files go in `/tmp/`**; paths come from
-`builder.config.json`. Discovery, Planning and Spec Review run on Opus at xhigh, creation and validation mechanics on
-Sonnet at high. Do not claim a token reduction you have not measured.
+`builder.config.json`. The harness never selects or pins a model; the user may change it manually. Do not claim a token
+reduction you have not measured.

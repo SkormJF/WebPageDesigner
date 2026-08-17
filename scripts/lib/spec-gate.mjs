@@ -5,8 +5,8 @@
  * = READY_TO_CREATE.
  *
  * This module checks only deterministic contract shape: required files/sections,
- * unresolved placeholders, IDs/references, fixed execution phases, build-group
- * capability/gate/clear rules, initial task status, and dependency validity.
+ * unresolved placeholders, IDs/references, fixed implementation phases,
+ * stack invariants, initial task status, and dependency validity.
  * Whether the plan is semantically good-sized or faithful to the approved
  * product remains the Spec Reviewer's job.
  *
@@ -22,8 +22,8 @@ const REQUIRED_SECTIONS = {
   "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions in force"],
   "requirements.md": ["## Functional requirements", "## Non-functional requirements"],
   "design.md": ["## Architecture", "## Routes", "## Backend", "## Human platform actions", "## Security"],
-  "design-system.md": ["## Approval", "## Color", "## Typography", "## Interaction states"],
-  "tasks.md": ["## Dependency order", "## Build groups", "### Fixed phase ownership"],
+  "design-system.md": ["## Approval", "## Color", "## Typography", "## Interaction states", "## Responsive behaviour"],
+  "tasks.md": ["## Dependency order", "## Implementation tasks", "## Phase ownership"],
 };
 
 const PLACEHOLDER_PATTERNS = [
@@ -35,10 +35,8 @@ const PLACEHOLDER_PATTERNS = [
 
 const REQ_ID = /\bREQ-\d{3}\b/g;
 const TASK_ID = /\bTASK-\d{3}\b/g;
-const PHASES = ["FOUNDATION", "BUILD_TASKS", "INTEGRATION"];
+const PHASES = ["FOUNDATION", "PRODUCT_BUILD"];
 const PHASE_ORDER = new Map(PHASES.map((phase, index) => [phase, index]));
-const CAPABILITIES = ["BASE", "SUPABASE"];
-const GATES = ["AUTO", "REVIEW", "DB_REVIEW"];
 const RISKS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 /* Obvious planning mistakes that are deterministic enough to reject before the
@@ -55,18 +53,6 @@ const GLOBAL_LIFECYCLE_TASK_PATTERNS = [
   { re: /\bfull\s+(?:task\s+)?lifecycle\b/i, label: "full product/task lifecycle regression belongs to lifecycle phase E2E" },
   { re: /\b(?:whole|full|complete|product[- ]wide)\s+(?:product\s+)?regression\s+pass\b/i, label: "product-wide regression pass belongs to lifecycle phase E2E" },
   { re: /\b(?:both|all)\s+(?:desktop\s+and\s+mobile|mobile\s+and\s+desktop)\s+viewports?\b/i, label: "all-viewports whole-product verification belongs to lifecycle phase E2E" },
-];
-
-const DB_REVIEW_CONTROL_PLANE_PATTERNS = [
-  /\bauth(?:entication)?\s+(?:project\s+)?settings?\b/i,
-  /\bauthentication\s+is\s+configured\b/i,
-  /\bemail\s+confirmation\b/i,
-  /\bsmtp\b/i,
-  /\bpassword\s+(?:policy|settings?)\b/i,
-  /\bprovider\s+(?:configuration|settings?)\b/i,
-  /\bproject\s+settings?\b/i,
-  /\bstorage\s+(?:configuration|settings?)\b/i,
-  /\bedge\s+function\s+(?:deploy|deployment)\b/i,
 ];
 
 const HUMAN_ONLY_CONTROL_PLANE_TASK_PATTERNS = [
@@ -130,6 +116,43 @@ export function runSpecGate(dir = paths.builderCurrent) {
 
   const requirementsText = contents["requirements.md"] ?? "";
   const tasksText = contents["tasks.md"] ?? "";
+  const designSystemText = contents["design-system.md"] ?? "";
+
+  /* Version-sensitive Stack Profile invariants that must never rely on model memory. */
+  for (const forbidden of ["middleware.ts", "src/middleware.ts"]) {
+    if (Object.entries(contents).some(([, text]) => text.includes(forbidden))) {
+      add("design.md", `${forbidden} is forbidden by next-standard-v1; use src/proxy.ts exporting proxy when a request boundary is required`);
+    }
+  }
+  const routesSection = sectionBody(designText, "## Routes");
+  const declaredRouteCells = tableRows(routesSection).map(cellsOf).filter((cells) => cells[0] !== "Route");
+  if (!declaredRouteCells.some((cells) => cells[0]?.replace(/`/g, "") === "/")) {
+    add("design.md", "the root route `/` has no explicit behaviour/access contract");
+  }
+
+  const responsiveRows = tableRows(sectionBody(designSystemText, "## Responsive behaviour"))
+    .map(cellsOf)
+    .filter((cells) => cells[0] !== "Breakpoint");
+  const ranges = [];
+  for (const cells of responsiveRows) {
+    const width = (cells[1] ?? "").replace(/[–—]/g, "-").replace(/`|px|\s/gi, "");
+    let match = width.match(/^(\d+)-(\d+)$/);
+    if (match) ranges.push({ start: Number(match[1]), end: Number(match[2]), label: cells[0] });
+    else if ((match = width.match(/^(\d+)\+$/))) ranges.push({ start: Number(match[1]), end: Infinity, label: cells[0] });
+    else add("design-system.md", `responsive width for ${cells[0] || "(unnamed breakpoint)"} must use canonical N-M or N+ syntax`);
+  }
+  ranges.sort((a, b) => a.start - b.start);
+  if (ranges.length > 0) {
+    if (ranges[0].start !== 0) add("design-system.md", "responsive coverage must start at 0px");
+    for (let i = 1; i < ranges.length; i += 1) {
+      if (ranges[i].start !== ranges[i - 1].end + 1) {
+        add("design-system.md", `responsive ranges are not contiguous between ${ranges[i - 1].label} and ${ranges[i].label}`);
+      }
+    }
+    if (ranges.at(-1).end !== Infinity) add("design-system.md", "responsive coverage must end with an N+ range");
+  } else if (designSystemText) {
+    add("design-system.md", "no responsive breakpoint ranges declared");
+  }
 
   /* 5 — requirement declarations. */
   const reqIds = new Set([...requirementsText.matchAll(REQ_ID)].map((m) => m[0]));
@@ -139,65 +162,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
   const withdrawnSection = requirementsText.split("## Withdrawn")[1] ?? "";
   for (const m of withdrawnSection.matchAll(REQ_ID)) withdrawn.add(m[0]);
 
-  /* 6 — build groups, fixed phases, capability, gate and clear contract. */
-  const groupsSection = sectionBody(tasksText, "## Build groups");
-  const groupRows = tableRows(groupsSection);
-  const groups = new Map();
-  let extraClearCount = 0;
-
-  for (const line of groupRows) {
-    const cells = cellsOf(line);
-    if (cells[0] === "Group") continue;
-    if (cells.length < 6) {
-      add("tasks.md", `build-group row has ${cells.length} columns; expected Group, Phase, Purpose, Capability, Gate, Clear after`);
-      continue;
-    }
-
-    const [group, phase, _purpose, capability, gate, clearAfter] = cells;
-    if (!group) continue;
-    if (groups.has(group)) add("tasks.md", `build group ${group} is declared more than once`);
-
-    const meta = { phase, capability, gate, clearAfter, risks: [] };
-    groups.set(group, meta);
-
-    if (!PHASES.includes(phase)) add("tasks.md", `build group ${group} has invalid Phase ${phase || "(empty)"}`);
-    if (!CAPABILITIES.includes(capability)) {
-      add("tasks.md", `build group ${group} has invalid Capability ${capability || "(empty)"}`);
-    }
-    if (!GATES.includes(gate)) add("tasks.md", `build group ${group} has invalid Gate ${gate || "(empty)"}`);
-    if (!["YES", "NO"].includes(clearAfter)) {
-      add("tasks.md", `build group ${group} has invalid Clear after value ${clearAfter || "(empty)"}`);
-    }
-
-    if (clearAfter === "YES") {
-      if (phase !== "BUILD_TASKS") {
-        add("tasks.md", `build group ${group} requests Clear after = YES outside BUILD_TASKS`);
-      } else {
-        extraClearCount += 1;
-      }
-    }
-
-    if (capability === "SUPABASE" && backendMode !== "supabase") {
-      add("tasks.md", `build group ${group} requires Capability SUPABASE but design.md Backend Mode is not supabase`);
-    }
-    if (gate === "DB_REVIEW" && capability !== "SUPABASE") {
-      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but Capability is not SUPABASE`);
-    }
-    if (gate === "DB_REVIEW" && backendMode !== "supabase") {
-      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but design.md Backend Mode is not supabase`);
-    }
-  }
-
-  if (groups.size === 0) add("tasks.md", "no build groups declared");
-  if (extraClearCount > 1) add("tasks.md", "more than one BUILD_TASKS group requests Clear after = YES");
-
-  for (const phase of PHASES) {
-    if (![...groups.values()].some((meta) => meta.phase === phase)) {
-      add("tasks.md", `fixed phase ${phase} has no declared build group`);
-    }
-  }
-
-  /* Human-owned platform actions are durable preconditions, not Builder tasks. */
+  /* 6 — human-owned platform actions are durable preconditions, not Builder tasks. */
   const humanActionsSection = sectionBody(designText, "## Human platform actions");
   for (const line of tableRows(humanActionsSection)) {
     const cells = cellsOf(line);
@@ -208,7 +173,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
     const [id, action, beforeGroup, proof] = cells;
     if (!/^HPA-\d{3}$/.test(id)) add("design.md", `invalid Human platform action ID ${id || "(empty)"}; use HPA-nnn or the explicit None row`);
-    if (!groups.has(beforeGroup)) add("design.md", `${id} waits for undeclared build group ${beforeGroup || "(empty)"}`);
+    if (!PHASES.includes(beforeGroup)) add("design.md", `${id} waits for invalid phase ${beforeGroup || "(empty)"}`);
     if (!action || !proof) add("design.md", `${id} must name both the human-only action and its completion proof`);
   }
 
@@ -234,7 +199,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
       continue;
     }
 
-    const [_taskId, name, requirementsCell, dependsCell, group, risk, acceptance, status] = cells;
+    const [_taskId, name, requirementsCell, dependsCell, phase, risk, acceptance, status] = cells;
     const linkedReqs = [...requirementsCell.matchAll(REQ_ID)].map((m) => m[0]);
     if (linkedReqs.length === 0) add("tasks.md", `${id} links to no requirement`);
     for (const req of linkedReqs) {
@@ -242,14 +207,14 @@ export function runSpecGate(dir = paths.builderCurrent) {
       if (!reqIds.has(req)) add("tasks.md", `references ${req}, which requirements.md does not define`);
     }
 
-    if (!groups.has(group)) add("tasks.md", `${id} belongs to undeclared build group ${group || "(empty)"}`);
+    if (!PHASES.includes(phase)) add("tasks.md", `${id} has invalid Phase ${phase || "(empty)"}`);
     if (!RISKS.includes(risk)) add("tasks.md", `${id} has invalid Risk ${risk || "(empty)"}`);
     if (status !== "PENDING") add("tasks.md", `${id} must start PENDING before project generation; found ${status || "(empty)"}`);
 
     const deps = [...dependsCell.matchAll(TASK_ID)].map((m) => m[0]);
     if (deps.includes(id)) add("tasks.md", `${id} depends on itself`);
 
-    tasks.set(id, { group, risk, deps, name, acceptance });
+    tasks.set(id, { phase, risk, deps, name, acceptance });
 
     const lifecycleText = `${name} ${acceptance}`;
     for (const rule of GLOBAL_LIFECYCLE_TASK_PATTERNS) {
@@ -261,7 +226,6 @@ export function runSpecGate(dir = paths.builderCurrent) {
     if (DISPOSABLE_FIXTURE_PATTERN.test(lifecycleText) && !FIXTURE_CLEANUP_PATTERN.test(lifecycleText)) {
       add("tasks.md", `${id} uses disposable test fixtures without explicit cleanup plus final absence/no-residue verification`);
     }
-    if (groups.has(group)) groups.get(group).risks.push(risk);
   }
 
   if (tasks.size === 0) add("tasks.md", "no TASK-nnn declarations found");
@@ -275,55 +239,22 @@ export function runSpecGate(dir = paths.builderCurrent) {
     if (!reqsCitedByTasks.has(id)) add("tasks.md", `no task covers ${id}, a MUST requirement`);
   }
 
-  /* Every declared group must have work; gate/risk compatibility is mechanical. */
-  const taskCountByGroup = new Map();
-  for (const task of tasks.values()) {
-    if (groups.has(task.group)) taskCountByGroup.set(task.group, (taskCountByGroup.get(task.group) ?? 0) + 1);
-  }
-
-  for (const [group, meta] of groups.entries()) {
-    if (!taskCountByGroup.has(group)) {
-      add("tasks.md", `build group ${group} contains no task`);
-      continue;
-    }
-
-    const validRisks = meta.risks.filter((risk) => RISKS.includes(risk));
-    const allLow = validRisks.length > 0 && validRisks.every((risk) => risk === "LOW");
-    const hasNonLow = validRisks.some((risk) => risk !== "LOW");
-    const hasCritical = validRisks.includes("CRITICAL");
-
-    if (allLow && meta.gate !== "AUTO") add("tasks.md", `build group ${group} is all LOW and must use Gate AUTO`);
-    if (hasNonLow && meta.gate === "AUTO") {
-      add("tasks.md", `build group ${group} contains non-LOW work and cannot use Gate AUTO`);
-    }
-    if (meta.gate === "DB_REVIEW" && !hasCritical) {
-      add("tasks.md", `build group ${group} uses Gate DB_REVIEW but contains no CRITICAL task`);
-    }
-
-    if (meta.gate === "DB_REVIEW") {
-      for (const [taskId, task] of tasks.entries()) {
-        if (task.group !== group) continue;
-        const reviewText = `${task.name} ${task.acceptance}`;
-        if (DB_REVIEW_CONTROL_PLANE_PATTERNS.some((re) => re.test(reviewText))) {
-          add(
-            "tasks.md",
-            `${taskId} places Supabase Auth/project/control-plane configuration inside DB_REVIEW; split it to SUPABASE + REVIEW or an explicit human/platform precondition`,
-          );
-        }
-      }
+  for (const phase of PHASES) {
+    if (![...tasks.values()].some((task) => task.phase === phase)) {
+      add("tasks.md", `fixed phase ${phase} has no task`);
     }
   }
 
   /* 8 — dependency targets, phase direction and cycles. */
   for (const [id, task] of tasks.entries()) {
-    const taskPhase = groups.get(task.group)?.phase;
+    const taskPhase = task.phase;
     for (const dep of task.deps) {
       if (!tasks.has(dep)) {
         add("tasks.md", `${id} depends on undeclared task ${dep}`);
         continue;
       }
       const depTask = tasks.get(dep);
-      const depPhase = groups.get(depTask.group)?.phase;
+      const depPhase = depTask.phase;
       if (PHASE_ORDER.has(taskPhase) && PHASE_ORDER.has(depPhase) && PHASE_ORDER.get(depPhase) > PHASE_ORDER.get(taskPhase)) {
         add("tasks.md", `${id} in ${taskPhase} depends on later-phase ${dep} in ${depPhase}`);
       }

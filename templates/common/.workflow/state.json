@@ -1,12 +1,20 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "phase": "READY_TO_BUILD",
   "project": "[PROJECT_NAME]",
-  "current_group": null,
-  "group_stage": null,
   "active_tasks": [],
   "review_round": 0,
-  "global_round": 0,
+  "correction_round": 0,
+  "candidate_commit": null,
+  "evidence": {
+    "foundation_review": null,
+    "build_review": null,
+    "local_preview": null,
+    "visual_qa": null,
+    "human_preview": null,
+    "e2e": null,
+    "quality_gate": null
+  },
   "completed_human_actions": [],
   "pending_action": null,
   "external_operation": null

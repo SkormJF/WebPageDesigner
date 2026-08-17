@@ -213,20 +213,18 @@ export function composeBackendCapability(staging, backendMode) {
   const capabilityRoot = path.join(BUILDER_ROOT, "templates", "capabilities", "supabase");
   copyDir(capabilityRoot, staging);
 
-  /* Keep simple projects free of a dead Supabase tool declaration. The common
-     Builder is backend-agnostic; composing the Supabase capability grants the
-     writable MCP tool only to repositories that actually selected it. */
-  const builderFile = path.join(staging, ".claude", "agents", "builder.md");
-  if (!fs.existsSync(builderFile)) abort("Supabase composition requires the common Builder agent.");
-  const builderSource = fs.readFileSync(builderFile, "utf8");
-  const toolsLine = builderSource.match(/^tools:\s*(.+)$/m)?.[0];
-  if (!toolsLine) abort("Builder agent has no tools frontmatter to extend for Supabase.");
-  if (!toolsLine.includes("mcp__supabase")) {
-    fs.writeFileSync(
-      builderFile,
-      builderSource.replace(toolsLine, `${toolsLine}, mcp__supabase`),
-      "utf8",
-    );
+  /* Keep backend-less projects free of dead tool declarations. Supabase projects
+     grant the same scoped MCP to Builder and generic Reviewer; role instructions
+     distinguish authorized mutation from read-only inspection. */
+  for (const role of ["builder", "reviewer"]) {
+    const agentFile = path.join(staging, ".claude", "agents", `${role}.md`);
+    if (!fs.existsSync(agentFile)) abort(`Supabase composition requires the common ${role} agent.`);
+    const source = fs.readFileSync(agentFile, "utf8");
+    const toolsLine = source.match(/^tools:\s*(.+)$/m)?.[0];
+    if (!toolsLine) abort(`${role} agent has no tools frontmatter to extend for Supabase.`);
+    if (!toolsLine.includes("mcp__supabase")) {
+      fs.writeFileSync(agentFile, source.replace(toolsLine, `${toolsLine}, mcp__supabase`), "utf8");
+    }
   }
 
   const mcpFile = path.join(staging, ".mcp.json");

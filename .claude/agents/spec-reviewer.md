@@ -2,8 +2,6 @@
 name: spec-reviewer
 description: Independent review of the five Builder specifications before project generation. Returns SPEC_PASS or SPEC_FAIL with severity-classified findings. Invoked by the Builder Orchestrator during SPEC_REVIEW, after the mechanical Spec Gate passes and before human approval.
 tools: Read, Grep, Glob
-model: opus
-effort: xhigh
 maxTurns: 24
 ---
 
@@ -32,11 +30,8 @@ design-system.md    the approved visual contract
 tasks.md            implementation decomposition
 ```
 
-Plus `discovery.md` — the approved truth from the Discovery conversation, and the reference you check
-fidelity against.
-
-Read all six before judging any of them. Most real findings are relationships between files, not defects
-inside one.
+Plus `discovery.md` and `config/stack-profiles/next-standard-v1.json`. The former is approved product truth; the latter
+is the versioned technical contract. Read all seven inputs before judging. Most real findings are relationships between them.
 
 ---
 
@@ -79,32 +74,19 @@ Can every piece be traced to a reason, and every reason to a piece?
 Can this be built as specified on the fixed Next baseline and the declared Backend Mode?
 
 - No requirement that the fixed Next baseline plus declared integrations/backend mode cannot satisfy without an undeclared dependency.
-- The execution phases are exactly `FOUNDATION`, `BUILD_TASKS`, `INTEGRATION`; Planning did not invent another phase.
-  FOUNDATION contains shared prerequisites, BUILD_TASKS product features, and INTEGRATION only wiring/regression of work
-  already built — not deferred feature implementation.
+- The implementation phases are exactly `FOUNDATION` and `PRODUCT_BUILD`; Planning did not invent another phase.
+  FOUNDATION contains shared prerequisites and PRODUCT_BUILD delivers the complete integrated product.
 - Dependencies form an acyclic workable order. A task may depend within its phase or on an earlier phase, never a later one;
   `Depends on` is a real prerequisite, not merely probable implementation order.
-- Planning went **groups first, tasks second**. Groups are meaningful context/capability boundaries, not one routine LOW
-  task each; tasks are outcome-based, not one per component/file/route/REQ. Repeated one-task LOW groups or component-per-task
-  decomposition that would create needless agent cycles is a **MAJOR efficiency defect**, not harmless style.
-- Start from the minimum useful groups and split only for dependency, context, capability or review boundaries. At most one
-  BUILD_TASKS group may set `Clear after = YES`; FOUNDATION/INTEGRATION groups never do.
-- `design.md` declares Backend Mode exactly `none` or `supabase`. `Capability = SUPABASE` exists only with backend
-  `supabase`; DB-specific tasks do not exist with `none`.
-- Gate/capability mapping is coherent **and reviewable** before dispatch: all-LOW groups use `AUTO`; non-LOW groups do not;
-  `DB_REVIEW` requires `Capability = SUPABASE` and CRITICAL Supabase/schema/RLS/data-integrity work whose risk-bearing
-  **final state** can be independently inspected through versioned SQL plus non-mutating reads over the project-scoped
-  Supabase MCP. Builder-owned mutation tests may supplement that final-state review. Other critical
-  surfaces use `REVIEW` unless a dedicated capability gate is explicitly defined.
-- A DB_REVIEW group does not contain Supabase Auth/project settings, email-confirmation/SMTP settings, Storage configuration,
-  Edge Function deployment or any other control-plane/app behaviour its declared Reviewer cannot observe. Automatable work
-  belongs in `SUPABASE + REVIEW`; an action explicitly owned by the human belongs in `design.md` as a stable `HPA-nnn` with
-  `Before group` and completion proof, never as Builder work. A group whose acceptance requires a tool/credential its Reviewer
-  does not have is a **MAJOR reviewability defect**.
-- Global lifecycle gates do not leak into tasks: there is no standalone E2E-suite-pass task, Visual QA task, Quality Gate
+- Tasks are outcome-based, not one per component/file/route/REQ. Decomposition that recreates per-task agent cycles is a
+  **MAJOR efficiency defect**. Lifecycle gates, reviewers and `/clear` checkpoints never appear as tasks.
+- `design.md` declares Backend Mode exactly `none` or `supabase`; DB-specific tasks do not exist with `none`. Supabase
+  Foundation must be independently reviewable through versioned SQL and non-mutating reads over the one scoped MCP.
+  Human-only control-plane work is an `HPA-nnn` blocked on `FOUNDATION` or `PRODUCT_BUILD`, never a Builder task.
+- Global lifecycle gates do not leak into tasks: there is no Foundation Review, Build Review, standalone E2E-suite-pass task, Visual QA task, Quality Gate
   task or deploy task. Playwright specs may be authored with the behaviour they cover; the full suite executes only after
-  Human Preview in lifecycle phase E2E. An INTEGRATION task asking for a full lifecycle/product-wide regression pass or a
-  desktop+mobile whole-product run is the same duplicate E2E under another name and is a **MAJOR efficiency defect**.
+  Human Preview in lifecycle phase E2E. A Product Build task asking for a full lifecycle/product-wide regression pass is
+  the same duplicate E2E under another name and is a **MAJOR efficiency defect**.
   Deliberately breaking a test once is not an acceptance criterion.
 - Any task relying on disposable test users/rows/data states the scratch-only source plus cleanup and a final absence/no-residue
   verification. Reusing/mutating a pre-existing identity, or creating a fixture the harness cannot clean safely, is a **MAJOR**
@@ -112,6 +94,9 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
 - Derived and calculated values have a stated mechanism, not just a stated result.
 - Security-relevant requirements (access control, role separation, data isolation) have an enforcement point
   named in `design.md`, not left implied by the UI.
+- Every version-sensitive choice matches the Stack Profile. When a request boundary is required it specifies
+  `src/proxy.ts` exporting `proxy`; `middleware.ts` is forbidden. Missing root-route behaviour, uncovered responsive
+  width intervals, or an ownerless stack/security decision is a MAJOR or BLOCKER according to consequence.
 
 ### 5. Fidelity to what was approved
 

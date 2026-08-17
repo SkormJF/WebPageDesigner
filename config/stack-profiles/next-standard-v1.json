@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "next-standard-v1",
   "label": "Next.js App Router + Tailwind + TypeScript",
   "template": "templates/stacks/next-standard-v1",
@@ -15,6 +15,45 @@
     "lint": "npm run lint",
     "typecheck": "npm run typecheck",
     "e2e": "npm run test:e2e"
+  },
+  "runtime_contract": {
+    "package_manager": "npm",
+    "lockfile": "package-lock.json",
+    "router": "app-router",
+    "typescript": true,
+    "source_root": "src",
+    "deployment": "vercel"
+  },
+  "request_boundary": {
+    "file": "src/proxy.ts",
+    "export": "proxy",
+    "forbidden_files": [
+      "middleware.ts",
+      "src/middleware.ts"
+    ],
+    "applies_when": "The approved design requires request interception, session refresh, redirects, or route protection at the request boundary."
+  },
+  "implementation_contract": {
+    "server_client_boundary": "Prefer Server Components; add use client only at the smallest interactive boundary.",
+    "icons": "lucide-react for non-brand icons; verified inline SVG for brand marks.",
+    "ui_primitives": "shadcn/ui backed by Radix primitives where a matching accessible primitive exists.",
+    "backend": "Supabase is the only supported owned backend capability.",
+    "database_changes": "Versioned local SQL migrations are the source of truth; RLS is explicit for every exposed table.",
+    "session_pattern": "When Supabase Auth uses SSR, follow the installed @supabase/ssr cookie pattern and the request_boundary contract.",
+    "forbidden_patterns": [
+      "floating framework versions",
+      "localStorage authentication tokens when SSR auth is declared",
+      "UI-only authorization",
+      "unversioned remote-only schema changes",
+      "invented product routes or entities"
+    ],
+    "dependency_policy": "Use exact versions and commit package-lock.json. A new dependency requires a spec-owned need; never use latest, caret or tilde during implementation."
+  },
+  "capability_packages": {
+    "supabase": {
+      "@supabase/ssr": "0.7.0",
+      "@supabase/supabase-js": "2.57.4"
+    }
   },
   "styling": {
     "engine": "tailwind-v4",

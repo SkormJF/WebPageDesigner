@@ -174,9 +174,14 @@ ui.pass(`stack template (${profile.id})`);
 const backendCapability = composeBackendCapability(staging, backendMode);
 ui.pass(
   backendCapability.supabase
-    ? "Supabase capability layer enabled (one shared project MCP + fail-closed read-only DB reviewer role)"
-    : "Static/simple capability layer: no Supabase MCP or DB reviewer installed",
+    ? "Supabase capability layer enabled (one shared project-scoped MCP; generic Reviewer remains read-only)"
+    : "No Supabase capability composed; lifecycle remains unchanged",
 );
+
+const generatedProfile = path.join(staging, ".workflow", "stack-profile.json");
+fs.mkdirSync(path.dirname(generatedProfile), { recursive: true });
+fs.copyFileSync(path.join(paths.stackProfiles, `${profile.id}.json`), generatedProfile);
+ui.pass(`versioned stack contract copied (${profile.id})`);
 
 /* .gitignore ships without its dot inside templates/ so it cannot apply to the
    Builder repo itself. Restore the name here, then append the stack's rules. */

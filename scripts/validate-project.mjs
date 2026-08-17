@@ -225,10 +225,7 @@ check("CLAUDE.md present", exists("CLAUDE.md"));
 for (const agent of ["planner", "builder", "reviewer"]) {
   check(`.claude/agents/${agent}.md present`, exists(`.claude/agents/${agent}.md`));
 }
-check(
-  backendMode === "supabase" ? "Supabase DB reviewer present" : "No Supabase DB reviewer in backend-less project",
-  backendMode === "supabase" ? exists(".claude/agents/db-reviewer.md") : !exists(".claude/agents/db-reviewer.md"),
-);
+check("No dedicated DB reviewer is generated", !exists(".claude/agents/db-reviewer.md"));
 check(
   backendMode === "supabase" ? "Supabase capability contract present" : "No Supabase capability contract in backend-less project",
   backendMode === "supabase"
@@ -244,11 +241,25 @@ if (exists(".claude/agents/builder.md")) {
     backendMode === "supabase" ? /mcp__supabase/.test(builderAgent) : !/mcp__supabase/.test(builderAgent),
   );
 }
-if (backendMode === "supabase" && exists(".claude/agents/db-reviewer.md")) {
-  const dbReviewer = read(".claude/agents/db-reviewer.md");
-  check("DB reviewer reuses the project Supabase MCP", /mcp__supabase/.test(dbReviewer));
-  check("DB reviewer declares no second inline MCP", !/^mcpServers:/m.test(dbReviewer) && !/supabase_review/.test(dbReviewer));
-  check("DB reviewer has no file-write or shell tools", !/^tools:.*\b(?:Write|Edit|Bash|WebFetch)\b/m.test(dbReviewer));
+if (exists(".claude/agents/reviewer.md")) {
+  const reviewerAgent = read(".claude/agents/reviewer.md");
+  check(
+    backendMode === "supabase"
+      ? "Generic Reviewer receives the same scoped Supabase MCP"
+      : "Backend-less Reviewer carries no Supabase MCP tool",
+    backendMode === "supabase" ? /mcp__supabase/.test(reviewerAgent) : !/mcp__supabase/.test(reviewerAgent),
+  );
+}
+check("Versioned stack contract present", exists(".workflow/stack-profile.json"));
+if (exists(".workflow/stack-profile.json")) {
+  const generatedProfile = readJson(path.join(target, ".workflow", "stack-profile.json"));
+  check(
+    "Generated stack contract byte-equivalent to configured profile",
+    JSON.stringify(generatedProfile) === JSON.stringify(profile),
+    "The generated repository must inherit the exact versioned contract, not a partial or locally edited copy.",
+  );
+  check("Request boundary is machine-readable", generatedProfile.request_boundary?.file === "src/proxy.ts" && generatedProfile.request_boundary?.export === "proxy");
+  check("Legacy middleware files are forbidden", generatedProfile.request_boundary?.forbidden_files?.includes("middleware.ts") && generatedProfile.request_boundary?.forbidden_files?.includes("src/middleware.ts"));
 }
 
 const hasState = check(".workflow/state.json present", exists(".workflow/state.json"));
@@ -267,7 +278,7 @@ if (hasState) {
 
   /* A fresh repository has nothing in flight. A non-null field here would mean
      the template shipped a half-finished operation as someone's starting point. */
-  const idleFields = ["current_group", "group_stage", "pending_action", "external_operation"];
+  const idleFields = ["pending_action", "external_operation"];
   const notIdle = idleFields.filter((f) => state[f] !== null);
   check(
     "Operational fields start null",
@@ -285,24 +296,35 @@ if (hasState) {
     Array.isArray(state.active_tasks) && state.active_tasks.length === 0,
     `active_tasks = ${JSON.stringify(state.active_tasks)}`,
   );
+  check("Fresh candidate commit is unset", state.candidate_commit === null);
   check(
     "Review round starts at zero",
     state.review_round === 0,
     `review_round = ${JSON.stringify(state.review_round)}`,
   );
   check(
-    "Global correction round starts at zero",
-    state.global_round === 0,
-    `global_round = ${JSON.stringify(state.global_round)}`,
+    "Correction round starts at zero",
+    state.correction_round === 0,
+    `correction_round = ${JSON.stringify(state.correction_round)}`,
   );
   check(
     "Human platform actions start incomplete",
     Array.isArray(state.completed_human_actions) && state.completed_human_actions.length === 0,
     `completed_human_actions = ${JSON.stringify(state.completed_human_actions)}`,
   );
+  const evidenceKeys = ["foundation_review", "build_review", "local_preview", "visual_qa", "human_preview", "e2e", "quality_gate"];
   check(
-    "Workflow schema is group/global-gate centric v4",
-    state.schema_version === 4,
+    "All lifecycle evidence starts empty",
+    evidenceKeys.every((key) => state.evidence?.[key] === null),
+    `evidence = ${JSON.stringify(state.evidence)}`,
+  );
+  check(
+    "Retired group/global-loop state is absent",
+    !("current_group" in state) && !("group_stage" in state) && !("global_round" in state),
+  );
+  check(
+    "Workflow schema is phase-review centric v5",
+    state.schema_version === 5,
     `schema_version = ${JSON.stringify(state.schema_version)}`,
   );
 }
@@ -329,16 +351,7 @@ if (hasClaudeSettings) {
   }
   if (settings) {
     check(".claude/settings.json is valid JSON", true);
-    check(
-      "Main session defaults to Sonnet",
-      settings.model === "sonnet",
-      `model = ${JSON.stringify(settings.model)}`,
-    );
-    check(
-      "Main session defaults to high effort",
-      settings.effortLevel === "high",
-      `effortLevel = ${JSON.stringify(settings.effortLevel)}`,
-    );
+    check("Project settings do not pin a model", !("model" in settings) && !("effortLevel" in settings));
     check(
       "Project settings carry no backend identity",
       !("SUPABASE_PROJECT_REF" in (settings.env ?? {})),
@@ -602,4 +615,3 @@ function killTree(child) {
     /* Already gone. Nothing to clean up. */
   }
 }
-

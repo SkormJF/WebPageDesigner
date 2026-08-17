@@ -28,7 +28,8 @@ These hold for this project. Violations are review findings, not style opinions:
 
 ## Routes
 
-<!-- SLOT: Access level is load-bearing — the middleware and the Quality Gate check against it. -->
+<!-- SLOT: Access level is load-bearing. The Stack Profile owns the request-boundary filename/export; design owns which
+     routes require that boundary. Include `/` explicitly, even when it redirects. -->
 
 | Route | Access | Purpose | Requirements |
 |---|---|---|---|
@@ -131,10 +132,10 @@ These hold for this project. Violations are review findings, not style opinions:
 
 ## Human platform actions
 
-<!-- SLOT: Human-only external actions current tools must not perform: HPA-nnn + blocked group + completion proof.
+<!-- SLOT: Human-only external actions current tools must not perform: HPA-nnn + blocked phase + completion proof.
      Use `— | None | — | —` when absent. No secrets. -->
 
-| ID | Human-only action | Before group | Completion proof |
+| ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
 | [TBD: HPA-001 or —] | [TBD: action or None] | [TBD: group or —] | [TBD: confirmation/observable proof] |
 
