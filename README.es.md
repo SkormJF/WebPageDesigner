@@ -54,7 +54,8 @@ layout, fondos y tono— y aprobás esa dirección en una sola compuerta cuando 
 No es una imagen de un diseño: es una página real. Por eso hover, foco, estados y ritmo pueden inspeccionarse antes de
 convertirse en el contrato visual, en vez de improvisarse durante la implementación.
 
-**La planificación** convierte todo eso en cinco especificaciones, cada una dueña de exactamente una cosa:
+**La planificación** termina el conjunto de especificaciones. `design-system.md` ya es la salida durable aprobada de R4;
+Planning no lo reescribe y genera las otras cuatro specs. Cada archivo es dueño de exactamente una cosa:
 
 | Archivo | De qué es dueño |
 |---|---|
@@ -70,7 +71,9 @@ convertirse en el contrato visual, en vez de improvisarse durante la implementac
 Spec Gate mecánico  +  Spec Reviewer  +  tu aprobación explícita  =  READY_TO_CREATE
 ```
 
-La mitad mecánica revisa estructura: archivos, IDs, referencias, placeholders sin resolver. El
+La mitad mecánica revisa estructura: archivos, IDs, referencias, placeholders sin resolver, y comprueba que cada decisión
+compacta `DISC-nnn` persistida por Discovery tenga un Requirement propietario. Esa trazabilidad no obliga a crear un REQ o
+una Task por decisión. El
 [Spec Reviewer](.claude/agents/spec-reviewer.md) es un agente aparte que revisa si las specs están *bien*:
 completas, consistentes, trazables, factibles y fieles a lo que realmente aprobaste. Reporta y nunca corrige.
 
@@ -94,7 +97,9 @@ Hay una sola base de aplicación soportada:
 
 Planning no elige framework. Toda aplicación generada usa Next.js. Solo decide el modo de backend de la aplicación:
 `none` para un proyecto simple/sin backend propio, o `supabase` cuando el producto necesita datos persistentes, Auth,
-storage, realtime o autorización en base de datos. Las APIs externas siguen siendo Integrations. Las versiones exactas
+storage, realtime o autorización en base de datos. Los proyectos con Supabase Auth usan el invariante **Confirm Email =
+OFF**; como esa opción del panel es humana, el proyecto generado se detiene una sola vez en su HPA declarado hasta que
+confirmes el cambio. Las APIs externas siguen siendo Integrations. Las versiones exactas
 viven en el `package.json` y lockfile de la plantilla Next.
 
 ---

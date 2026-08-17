@@ -24,7 +24,7 @@ does a component for this already exist in the project?
            product structure  → build it, in the feature that owns it
 ```
 
-**Add only what the assigned scope/build group needs.** Never `add --all`, and never add a component speculatively: every
+**Add only what the assigned phase/scope needs.** Never `add --all`, and never add a component speculatively: every
 one is source code that lands in the repository, gets reviewed, and has to be maintained whether or not
 anything imports it.
 

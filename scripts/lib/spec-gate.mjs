@@ -16,7 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { paths, SPEC_FILES, ui, parseArgs, parseBackendMode } from "./common.mjs";
+import { paths, SPEC_FILES, ui, parseArgs, parseBackendMode, parseAuthenticationMode } from "./common.mjs";
 
 const REQUIRED_SECTIONS = {
   "PROJECT.md": ["## Identity", "## What this is", "## Scope", "## Decisions in force"],
@@ -33,6 +33,7 @@ const PLACEHOLDER_PATTERNS = [
   { label: "unreplaced [PROJECT_NAME] token", re: /\[PROJECT_NAME\]/g },
 ];
 
+const DISC_ID = /\bDISC-\d{3}\b/g;
 const REQ_ID = /\bREQ-\d{3}\b/g;
 const TASK_ID = /\bTASK-\d{3}\b/g;
 const PHASES = ["FOUNDATION", "PRODUCT_BUILD"];
@@ -118,12 +119,16 @@ export function runSpecGate(dir = paths.builderCurrent) {
   const tasksText = contents["tasks.md"] ?? "";
   const designSystemText = contents["design-system.md"] ?? "";
 
-  /* Version-sensitive Stack Profile invariants that must never rely on model memory. */
-  for (const forbidden of ["middleware.ts", "src/middleware.ts"]) {
-    if (Object.entries(contents).some(([, text]) => text.includes(forbidden))) {
-      add("design.md", `${forbidden} is forbidden by next-standard-v1; use src/proxy.ts exporting proxy when a request boundary is required`);
-    }
+  /* Machine-readable design choices. Textual discussion of a forbidden implementation is not itself an implementation;
+     semantic stack choices are Reviewer-owned, while generated files are enforced later by validate-project. */
+  const authenticationMode = parseAuthenticationMode(designText);
+  if (!authenticationMode) add("design.md", "Authentication must be exactly `none` or `supabase`");
+  else if (authenticationMode.startsWith("unsupported:")) {
+    add("design.md", `unsupported Authentication ${authenticationMode.slice("unsupported:".length)}; use none or supabase`);
+  } else if (authenticationMode === "supabase" && backendMode !== "supabase") {
+    add("design.md", "Authentication `supabase` requires Backend Mode `supabase`");
   }
+
   const routesSection = sectionBody(designText, "## Routes");
   const declaredRouteCells = tableRows(routesSection).map(cellsOf).filter((cells) => cells[0] !== "Route");
   if (!declaredRouteCells.some((cells) => cells[0]?.replace(/`/g, "") === "/")) {
@@ -162,22 +167,69 @@ export function runSpecGate(dir = paths.builderCurrent) {
   const withdrawnSection = requirementsText.split("## Withdrawn")[1] ?? "";
   for (const m of withdrawnSection.matchAll(REQ_ID)) withdrawn.add(m[0]);
 
-  /* 6 — human-owned platform actions are durable preconditions, not Builder tasks. */
+  /* 6 — Discovery product-decision traceability. This validates connections, not semantic fidelity. */
+  const discoveryFile = path.join(dir, "discovery.md");
+  const discoveryText = fs.existsSync(discoveryFile) ? fs.readFileSync(discoveryFile, "utf8") : "";
+  if (!discoveryText) add("discovery.md", "approved Discovery is missing; product decisions cannot be traced into requirements");
+  const ledger = sectionBody(discoveryText, "## Product decision ledger");
+  const discoveryDecisions = new Set();
+  for (const line of tableRows(ledger)) {
+    const cells = cellsOf(line);
+    if (cells[0] === "ID" || cells[0] === "—") continue;
+    const id = cells[0] ?? "";
+    if (!/^DISC-\d{3}$/.test(id)) {
+      if (id) add("discovery.md", `invalid product decision ID ${id}; use DISC-nnn`);
+      continue;
+    }
+    if (discoveryDecisions.has(id)) add("discovery.md", `${id} is declared more than once`);
+    discoveryDecisions.add(id);
+    if (!cells[1]) add("discovery.md", `${id} has no approved product decision text`);
+  }
+  if (discoveryText && discoveryDecisions.size === 0) {
+    add("discovery.md", "Product decision ledger has no DISC-nnn decisions");
+  }
+
+  const reqSources = new Map();
+  for (const line of tableRows(requirementsText)) {
+    const req = line.match(REQ_ID)?.[0];
+    if (!req || withdrawn.has(req)) continue;
+    const sourceIds = [...line.matchAll(DISC_ID)].map((m) => m[0]);
+    reqSources.set(req, new Set(sourceIds));
+    if (sourceIds.length === 0) add("requirements.md", `${req} has no DISC-nnn Source`);
+    for (const disc of sourceIds) {
+      if (!discoveryDecisions.has(disc)) add("requirements.md", `${req} cites ${disc}, which discovery.md does not define`);
+    }
+  }
+  const citedDecisions = new Set([...reqSources.values()].flatMap((ids) => [...ids]));
+  for (const disc of discoveryDecisions) {
+    if (!citedDecisions.has(disc)) add("requirements.md", `${disc} is an approved product decision with no owning requirement`);
+  }
+
+  /* 7 — human-owned platform actions are durable preconditions, not Builder tasks. */
   const humanActionsSection = sectionBody(designText, "## Human platform actions");
+  const humanActions = [];
   for (const line of tableRows(humanActionsSection)) {
     const cells = cellsOf(line);
     if (cells[0] === "ID" || cells[0] === "—") continue;
     if (cells.length < 4) {
-      add("design.md", `human-platform-action row has ${cells.length} columns; expected ID, Human-only action, Before group, Completion proof`);
+      add("design.md", `human-platform-action row has ${cells.length} columns; expected ID, Human-only action, Before phase, Completion proof`);
       continue;
     }
-    const [id, action, beforeGroup, proof] = cells;
+    const [id, action, beforePhase, proof] = cells;
     if (!/^HPA-\d{3}$/.test(id)) add("design.md", `invalid Human platform action ID ${id || "(empty)"}; use HPA-nnn or the explicit None row`);
-    if (!PHASES.includes(beforeGroup)) add("design.md", `${id} waits for invalid phase ${beforeGroup || "(empty)"}`);
+    if (!PHASES.includes(beforePhase)) add("design.md", `${id} waits for invalid phase ${beforePhase || "(empty)"}`);
     if (!action || !proof) add("design.md", `${id} must name both the human-only action and its completion proof`);
+    humanActions.push({ id, action, beforePhase, proof });
+  }
+  if (authenticationMode === "supabase") {
+    const confirmEmailHpa = humanActions.find(({ action, beforePhase }) =>
+      beforePhase === "FOUNDATION" && /confirm\s+email/i.test(action) && /(?:disable|disabled|off)/i.test(action));
+    if (!confirmEmailHpa) {
+      add("design.md", "Supabase Authentication requires a FOUNDATION HPA that disables Confirm Email before Auth work");
+    }
   }
 
-  /* 7 — task declarations and requirement links.
+  /* 8 — task declarations and requirement links.
      Only table rows are declarations; dependency diagrams may repeat IDs. */
   const taskRows = tableRows(tasksText).filter((line) => line.match(TASK_ID));
   const tasks = new Map();
@@ -245,7 +297,7 @@ export function runSpecGate(dir = paths.builderCurrent) {
     }
   }
 
-  /* 8 — dependency targets, phase direction and cycles. */
+  /* 9 — dependency targets, phase direction and cycles. */
   for (const [id, task] of tasks.entries()) {
     const taskPhase = task.phase;
     for (const dep of task.deps) {

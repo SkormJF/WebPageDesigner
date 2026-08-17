@@ -58,9 +58,10 @@ ceremonies. Product Build includes integration.
 
 ## Roles
 
-**Builder** implements the complete assigned phase or one targeted correction. It reads the stack contract and only the
-governing spec slices, searches before creating, leaves no unexplained stub/mock/TODO, verifies the cleaned final state and
-returns compact evidence. It never invokes Reviewer or Planner.
+**Builder** implements the complete assigned phase or one targeted correction. At the start of FOUNDATION or PRODUCT_BUILD
+it reads the fixed Stack Profile and all five approved specs **once**, then uses `tasks.md` as the execution map and reloads
+only a single owner document when genuinely needed. Skills remain on-demand. It never reads Factory Discovery/Artifact/
+templates/history, never reviews task-by-task, and never invokes Reviewer or Planner.
 
 **Reviewer** is read-only and runs only at `FOUNDATION_REVIEW` or `BUILD_REVIEW`, plus one targeted recheck after a failed
 review. It seeks the smallest independent evidence able to falsify risk-bearing claims. With Supabase it reads the
@@ -70,6 +71,25 @@ capability guide, local migrations/policies and scoped live evidence without mut
 rule, state transition or material visual change. Bugs against approved specs go directly to Builder.
 
 Skills are loaded one at a time, only when needed. Skills provide HOW, never lifecycle authority.
+
+## Build dispatch, durable task status and commits
+
+Before dispatching Builder for `FOUNDATION` or `PRODUCT_BUILD`, persist the target phase first, then process every
+incomplete HPA whose `Before phase` matches it. Only after all required HPAs are complete set the assigned `TASK-xxx` rows
+`ACTIVE` in `tasks.md` and write those IDs to `active_tasks`. Builder never edits task status and never commits. When Builder returns COMPLETE, persist its evidence and
+advance to the matching review phase. Only after Reviewer PASS: mark that build phase's active tasks `DONE`, clear
+`active_tasks`/review counters, commit the accepted phase as one durable boundary, record the accepted commit/evidence, and
+persist the next lifecycle phase. A failed review leaves tasks ACTIVE until the bounded correction/recheck passes.
+
+## Human platform actions
+
+`HPA-nnn` rows in `design.md` are known human-owned prerequisites, not implementation attempts. After the Orchestrator has
+persisted their `Before phase` but before Builder work starts, if an HPA is not in `completed_human_actions`, persist
+`pending_action = { type: "HUMAN_PLATFORM_ACTION", id, action }`, print
+`HUMAN ACTION REQUIRED — <HPA-ID>: <action>. Cuando termines, escribe continúa.` and **STOP**. Never attempt a workaround or
+spend a correction round on it. On `continúa`, use the declared completion proof; explicit human confirmation is valid when
+that is the declared proof. Only then append the ID to `completed_human_actions`, clear `pending_action` and resume the same
+phase. HPA is never a Task or lifecycle phase.
 
 ## Review and correction budget
 
@@ -83,11 +103,11 @@ TARGETED ROUND 2 FAIL → STOP for the human
 ```
 
 Round 2 checks prior findings, the correction diff and minimum affected regression only. It cannot raise the standard,
-restart the audit, hunt unrelated MINORs or widen scope. PASS stops immediately. MINORs are recorded; they do not cause an
-automatic correction loop.
+restart the audit, hunt unrelated MINORs or widen scope. The Orchestrator persists `review_round = 1` before Round 1;
+a failure persists `correction_round = 1` before the targeted Builder correction and `review_round = 2` before recheck.
+PASS clears both counters. A Round 2 failure stays blocked for the human. MINORs never start a correction loop.
 
-For `LOCAL_PREVIEW`, `VISUAL_QA`, `E2E` or `QUALITY_GATE`, use the same one-correction/one-targeted-recheck budget while
-remaining in that lifecycle phase. Orchestrator routes the defect to Builder and never patches implementation itself.
+For `LOCAL_PREVIEW`, `VISUAL_QA`, `E2E` or `QUALITY_GATE`, use `correction_round` with the same one-correction/one-targeted-recheck budget while remaining in that lifecycle phase. Orchestrator routes the defect to Builder and never patches implementation itself.
 
 ## Fixed stack and Supabase
 
@@ -99,7 +119,9 @@ When request interception/session refresh/route protection is required, obey `re
 `src/proxy.ts`, export `proxy`, and never create `middleware.ts` or `src/middleware.ts`.
 
 Backend Mode is `none` or `supabase`, but lifecycle is identical. Supabase adds one shared project-scoped MCP and
-`.claude/capabilities/supabase.md`; it does not add a DB Reviewer agent. Builder owns migrations, remote mutations and safe
+`.claude/capabilities/supabase.md`; it does not add a DB Reviewer agent. When `design.md` declares Supabase Authentication,
+the capability contract requires the predeclared human HPA **Confirm Email = OFF** before FOUNDATION; do not rediscover it
+during implementation. Builder owns migrations, remote mutations and safe
 scratch-test cleanup. Reviewer uses the same connection read-only. Record remote mutations in `external_operation` before
 execution and never auto-retry an interrupted mutation. Never persist secrets.
 
@@ -111,6 +133,16 @@ execution and never auto-retry an interrupted mutation. Never persist secrets.
 - Do not claim a route, policy, cleanup, visual state or E2E path that was not inspected.
 - No reviewer may approve from Builder's summary alone.
 - If required access/evidence is unavailable, return BLOCKED; do not invent a substitute or bypass permissions.
+
+## Recovery
+
+Recovery reads `.workflow/state.json`, `tasks.md`, current evidence, git and the filesystem — never conversational memory.
+A pending HPA remains stopped until its proof is confirmed. An interrupted `external_operation` requires observing remote
+truth before any retry; never auto-repeat it. In FOUNDATION/PRODUCT_BUILD with `active_tasks`, resume the incomplete phase
+from the actual working tree rather than replaying accepted work. In a review phase, review the current candidate/evidence;
+do not rebuild first. Completed phases are identified by persisted evidence plus their accepted commit and are never
+replayed. A global-gate correction resumes the same gate/round. If durable state and repository evidence conflict, STOP for
+the human instead of guessing.
 
 ## Checkpoints
 

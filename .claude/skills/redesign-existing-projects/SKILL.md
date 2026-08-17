@@ -7,7 +7,7 @@ description: Audit an interface that already exists and improve it inside the ap
 
 ## Scope, before anything else
 
-This skill improves **the surface in front of you**, inside the assigned scope/build group and the contract that
+This skill improves **the surface in front of you**, inside the assigned phase/scope and the contract that
 was approved. It is not a mandate to modernize a product.
 
 ```

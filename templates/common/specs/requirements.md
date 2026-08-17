@@ -2,6 +2,7 @@
 
 <!-- SLOT: Owns WHAT the product must do, never how. A requirement naming a library, a component or a file
      path has leaked into design.md's territory.
+     Every product requirement cites one or more stable `DISC-nnn` decisions from `discovery.md` in Source.
      Every SLOT comment must be removed before the Spec Gate will pass. -->
 
 ## How to read this
@@ -48,9 +49,9 @@ State       While <state>, the system shall …
 <!-- SLOT: From Discovery Round 3, and its own section because it is the half that gets skipped. Each needs
      an enforcement point in design.md — hiding the UI is not one. -->
 
-| ID | Must not be possible | Enforcement point (design.md) |
-|---|---|---|
-| REQ-9xx | [TBD] | [TBD] |
+| ID | Must not be possible | Source | Enforcement point (design.md) |
+|---|---|---|---|
+| REQ-9xx | [TBD] | DISC-xxx | [TBD] |
 
 ## Withdrawn
 

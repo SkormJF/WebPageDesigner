@@ -8,12 +8,16 @@ tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 Implement the complete assigned phase (`FOUNDATION` or `PRODUCT_BUILD`), not one task/review cycle. Confirm the assigned
 `TASK-xxx` rows, work in dependency order, and return only when the phase is complete or honestly blocked.
 
-Read `.workflow/stack-profile.json`, the phase tasks, linked requirements, governing `design.md` sections,
-`design-system.md` when visual, and existing code. Search before creating and reuse established patterns.
+At the start of a `FOUNDATION` or `PRODUCT_BUILD` assignment, read `.workflow/stack-profile.json` and **all five approved
+specs once** (`PROJECT.md`, `requirements.md`, `design.md`, `design-system.md`, `tasks.md`) so the whole product contract is
+in phase context. Then let `tasks.md` drive dependency order; do not reread all specs before each task. Reopen only the
+single owner document when a real ambiguity requires it. Never load Discovery, the visual Artifact, Factory templates or
+Factory history. Search existing code before creating and reuse established patterns.
 Install only exact dependency versions authorized by that profile or an approved spec, and commit the resulting lockfile.
 
-No unexplained TODO, stub, fixed mock, decorative dead control or omitted behaviour. Stay inside approved scope. A real
-conflict or missing decision is `BLOCKED`; never rewrite specs or invent product behaviour.
+No unexplained TODO, stub, fixed mock, decorative dead control or omitted behaviour. Stay inside approved scope.
+Routine engineering choices inside the approved WHAT/HOW are yours: solve them. A real product/architecture conflict or
+missing load-bearing decision is `BLOCKED`; never rewrite specs or invent product behaviour.
 
 For `FOUNDATION`, establish the pinned stack and shared baseline. With Supabase, read the capability contract before
 remote work; version SQL locally before applying it, enforce RLS server-side and clean scratch fixtures with no-residue

@@ -48,6 +48,7 @@ import {
   describeExecFailure,
   resolveProjectTarget,
   readBackendMode,
+  parseAuthenticationMode,
 } from "./lib/common.mjs";
 
 const args = parseArgs(process.argv.slice(2));
@@ -83,6 +84,14 @@ if (!backendMode || backendMode.startsWith("unsupported:")) {
   abort(
     "The generated project's design.md does not state a supported Backend Mode.",
     "Expected `none` or `supabase`.",
+  );
+}
+const designText = fs.readFileSync(path.join(target, "design.md"), "utf8");
+const authenticationMode = parseAuthenticationMode(designText);
+if (!authenticationMode || authenticationMode.startsWith("unsupported:") || (authenticationMode === "supabase" && backendMode !== "supabase")) {
+  abort(
+    "The generated project's design.md does not state a supported Authentication contract.",
+    "Expected `Authentication: none|supabase`, with Supabase Authentication only under Backend Mode supabase.",
   );
 }
 const profile = loadProfile(config.stack_profile);
@@ -221,7 +230,13 @@ if (fs.existsSync(activeStateFile)) {
 
 ui.step("Harness");
 
-check("CLAUDE.md present", exists("CLAUDE.md"));
+const hasHarness = check("CLAUDE.md present", exists("CLAUDE.md"));
+if (hasHarness) {
+  const harness = read("CLAUDE.md");
+  check("Generated harness carries blocking HPA recovery", /HUMAN_PLATFORM_ACTION/.test(harness) && /completed_human_actions/.test(harness) && /resume the same phase/i.test(harness));
+  check("Generated harness carries durable interruption recovery", /## Recovery/.test(harness) && /never conversational memory/i.test(harness) && /never replayed/i.test(harness));
+  check("Generated harness keeps phase-wide context loading", /all five approved specs/i.test(harness) && /tasks\.md.*execution map/i.test(harness));
+}
 for (const agent of ["planner", "builder", "reviewer"]) {
   check(`.claude/agents/${agent}.md present`, exists(`.claude/agents/${agent}.md`));
 }
@@ -232,8 +247,17 @@ check(
     ? exists(".claude/capabilities/supabase.md")
     : !exists(".claude/capabilities/supabase.md"),
 );
+if (backendMode === "supabase" && exists(".claude/capabilities/supabase.md")) {
+  const capability = read(".claude/capabilities/supabase.md");
+  check("Supabase capability fixes Confirm Email OFF for Auth", authenticationMode !== "supabase" || (/Confirm Email/.test(capability) && /always disabled/i.test(capability.replace(/\*/g, ""))));
+  if (authenticationMode === "supabase") {
+    check("Supabase Auth design carries the pre-Foundation Confirm Email HPA", /HPA-\d{3}[^\n]*disable[^\n]*Confirm Email[^\n]*FOUNDATION/i.test(designText));
+  }
+}
 if (exists(".claude/agents/builder.md")) {
   const builderAgent = read(".claude/agents/builder.md");
+  check("Builder reads the five frozen specs once per full build phase", /all five approved[\s\S]{0,120}specs once/i.test(builderAgent));
+  check("Builder does not depend on Factory-only context", /Never load Discovery, the visual Artifact, Factory templates or Factory history/i.test(builderAgent));
   check(
     backendMode === "supabase"
       ? "Builder receives the writable Supabase MCP tool only for this backend"
@@ -259,7 +283,17 @@ if (exists(".workflow/stack-profile.json")) {
     "The generated repository must inherit the exact versioned contract, not a partial or locally edited copy.",
   );
   check("Request boundary is machine-readable", generatedProfile.request_boundary?.file === "src/proxy.ts" && generatedProfile.request_boundary?.export === "proxy");
-  check("Legacy middleware files are forbidden", generatedProfile.request_boundary?.forbidden_files?.includes("middleware.ts") && generatedProfile.request_boundary?.forbidden_files?.includes("src/middleware.ts"));
+  const forbiddenRequestFiles = generatedProfile.request_boundary?.forbidden_files ?? [];
+  check(
+    "Legacy middleware files are forbidden by the contract",
+    forbiddenRequestFiles.includes("middleware.ts") && forbiddenRequestFiles.includes("src/middleware.ts"),
+  );
+  const forbiddenPresent = forbiddenRequestFiles.filter((rel) => exists(rel));
+  check(
+    "No forbidden request-boundary file exists",
+    forbiddenPresent.length === 0,
+    forbiddenPresent.length ? `Forbidden files present: ${forbiddenPresent.join(", ")}` : undefined,
+  );
 }
 
 const hasState = check(".workflow/state.json present", exists(".workflow/state.json"));

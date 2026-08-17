@@ -51,7 +51,8 @@ in a browser. The Builder names the major visual-system decisions — palette, t
 tone — and you approve that direction in one gate when nothing is contested. It is a real page rather than a picture, so
 hover, focus, states and rhythm can be inspected before they become the visual contract instead of being improvised later.
 
-**Planning** turns that into five specifications, each owning exactly one thing:
+**Planning** finishes the specification set. `design-system.md` is already the approved durable output of R4; Planning
+keeps it unchanged and writes the other four specifications. Each file owns exactly one thing:
 
 | File | Owns |
 |---|---|
@@ -67,7 +68,9 @@ hover, focus, states and rhythm can be inspected before they become the visual c
 Mechanical Spec Gate  +  Spec Reviewer  +  your explicit approval  =  READY_TO_CREATE
 ```
 
-The mechanical half checks structure — files, IDs, references, placeholders. The
+The mechanical half checks structure — files, IDs, references, placeholders — and verifies that every compact `DISC-nnn`
+product decision persisted by Discovery has an owning requirement. This adds traceability without forcing one requirement
+or one task per decision. The
 [Spec Reviewer](.claude/agents/spec-reviewer.md) is a separate agent that checks whether the specs are
 *right*: complete, consistent, traceable, feasible, and faithful to what you actually approved. It reports
 and never fixes.
@@ -92,7 +95,9 @@ There is one supported application baseline:
 
 Planning does **not** choose a framework. Every generated application is Next.js. It chooses only the application
 backend mode: `none` for a simple/backend-less project, or `supabase` when the product owns persistent data, Auth,
-storage, realtime or database-enforced authorization. External APIs remain integrations. The exact runtime versions live
+storage, realtime or database-enforced authorization. Supabase Auth projects use the harness invariant **Confirm Email =
+OFF**; because that dashboard setting is human-owned, the generated project pauses once on its declared HPA until you
+confirm it. External APIs remain integrations. The exact runtime versions live
 in the Next template's `package.json` and lockfile.
 
 ---

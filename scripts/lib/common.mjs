@@ -117,6 +117,25 @@ export function readBackendMode(dir = paths.builderCurrent) {
   return parseBackendMode(fs.readFileSync(file, "utf8"));
 }
 
+/** Extract the explicit authentication mode owned by design.md. */
+export function parseAuthenticationMode(designText) {
+  if (typeof designText !== "string") return null;
+  let insideBackend = false;
+  for (const line of designText.split(/\r\n|\n|\r/)) {
+    if (/^##[^#]/.test(line) || /^##$/.test(line)) {
+      insideBackend = /^##\s+Backend\s*$/.test(line);
+      continue;
+    }
+    if (!insideBackend) continue;
+    const match = line.match(/^\s*\*\*Authentication:\*\*\s*(.+?)\s*$/);
+    if (!match) continue;
+    const value = match[1].replace(/^`+|`+$/g, "").trim().toLowerCase();
+    if (!value || value.startsWith("[")) return null;
+    return ["none", "supabase"].includes(value) ? value : `unsupported:${value}`;
+  }
+  return null;
+}
+
 /**
  * Resolve a slug to its target directory under projects_root, refusing anything
  * that would land outside it. Deterministic by construction rather than by

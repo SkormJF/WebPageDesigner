@@ -16,6 +16,13 @@ Then print the required restart message and stop. After restart, compare the per
 read-only identity call that proves the selected project. Connectivity alone is not identity. Clear the action only after
 proof.
 
+## Fixed Auth prerequisite
+
+When `design.md` declares `**Authentication:** supabase`, email confirmation is **always disabled** for projects generated
+by this harness. This is not a product decision and Builder must not rediscover it. Planning records an `HPA-nnn` before
+`FOUNDATION`: the human disables **Confirm Email** in the Supabase Auth dashboard, then confirms completion. Do not spend a
+Builder correction attempt on this control-plane setting and do not continue Auth-dependent work while that HPA is pending.
+
 ## Builder mutation contract
 
 - Version local SQL migration before applying the same migration remotely.

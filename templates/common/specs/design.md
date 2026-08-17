@@ -60,6 +60,7 @@ These hold for this project. Violations are review findings, not style opinions:
      With `none`, delete the backend-only subsections below. -->
 
 **Mode:** [TBD: none | supabase]
+**Authentication:** [TBD: none | supabase]
 
 ### Data model
 
@@ -87,6 +88,10 @@ These hold for this project. Violations are review findings, not style opinions:
 | [TBD] | [TBD] | [TBD] | [TBD] |
 
 ### Auth and roles
+
+<!-- SLOT: Authentication is `supabase` only when this product uses Supabase Auth. In this harness every Supabase login
+     is intentionally **without email confirmation**. Because Confirm Email is a human-owned dashboard setting, include an
+     HPA before FOUNDATION that disables Confirm Email; do not ask Builder to discover or mutate it. -->
 
 | Role | May see | May do | May not |
 |---|---|---|---|
@@ -137,7 +142,7 @@ These hold for this project. Violations are review findings, not style opinions:
 
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
-| [TBD: HPA-001 or —] | [TBD: action or None] | [TBD: group or —] | [TBD: confirmation/observable proof] |
+| [TBD: HPA-001 or —] | [TBD: action or None] | [TBD: FOUNDATION / PRODUCT_BUILD / —] | [TBD: confirmation/observable proof] |
 
 ## Security
 

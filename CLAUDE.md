@@ -26,7 +26,8 @@ IDLE → DISCOVERY → PLANNING → SPEC_REVIEW → AWAITING_APPROVAL → READY_
 
 **Only you write lifecycle state** — no skill, no script, no subagent. Persist **before** a consequential action and
 **after** its result. **Never skip a declared enum phase because it appears transient.** One active project.
-`.builder/current/` holds `state.json` always, `discovery.md` from DISCOVERY, the five specs from PLANNING, and a
+`.builder/current/` holds `state.json` always, `discovery.md` from DISCOVERY, `design-system.md` from approved R4,
+`PROJECT.md`/`requirements.md`/`design.md`/`tasks.md` from PLANNING, and a
 temporary `artifact/`.
 ```json
 { "schema_version": 1, "phase": "DISCOVERY", "project_name": "Example", "slug": "example",
@@ -38,7 +39,8 @@ path branches on it. With `pending_action` that is the whole of state, where we 
 requirements, no architecture, no visual decisions, no review history, and the target derived from `projects_root + slug`
 rather than stored. `discovery.md` holds **current approved truth only**, replaced when a decision changes. Load per phase
 and no more — `DISCOVERY`: state and discovery · `PLANNING`: state, discovery, templates, approved design system and
-fixed Stack Profile · `SPEC_REVIEW`/`AWAITING_APPROVAL`: state, discovery, five specs and Stack Profile ·
+fixed Stack Profile (and `templates/capabilities/supabase/.claude/capabilities/supabase.md` after Backend Mode becomes `supabase`) ·
+`SPEC_REVIEW`/`AWAITING_APPROVAL`: state, discovery, five specs and Stack Profile ·
 `CREATING_PROJECT`/`VALIDATING_PROJECT`: state, config, Stack Profile and approved backend mode.
 ## Discovery
 Conversational, not a form: infer what you can, ask only what is unknown, ambiguous or contradictory, and write
@@ -47,7 +49,10 @@ context** — purpose, users, type, business context, objective, constraints. **
 language, tone, factual and claim limits, and whether they must **receive files**, asked separately. **R3 functional
 direction**, *only if R1 found real functionality* — the flow narrated end to end first, then entities and relations,
 roles, the states a record moves through, derived values, one concrete case, and **what must NOT be possible**; summarize
-back. **R4 visual direction** — reference site (`web-reader`), colour, light or dark, feeling, then assets, then approval.
+back. Keep a compact `## Product decision ledger` in `discovery.md`: stable `DISC-nnn` IDs for approved **requirements-owned product decisions** — capabilities, user-visible behaviour,
+business rules, permissions, state transitions, product-specific constraints and explicit "must not" decisions. Do not put
+identity/scope, visual tokens, stack choices or implementation in that ledger. Update the same ID when a
+decision is refined; never reuse an ID for a different decision. **R4 visual direction** — reference site (`web-reader`), colour, light or dark, feeling, then assets, then approval.
 Four answers decide more than they look. **Real functionality or a presentation?** decides whether R3 runs at all — never
 infer it later. **"¿Qué parte de esto va a cambiar, cada cuánto, y quién lo va a cambiar?"**, in those words: nothing →
 static; a weekly list → decide **now** between a data file, a light CMS, a backend, or leaving it off the page; a
@@ -65,7 +70,7 @@ once: `[ Aprobar dirección visual ] [ Quiero cambios ]`. Naming them is what se
 "¿te gusta?", and a genuinely ambiguous element still earns its own. Changes are resolved specifically, republished to the
 same URL, and approved on the next turn. What gets approved is a **named visual system — tokens, roles, tiers, rhythm,
 states — not every CSS literal**, and no accessibility claim is made without a real measurement. `design-system.md` copies
-those values. The Artifact is transient: it stays in `.builder/current/artifact/` until `reset-builder` removes it, so do
+those values and becomes their durable authority after approval. The Artifact is transient: it stays in `.builder/current/artifact/` until `reset-builder` removes it, so do
 not spend a turn deleting it — and it is never copied into the generated project.
 ## Planning — five specifications, one owner each
 | File | Owns |
@@ -73,18 +78,25 @@ not spend a turn deleting it — and it is never copied into the generated proje
 | `PROJECT.md` | Identity, purpose, audience, scope, non-goals, scope decisions. Small — no architecture, QA, tokens or history. |
 | `requirements.md` | **WHAT.** Stable IDs (`REQ-001`), EARS wording where it helps. |
 | `design.md` | **HOW, technically.** Backend mode; architecture, routes, data, auth, RLS, integrations, security, env names and justified baseline deviations. The Factory already owns Next. |
-| `design-system.md` | **The approved visual contract**, copied from the Artifact — not re-derived, not improved on. |
+| `design-system.md` | **The approved visual contract**, already persisted at B1 from the Artifact — Planning consumes it unchanged. |
 | `tasks.md` | **Decomposition.** Requirement-linked outcomes, phase, dependencies, risk, acceptance and durable status. |
-Templates in `templates/common/specs/` carry the structure; write real content into them. One owner per datum — a task
+Templates in `templates/common/specs/` carry the structure. Planning writes real content into `PROJECT.md`,
+`requirements.md`, `design.md` and `tasks.md`; **do not rewrite `design-system.md`** after B1. Design closes load-bearing architecture and enforcement, not routine coding choices the generated Builder can safely
+resolve inside the approved contracts. One owner per datum — a task
 says "create `.env.example` from `design.md`" instead of restating a second, divergent list. Rigour is proportional, never
 quota-driven: **write a datum only if it is needed to build, review or recover this project.** Requirements are
 **product** scope, so harness work (axe, Lighthouse, E2E, SEO, Visual QA, `humanizalo`) is a `REQ` only where the product
 carries its own constraint; a **global audit belongs to its later gate** and no `TASK-9xx` QA block is generated.
-**Planning order is fixed:** `REQ/EARS → Stack Profile constraints → fixed phase → outcome-based Tasks`. The harness owns
+Every active `DISC-nnn` in the Discovery product-decision ledger must be represented by at least one requirement and
+listed in that requirement's `Source`; one requirement may cover several decisions and one decision may need several
+requirements. This is traceability, **not** a one-REQ-per-decision or one-TASK-per-REQ quota.
+**Planning order is fixed:** `Discovery decisions → REQ/EARS → Stack Profile constraints → fixed phase → outcome-based Tasks`. The harness owns
 exactly `FOUNDATION` and `PRODUCT_BUILD`; Planning never invents lifecycle phases. Foundation owns shared stack/database/
 Auth prerequisites; Product Build owns the complete integrated product. A task is an acceptance outcome, not a file,
 component, route, requirement or agent cycle. Tasks never encode reviewers, checkpoints, Visual QA, full E2E, Quality Gate
-or deployment. Human-only platform actions are `HPA-nnn` in `design.md`, blocked on one fixed phase. Disposable fixtures
+or deployment. Human-only platform actions are `HPA-nnn` in `design.md`, blocked on one fixed phase. When Backend Mode is `supabase`
+and Authentication is `supabase`, the Supabase capability contract makes **Confirm Email = OFF** a known human-owned
+prerequisite: Planning records that HPA before `FOUNDATION`; it is never left for Builder to discover. Disposable fixtures
 require scratch create → test → cleanup → no-residue proof; cleanup failure → STOP.
 **Transversal change:** detect scope → modify only affected sections → preserve unrelated approved decisions → revalidate.
 Broad re-review only for structural change.
@@ -98,17 +110,20 @@ Maximum 2 automatic Spec Reviewer runs; if the second still fails → STOP and b
 cause to the human. There is no third automatic pass.
 ```
 
-**Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, ID hygiene, requirement↔task references,
-orphan MUSTs, fixed phase coverage, stack invariants, global-gate/E2E leaks, human-only
-platform work assigned to Builder, fixture cleanup, initial task status, dependency direction and cycles.
-Deterministic, and it does not judge visual literals or whether a group is semantically well-sized. **Spec Reviewer:** the `spec-reviewer` subagent,
+**Mechanical:** `node scripts/lib/spec-gate.mjs` — files, sections, placeholders, Discovery-decision↔requirement
+source coverage, ID hygiene, requirement↔task references, orphan MUSTs, fixed phase coverage, machine-readable stack
+invariants, global-gate/E2E leaks, human-only platform work assigned to Builder, fixture cleanup, initial task status,
+dependency direction and cycles. Deterministic; it does not judge whether requirement wording faithfully preserves a
+Discovery decision, visual quality, or task sizing. **Spec Reviewer:** the `spec-reviewer` subagent,
 which owns its own criteria; it reviews and reports, never fixing specs, writing code or changing phase. Its second run
 checks the earlier findings, the regressions the corrections introduced and any obvious BLOCKER/MAJOR missed first time —
-it does not raise the standard, reinterpret the approved Artifact, widen scope, hunt unrelated new MINORs or invent design
+it does not raise the standard, reinterpret the approved visual contract, widen scope, hunt unrelated new MINORs or invent design
 rules. After `SPEC_PASS`, specs are frozen. Never apply MINOR edits silently; an accepted edit invalidates the pass and
-returns through both gates. Never call a third Spec Reviewer. **Human approval is a
-real gate**, not "procedo entonces" while already proceeding: ask in chat — `SPEC_PASS — 0 BLOCKER, 0 MAJOR. ¿Apruebas
-las especificaciones? [ Aprobar ] [ Revisar ]` — then persist `READY_TO_CREATE` and stop at checkpoint **B2**.
+returns through both gates. Never call a third Spec Reviewer. **Dispatch order is durable:** when Planning finishes its four
+specs, persist `SPEC_REVIEW` before the Mechanical Gate or Reviewer. Failures/corrections stay there. Immediately after
+`SPEC_PASS`, persist `AWAITING_APPROVAL` before asking the human; recovery from either phase uses disk and never returns to
+`PLANNING`. **Human approval is a real gate**: ask `SPEC_PASS — 0 BLOCKER, 0 MAJOR. ¿Apruebas las especificaciones?
+[ Aprobar ] [ Revisar ]`; only explicit approval persists `READY_TO_CREATE` and stops at checkpoint **B2**.
 
 ## Fixed Next platform, optional Supabase, skills, and the three mechanical scripts
 `builder.config.json` fixes `stack_profile = next-standard-v1`. There is one supported application framework: Next.js.
@@ -177,8 +192,9 @@ Ejecuta:
 ```
 
 **B1 — after the Artifact is approved.** Persist `discovery.md`, `design-system.md`, phase `PLANNING`, confirm
-`pending_action = null`; the next session starts Planning without re-reading the Artifact's HTML unless a specific visual
-contradiction appears. **B2 — after human spec approval.** Persist phase `READY_TO_CREATE`, confirm `pending_action = null`;
+`pending_action = null`; the next session starts Planning and **never reopens the Artifact HTML**. A material visual change returns to R4,
+republishes, gets human approval and then replaces `design-system.md`; ordinary Planning/Spec Review uses the durable
+contract only. **B2 — after human spec approval.** Persist phase `READY_TO_CREATE`, confirm `pending_action = null`;
 the next session persists `CREATING_PROJECT`, creates, validates, hands off and resets.
 
 ## Verification, environment, model

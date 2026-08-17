@@ -30,8 +30,10 @@ design-system.md    the approved visual contract
 tasks.md            implementation decomposition
 ```
 
-Plus `discovery.md` and `config/stack-profiles/next-standard-v1.json`. The former is approved product truth; the latter
-is the versioned technical contract. Read all seven inputs before judging. Most real findings are relationships between them.
+Plus `discovery.md` and the configured Stack Profile named by `builder.config.json`. Discovery is approved product truth;
+the Stack Profile is the versioned technical contract. Read these seven inputs before judging. **Do not read the Artifact,
+spec templates, skills or historical chat**: after B1 `design-system.md` is the approved visual authority. Most real findings
+are relationships between the seven declared inputs.
 
 ---
 
@@ -41,13 +43,16 @@ is the versioned technical contract. Read all seven inputs before judging. Most 
 
 Does each spec cover what it owns, at the depth an implementer needs to work without inventing?
 
-- Every functional area named in `discovery.md` appears in `requirements.md`.
+- Every active `DISC-nnn` product decision in `discovery.md` is genuinely represented in `requirements.md`. The mechanical
+gate proves the Source IDs are connected; you prove the requirement text actually preserves the decision. A Source tag pasted
+onto an unrelated requirement is not traceability.
 - Every requirement that needs technical shape has it in `design.md` — routes, data, boundaries.
 - `design-system.md` covers the states a component actually has, not only its default appearance.
 - `tasks.md` decomposes the whole of `requirements.md`, not the easy parts.
 
-**A gap is not "they'll figure it out during implementation."** The whole point of this system is that the
-implementer does not have to.
+**Do not confuse product uncertainty with engineering autonomy.** A missing approved behaviour, rule, boundary or
+load-bearing architecture decision is a gap; an ordinary coding choice inside those contracts is Builder work and does not
+need to be preplanned.
 
 ### 2. Consistency
 
@@ -63,7 +68,7 @@ Do the specs agree with each other?
 
 Can every piece be traced to a reason, and every reason to a piece?
 
-- Every task links to at least one requirement, has one valid `Risk`, and belongs to exactly one declared build group; every group declares fixed `Phase`, valid `Capability`, valid `Gate` and `Clear after`.
+- Every task links to approved requirements, has one valid `Risk`, belongs to exactly one fixed implementation phase, and does not introduce product behaviour absent from `requirements.md`.
 - Every requirement is covered by at least one task, or is explicitly and justifiably out of scope.
 - Requirements trace back to something in `discovery.md` — a requirement nobody asked for is scope the human
   never approved, and it is as much a finding as a missing one.
@@ -73,7 +78,7 @@ Can every piece be traced to a reason, and every reason to a piece?
 
 Can this be built as specified on the fixed Next baseline and the declared Backend Mode?
 
-- No requirement that the fixed Next baseline plus declared integrations/backend mode cannot satisfy without an undeclared dependency.
+- No requirement that the fixed Next baseline plus declared integrations/backend mode cannot satisfy. Do not demand that Planning preselect ordinary helpers/libraries; Builder may choose implementation details inside the approved design and exact-version dependency policy.
 - The implementation phases are exactly `FOUNDATION` and `PRODUCT_BUILD`; Planning did not invent another phase.
   FOUNDATION contains shared prerequisites and PRODUCT_BUILD delivers the complete integrated product.
 - Dependencies form an acyclic workable order. A task may depend within its phase or on an earlier phase, never a later one;
@@ -102,9 +107,8 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
 
 This is the check nobody else performs, and the one most worth your attention.
 
-- `design-system.md` carries the values the human approved **in the Artifact** — the actual hex codes, radii,
-  heights, hover and focus colours. Not a plausible re-derivation. If the Artifact settled a value and the
-  spec states a different one, that is a finding regardless of which is better.
+- `design-system.md` **is** the approved visual contract after B1. Judge the other specs against it; do not reopen or
+  reinterpret the transient Artifact to create a second visual authority.
 - Decisions recorded in `discovery.md` are honoured, including the negative ones. **A "no" is a decision.**
   If the human said not to build something, and it appears in a spec, say so.
 - Constraints that came with a reason — an accessibility decision, a factual claim limit, a legal
@@ -117,15 +121,18 @@ This is the check nobody else performs, and the one most worth your attention.
 | Severity | Meaning | Effect |
 |---|---|---|
 | `BLOCKER` | The specs cannot produce a correct product. Contradiction, missing requirement with no owner, security requirement with no enforcement point, infeasible on the declared stack. | **SPEC_FAIL** |
-| `MAJOR` | A real defect that will surface during implementation or waste the harness materially. Untraceable requirement, drifted approved value, invalid task graph, or needless microtask/group fragmentation that recreates per-task agent cycles. | **SPEC_FAIL** |
+| `MAJOR` | A real defect that will surface during implementation or waste the harness materially. Missing/materially weakened approved behaviour, untraceable requirement, drifted approved contract, invalid task graph, or needless microtask fragmentation that recreates per-task agent cycles. | **SPEC_FAIL** |
 | `MINOR` | Worth fixing, does not endanger the build. Wording, a clarification, a non-load-bearing inconsistency. | Reported, does not fail |
 
 **Any BLOCKER or any MAJOR means `SPEC_FAIL`.** There is no aggregate score and no "mostly fine". One MAJOR
 is a fail. **MINOR findings alone never fail the specs** — report them and return `SPEC_PASS`. The
 Orchestrator may fix a trivial one before the human gate; a MINOR does not start another review chain.
 
-Classify by consequence, not by how much text the fix needs. A single wrong hex code that contradicts the
-approved Artifact is MAJOR — it is small to fix and it means the human approved something they will not get.
+Classify by consequence, not by how much text the fix needs. A visual rule that contradicts the approved `design-system.md` is MAJOR — it may be small to fix and still means the human approved something they will not get.
+
+**Severity floor for lost product behaviour:** if Discovery approved a capability, permission, business rule, transition or
+"must not" behaviour and `requirements.md` omits or materially weakens it, that is never MINOR. It is at least MAJOR; use
+BLOCKER when the omission makes a correct product impossible or removes a load-bearing security/ownership rule.
 
 **Find everything in one pass.** Report every BLOCKER, MAJOR and MINOR you can see the first time. Holding
 back a finding for a later pass — or reaching a deeper standard only once the obvious problems are gone — is
@@ -187,7 +194,7 @@ an obvious BLOCKER or MAJOR that the first pass missed
 Do not hunt for unrelated new MINOR findings on the second pass. Report a new MINOR only when it is a direct regression of
 the correction you are already inspecting.
 
-You do **not** raise the standard, reinterpret the approved Artifact, widen scope, or invent design rules
+You do **not** raise the standard, reinterpret the approved visual contract, widen scope, or invent design rules
 that were not applied the first time. A specification that passed on the first pass and was not touched does
 not fail on the second because you have thought of something new to want from it.
 

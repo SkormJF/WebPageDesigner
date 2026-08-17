@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseBackendMode, composeBackendCapability, expectedSkills } from "../scripts/lib/common.mjs";
+import { parseBackendMode, parseAuthenticationMode, composeBackendCapability, expectedSkills } from "../scripts/lib/common.mjs";
 import { runSpecGate } from "../scripts/lib/spec-gate.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -12,7 +12,7 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 const json = (rel) => JSON.parse(read(rel));
 const flat = (rel) => read(rel).replace(/\s+/g, " ");
 
-function makeSpecs({ tasks, design, backend = "none" } = {}) {
+function makeSpecs({ tasks, design, backend = "none", auth = "none", requirements, discovery } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "v9-spec-"));
   const designText = design ?? `# Design
 ## Architecture
@@ -23,6 +23,7 @@ No deviations.
 | \`/\` | public | Entry | REQ-001 |
 ## Backend
 **Mode:** ${backend}
+**Authentication:** ${auth}
 ## Human platform actions
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
@@ -43,12 +44,13 @@ FOUNDATION then PRODUCT_BUILD.
 `;
   const files = {
     "PROJECT.md": "# Project\n## Identity\nX\n## What this is\nX\n## Scope\nX\n## Decisions in force\nX\n",
-    "requirements.md": "# Requirements\n## Functional requirements\n| ID | Requirement |\n|---|---|\n| REQ-001 | The product MUST have an entry flow. |\n## Non-functional requirements\nX\n",
+    "requirements.md": requirements ?? "# Requirements\n## Functional requirements\n| ID | Requirement | Priority | Source |\n|---|---|---|---|\n| REQ-001 | The product MUST have an entry flow. | MUST | DISC-001 |\n## Non-functional requirements\nX\n",
     "design.md": designText,
     "design-system.md": "# DS\n## Approval\nX\n## Color\nX\n## Typography\nX\n## Interaction states\nX\n## Responsive behaviour\n| Breakpoint | Width | What changes |\n|---|---|---|\n| Mobile | 0-639 | Compact |\n| Tablet | 640-1023 | Medium |\n| Desktop | 1024+ | Full |\n",
     "tasks.md": taskText,
   };
   for (const [name, text] of Object.entries(files)) fs.writeFileSync(path.join(dir, name), text);
+  fs.writeFileSync(path.join(dir, "discovery.md"), discovery ?? "# Discovery\n## Product decision ledger\n| ID | Approved product decision |\n|---|---|\n| DISC-001 | The product has an entry flow. |\n");
   return dir;
 }
 
@@ -62,6 +64,12 @@ test("backend mode parser accepts only none and supabase", () => {
   assert.equal(parseBackendMode("## Backend\n**Mode:** none"), "none");
   assert.equal(parseBackendMode("## Backend\n**Mode:** supabase"), "supabase");
   assert.equal(parseBackendMode("## Backend\n**Mode:** firebase"), "unsupported:firebase");
+});
+
+test("authentication mode parser is explicit and bounded", () => {
+  assert.equal(parseAuthenticationMode("## Backend\n**Mode:** supabase\n**Authentication:** supabase"), "supabase");
+  assert.equal(parseAuthenticationMode("## Backend\n**Mode:** supabase\n**Authentication:** none"), "none");
+  assert.equal(parseAuthenticationMode("## Backend\n**Authentication:** clerk"), "unsupported:clerk");
 });
 
 test("V9 keeps one fixed versioned stack profile", () => {
@@ -87,7 +95,7 @@ test("Planning and Spec Review must consume the Stack Profile", () => {
   const reviewer = flat(".claude/agents/spec-reviewer.md");
   assert.match(harness, /PLANNING.*fixed Stack Profile/i);
   assert.match(harness, /SPEC_REVIEW.*Stack Profile/i);
-  assert.match(reviewer, /config\/stack-profiles\/next-standard-v1\.json/);
+  assert.match(reviewer, /configured Stack Profile named by `builder\.config\.json`/i);
   assert.match(reviewer, /src\/proxy\.ts.*exporting `proxy`/i);
 });
 
@@ -95,16 +103,17 @@ test("valid two-phase specifications pass the mechanical gate", () => {
   assert.equal(gate().pass, true);
 });
 
-test("Spec Gate rejects legacy middleware and missing root route", () => {
+test("Spec Gate does not treat a negative middleware mention as an implementation", () => {
   const design = `# Design
 ## Architecture
-Use src/middleware.ts.
+Do not use middleware.ts; request-boundary work follows the Stack Profile.
 ## Routes
 | Route | Access | Purpose | Requirements |
 |---|---|---|---|
-| \`/app\` | authenticated | App | REQ-001 |
+| \`/\` | public | Entry | REQ-001 |
 ## Backend
 **Mode:** none
+**Authentication:** none
 ## Human platform actions
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
@@ -112,10 +121,28 @@ Use src/middleware.ts.
 ## Security
 Server enforcement.
 `;
-  const result = gate({ design });
-  assert.equal(result.pass, false);
-  assert.ok(result.findings.some((f) => /middleware\.ts is forbidden/.test(f.message)));
-  assert.ok(result.findings.some((f) => /root route/.test(f.message)));
+  assert.equal(gate({ design }).pass, true);
+});
+
+test("Spec Gate still rejects a missing root route mechanically", () => {
+  const design = `# Design
+## Architecture
+No deviations.
+## Routes
+| Route | Access | Purpose | Requirements |
+|---|---|---|---|
+| \`/app\` | authenticated | App | REQ-001 |
+## Backend
+**Mode:** none
+**Authentication:** none
+## Human platform actions
+| ID | Human-only action | Before phase | Completion proof |
+|---|---|---|---|
+| — | None | — | — |
+## Security
+Server enforcement.
+`;
+  assert.ok(gate({ design }).findings.some((f) => /root route/.test(f.message)));
 });
 
 test("Spec Gate rejects responsive gaps like the FocoV5 641-859 defect", () => {
@@ -204,15 +231,72 @@ No deviations.
 | \`/\` | public | Entry | REQ-001 |
 ## Backend
 **Mode:** supabase
+**Authentication:** supabase
 ## Human platform actions
 | ID | Human-only action | Before phase | Completion proof |
 |---|---|---|---|
-| HPA-001 | Configure SMTP | FOUNDATION | Human confirmation |
+| HPA-001 | Disable Confirm Email in Supabase Auth | FOUNDATION | Human confirmation |
 ## Security
 Server enforcement.
 `;
   assert.equal(gate({ design, backend: "supabase" }).pass, true);
 });
+
+test("FocoV5 regression: every Discovery product decision needs an owning requirement", () => {
+  const discovery = `# Discovery
+## Product decision ledger
+| ID | Approved product decision |
+|---|---|
+| DISC-001 | The product has an entry flow. |
+| DISC-002 | A user can mark an item as Done. |
+`;
+  const result = gate({ discovery });
+  assert.equal(result.pass, false);
+  assert.ok(result.findings.some((f) => /DISC-002.*no owning requirement/.test(f.message)));
+});
+
+test("requirements cannot cite a Discovery decision that does not exist", () => {
+  const requirements = `# Requirements
+## Functional requirements
+| ID | Requirement | Priority | Source |
+|---|---|---|---|
+| REQ-001 | The product MUST have an entry flow. | MUST | DISC-999 |
+## Non-functional requirements
+X
+`;
+  const result = gate({ requirements });
+  assert.ok(result.findings.some((f) => /REQ-001 cites DISC-999/.test(f.message)));
+  assert.ok(result.findings.some((f) => /DISC-001.*no owning requirement/.test(f.message)));
+});
+
+test("one requirement may cover multiple Discovery decisions without creating more tasks", () => {
+  const discovery = `# Discovery
+## Product decision ledger
+| ID | Approved product decision |
+|---|---|
+| DISC-001 | The user can upload an image. |
+| DISC-002 | The user can delete their own image. |
+`;
+  const requirements = `# Requirements
+## Functional requirements
+| ID | Requirement | Priority | Source |
+|---|---|---|---|
+| REQ-001 | The product MUST let the user manage their own images by uploading and deleting them. | MUST | DISC-001, DISC-002 |
+## Non-functional requirements
+X
+`;
+  assert.equal(gate({ discovery, requirements }).pass, true);
+});
+
+test("Supabase Auth requires the known Confirm Email OFF human prerequisite", () => {
+  const result = gate({ backend: "supabase", auth: "supabase" });
+  assert.ok(result.findings.some((f) => /Confirm Email/.test(f.message)));
+});
+
+test("Supabase without Auth does not invent the Confirm Email prerequisite", () => {
+  assert.equal(gate({ backend: "supabase", auth: "none" }).pass, true);
+});
+
 
 test("generated lifecycle has one technical review after each complete build phase", () => {
   const harness = flat("templates/common/CLAUDE.md");
@@ -318,6 +402,10 @@ test("validate-project enforces V9 composition and no model pin", () => {
   assert.match(validator, /Versioned stack contract present/);
   assert.match(validator, /byte-equivalent to configured profile/);
   assert.match(validator, /Request boundary is machine-readable/);
+  assert.match(validator, /No forbidden request-boundary file exists/);
+  assert.match(validator, /Generated harness carries blocking HPA recovery/);
+  assert.match(validator, /Supabase Auth design carries the pre-Foundation Confirm Email HPA/);
+  assert.match(validator, /Builder reads the five frozen specs once per full build phase/);
   assert.match(validator, /Project settings do not pin a model/);
   assert.match(validator, /schema_version === 5/);
 });
@@ -364,10 +452,87 @@ test("skill distribution remains slim and deterministic", () => {
   assert.deepEqual(profile.profile_skills, ["shadcn-ui", "vercel-react-best-practices"]);
 });
 
-test("always-on harness files remain below 200 lines", () => {
-  for (const rel of ["CLAUDE.md", "templates/common/CLAUDE.md"]) {
-    assert.ok(read(rel).split(/\r?\n/).length <= 200, rel);
+test("always-on harness files keep explicit context budgets", () => {
+  const budgets = new Map([
+    ["CLAUDE.md", 3000],
+    ["templates/common/CLAUDE.md", 1800],
+  ]);
+  for (const [rel, maxWords] of budgets) {
+    const words = read(rel).trim().split(/\s+/).length;
+    assert.ok(words <= maxWords, `${rel}: ${words} words > ${maxWords}`);
   }
+});
+
+test("active V9 contracts contain no retired build-group execution language", () => {
+  for (const rel of [
+    "CLAUDE.md",
+    ".claude/agents/spec-reviewer.md",
+    ".claude/skills/shadcn-ui/SKILL.md",
+    ".claude/skills/redesign-existing-projects/SKILL.md",
+    ".claude/skills/performance-audit/SKILL.md",
+    "templates/common/CLAUDE.md",
+    "templates/common/specs/design.md",
+  ]) {
+    assert.doesNotMatch(read(rel), /\bbuild groups?\b|Before group|scope\/build group/i, rel);
+  }
+});
+
+test("B1 freezes design-system and Spec Review never reopens the Artifact", () => {
+  const factory = flat("CLAUDE.md");
+  const reviewer = flat(".claude/agents/spec-reviewer.md");
+  assert.match(factory, /Planning writes real content into `PROJECT\.md`.*`requirements\.md`.*`design\.md`.*`tasks\.md`.*do not rewrite `design-system\.md`/i);
+  assert.match(factory, /never reopens the Artifact HTML/i);
+  assert.match(reviewer, /do not read the Artifact/i);
+  assert.match(reviewer, /`design-system\.md`.*approved visual contract after B1/i);
+});
+
+test("Factory persists SPEC_REVIEW before gates and AWAITING_APPROVAL before the human question", () => {
+  const factory = flat("CLAUDE.md");
+  assert.match(factory, /persist `SPEC_REVIEW` before the Mechanical Gate or Reviewer/i);
+  assert.match(factory, /Immediately after `SPEC_PASS`, persist `AWAITING_APPROVAL` before asking the human/i);
+  assert.match(factory, /recovery from either phase.*never returns to `PLANNING`/i);
+});
+
+test("Spec Reviewer treats lost approved product behaviour as at least MAJOR", () => {
+  const reviewer = flat(".claude/agents/spec-reviewer.md");
+  assert.match(reviewer, /Severity floor for lost product behaviour/i);
+  assert.match(reviewer, /never MINOR.*at least MAJOR/i);
+  assert.match(reviewer, /Source tag pasted onto an unrelated requirement is not traceability/i);
+});
+
+test("generated Builder loads the complete frozen contract once per build phase", () => {
+  const harness = flat("templates/common/CLAUDE.md");
+  const builder = flat("templates/common/.claude/agents/builder.md");
+  for (const text of [harness, builder]) {
+    assert.match(text, /all five approved specs.*once/i);
+    assert.match(text, /tasks\.md.*execution/i);
+  }
+  assert.match(builder, /Never load Discovery, the visual Artifact, Factory templates or Factory history/i);
+});
+
+test("generated HPA protocol is blocking, resumable and does not consume correction rounds", () => {
+  const harness = flat("templates/common/CLAUDE.md");
+  assert.match(harness, /pending_action = \{ type: "HUMAN_PLATFORM_ACTION", id, action \}/);
+  assert.match(harness, /Cuando termines, escribe continúa.*STOP/i);
+  assert.match(harness, /Never attempt a workaround or spend a correction round on it/i);
+  assert.match(harness, /append the ID to `completed_human_actions`.*clear `pending_action`.*resume the same phase/i);
+});
+
+test("Supabase Auth contract fixes Confirm Email OFF as a known human prerequisite", () => {
+  const capability = flat("templates/capabilities/supabase/.claude/capabilities/supabase.md");
+  const design = flat("templates/common/specs/design.md");
+  const harness = flat("templates/common/CLAUDE.md");
+  assert.match(capability, /email confirmation.*always disabled/i);
+  assert.match(capability, /Planning records an `HPA-nnn` before `FOUNDATION`/i);
+  assert.match(design, /without email confirmation/i);
+  assert.match(harness, /Confirm Email = OFF.*before FOUNDATION/i);
+});
+
+test("generated recovery resumes durable work instead of replaying accepted phases", () => {
+  const harness = flat("templates/common/CLAUDE.md");
+  assert.match(harness, /Recovery reads `.workflow\/state\.json`.*never conversational memory/i);
+  assert.match(harness, /resume the incomplete phase from the actual working tree rather than replaying accepted work/i);
+  assert.match(harness, /Completed phases.*never replayed/i);
 });
 
 test("central V9 contracts contain no retired phases or DB review gate", () => {
