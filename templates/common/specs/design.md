@@ -26,6 +26,10 @@ These hold for this project. Violations are review findings, not style opinions:
 - `lib/` must not depend on features or `app/`.
 - Features do not reach into each other's internals.
 
+<!-- The Modules/Features dependency table below must obey these rules. A cross-feature dependency is not automatically a
+     violation: when one exists, name the allowed public/composition boundary explicitly. Never leave a dependency that
+     requires reaching into another feature's internals. -->
+
 ## Routes
 
 <!-- SLOT: Access level is load-bearing. The Stack Profile owns the request-boundary filename/export; design owns which
@@ -111,7 +115,9 @@ These hold for this project. Violations are review findings, not style opinions:
 
 ### Enforcement points
 
-<!-- SLOT: One row per "must NOT be possible" requirement. Hidden UI is never an enforcement point. -->
+<!-- SLOT: One row per "must NOT be possible" requirement. Hidden UI is never an enforcement point. For every enforcement
+     mechanism, check both directions: it blocks the forbidden operation AND still permits every operation that requirements.md
+     explicitly allows. Security/state hardening must not make an approved MUST behaviour impossible. -->
 
 | Requirement | Enforced at | How |
 |---|---|---|

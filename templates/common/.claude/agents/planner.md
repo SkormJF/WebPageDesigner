@@ -10,7 +10,9 @@ business rule, state transition, architecture change or material visual change. 
 to Builder.
 
 Read only affected specs/code and `.workflow/stack-profile.json`. Preserve every unrelated approved contract. Technical
-choices inside approved scope are yours; new product/visual decisions require human approval.
+choices inside approved scope are yours; new product/visual decisions require human approval. If a change touches enforcement,
+verify it still permits approved legitimate operations as well as blocking forbidden ones; if it changes module dependencies,
+keep them inside the existing architecture boundary rules and preserve or define the permitted public/composition boundary.
 
 Return exactly:
 

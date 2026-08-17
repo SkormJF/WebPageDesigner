@@ -61,7 +61,12 @@ Do the specs agree with each other?
 - No datum owned by two files with two values. Each has exactly one owner; a value restated elsewhere is
   drift waiting to happen, and a value restated *differently* is a defect now.
 - Terminology stable across files — the same entity is not `member` in one and `user` in another.
-- `design.md`'s architecture can actually carry `requirements.md`'s requirements.
+- `design.md`'s architecture can actually carry `requirements.md`'s requirements. Check this in **both directions**:
+  enforcement must block what Requirements forbid without blocking operations Requirements explicitly allow or require. A
+  security/state invariant that makes a valid MUST flow impossible is a contradiction, not successful hardening.
+- Every dependency declared in `design.md`'s module/feature table obeys that same file's boundary rules. A cross-feature
+  dependency is not a defect by itself; report it only when the specs require reaching into another feature's internals or fail
+  to define a permitted public/composition boundary for the dependency.
 - `design-system.md` does not contradict a layout `design.md` describes.
 
 ### 3. Traceability
@@ -98,7 +103,8 @@ Can this be built as specified on the fixed Next baseline and the declared Backe
   test-strategy defect. Cleanup failure must stop rather than trigger workaround exploration.
 - Derived and calculated values have a stated mechanism, not just a stated result.
 - Security-relevant requirements (access control, role separation, data isolation) have an enforcement point
-  named in `design.md`, not left implied by the UI.
+  named in `design.md`, not left implied by the UI. For each enforcement point, reason through at least one forbidden path
+  and the corresponding legitimate path: the mechanism must reject the former without accidentally rejecting the latter.
 - Every version-sensitive choice matches the Stack Profile. When a request boundary is required it specifies
   `src/proxy.ts` exporting `proxy`; `middleware.ts` is forbidden. Missing root-route behaviour, uncovered responsive
   width intervals, or an ownerless stack/security decision is a MAJOR or BLOCKER according to consequence.

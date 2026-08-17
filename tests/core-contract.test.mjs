@@ -652,3 +652,35 @@ test("central V9 contracts contain no retired phases or DB review gate", () => {
     assert.doesNotMatch(text, /\bINTEGRATION\b/, rel);
   }
 });
+
+
+test("Planning and Spec Reviewer validate enforcement in both directions", () => {
+  const factory = flat("CLAUDE.md");
+  const design = flat("templates/common/specs/design.md");
+  const reviewer = flat(".claude/agents/spec-reviewer.md");
+  assert.match(factory, /Enforcement is bidirectional/i);
+  assert.match(factory, /preserve every operation Requirements explicitly allow/i);
+  assert.match(design, /blocks the forbidden operation AND still permits every operation/i);
+  assert.match(reviewer, /enforcement must block what Requirements forbid without blocking operations Requirements explicitly allow or require/i);
+  assert.match(reviewer, /forbidden path.*legitimate path/i);
+});
+
+test("Planning and review keep declared feature dependencies inside architecture boundaries", () => {
+  const factory = flat("CLAUDE.md");
+  const design = flat("templates/common/specs/design.md");
+  const reviewer = flat(".claude/agents/spec-reviewer.md");
+  const planner = flat("templates/common/.claude/agents/planner.md");
+  assert.match(factory, /Declared module dependencies must obey `design\.md`'s own boundary rules/i);
+  assert.match(factory, /permitted public\/composition boundary/i);
+  assert.match(design, /cross-feature dependency is not automatically a violation/i);
+  assert.match(reviewer, /cross-feature.*not a defect by itself/i);
+  assert.match(reviewer, /permitted public\/composition boundary/i);
+  assert.match(planner, /module dependencies.*architecture boundary rules.*public\/composition boundary/is);
+});
+
+test("V9.3 semantic hardening stays generic and does not encode the FocoV6 incident", () => {
+  for (const rel of ["CLAUDE.md", ".claude/agents/spec-reviewer.md", "templates/common/specs/design.md", "templates/common/.claude/agents/planner.md"]) {
+    const text = read(rel);
+    assert.doesNotMatch(text, /FocoV6|por_hacer|en_proceso|hechas|StatusAdvanceControl/i, rel);
+  }
+});

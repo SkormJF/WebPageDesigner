@@ -88,7 +88,10 @@ Templates carry structure. Planning reads only the four templates it writes, pro
 Mechanical Spec Gate as a black box; do not read `scripts/lib/spec-gate.mjs` or `scripts/lib/common.mjs` to tailor prose. A
 Gate result contradicting a higher contract is a harness defect, not a reason to rewrite valid content. Design closes
 load-bearing architecture and enforcement, not routine coding choices the generated Builder can safely
-resolve inside the approved contracts. One owner per datum — a task
+resolve inside the approved contracts. **Enforcement is bidirectional:** every mechanism that blocks a forbidden operation must
+also preserve every operation Requirements explicitly allow; do not make a MUST behaviour impossible while hardening a must-not.
+Declared module dependencies must obey `design.md`'s own boundary rules; when behaviour crosses features, name the permitted
+public/composition boundary instead of leaving an implicit reach into another feature's internals. One owner per datum — a task
 says "create `.env.example` from `design.md`" instead of restating a second, divergent list. Rigour is proportional, never
 quota-driven: **write a datum only if it is needed to build, review or recover this project.** Requirements are
 **product** scope, so harness work (axe, Lighthouse, E2E, SEO, Visual QA, `humanizalo`) is a `REQ` only where the product
